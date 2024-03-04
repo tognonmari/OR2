@@ -1,8 +1,8 @@
 
 //parameters for the random values generation
 #define SEED 13
-#define MAX_X 10000
-#define MAX_Y 10000
+#define MAX_X 10000  //maximum value for ascisse of generated points
+#define MAX_Y 10000  //maximum value for ordinate of generated points
 
 typedef struct {
 
