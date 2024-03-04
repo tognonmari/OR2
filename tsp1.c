@@ -38,32 +38,22 @@ void generate_instance(int n, instance *inst){
 }
 
 /*
-* A datafile "graph_data_$(inst->nnodes)_$SEED.txt" containing the coordinates of the nodes
-* is created in the "data" directory. Each line of the file contains the coordinates of each point
+* The file data_file is modified in the following way:
+* each line of the file contains the coordinates of each point
 * separeted by a space.
 * IP inst Instance from which the data are taken
+* OF data_file File to modify
 */
-void make_datafile(instance *inst) {
-	// Open the file in writing mode ("w")
-	char file_name[256];
-	// The name of the file have the form "graph_data_$nnodes_SEED.txt" where SEED is the seed used for the random generation
-	// and $nnodes is the size of the graph. The file is created in the directory "data".
-	snprintf(file_name, sizeof(file_name), "data/graph_data_%d_%d.txt", inst->nnodes, SEED);
-	FILE* file = fopen(file_name, "w");
-	if (file == NULL) {
-		fprintf(stderr, "The file could not be opened for writing.\n");
-		return;
-	}
+void make_datafile(instance *inst, FILE* data_file) {
 
 	double* x_pointer = inst->xcoord;
 	double* y_pointer = inst->ycoord;
 
 	for (int i = 0; i < inst->nnodes; i++) {
-		fprintf(file, "%d %d\n", (int)(*x_pointer), (int)(*y_pointer));
+		fprintf(data_file, "%d %d\n", (int)(*x_pointer), (int)(*y_pointer));
 		x_pointer++;
 		y_pointer++;
 	}
-	fclose(file);
 }
 /*
 * Plot the input datafile using GNUPLOT
@@ -89,15 +79,38 @@ void plot_graph(const char graph_data[], const char graph[]) {
 	fclose(gnuplotPipe);
 }
 
+/*
+OR Esito(
+	0: elaborazione riuscita;
+	
+	-2: apertura fallita di data_file;
+	-3: numero di parametri inseriti da linea di comando non corretto).
+*/
 int main(void) {
 	/*
 	*/
 	instance inst;
-	srand(SEED);
+	FILE (*data_file);
+	char data_file_name[256];
+	char figure_name[256];
+
 	generate_instance(12, &inst);
-	make_datafile(&inst);
-	plot_graph("data/graph_data_12_13.txt","figures/graph.png");
+	// The name of the file have the form "graph_data_$nnodes_SEED.txt" where SEED is the seed used for the random generation
+	// and $nnodes is the size of the graph. The file is created in the directory "data".
+	snprintf(data_file_name, sizeof(data_file_name), "data/graph_data_%d_%d.txt", inst.nnodes, SEED);
+	data_file = fopen(data_file_name, "w");
+	if (data_file == NULL) {
+		fclose(data_file);
+		return -2;
+	}
+	// The name of the figure have the form "graph_$nnodes_SEED.png" where SEED is the seed used for the random generation
+	// and $nnodes is the size of the graph. The file is created in the directory "figures".
+	snprintf(figure_name, sizeof(figure_name), "figures/graph_%d_%d.png", inst.nnodes, SEED);
+	srand(SEED);
+	make_datafile(&inst, data_file);
+	plot_graph(data_file_name,figure_name);
 	printArrayDouble("Stampo xcoord\n", inst.xcoord, inst.nnodes);
 	printArrayDouble("Stampo ycoord\n", inst.ycoord, inst.nnodes);
+	fclose(data_file);
 	return 0;
 }
