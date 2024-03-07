@@ -1,16 +1,22 @@
+#ifndef TSP_H_
 
+#define TSP_H_
 //parameters for the random values generation
 #define SEED 14
 #define MAX_X 10000  //maximum value for ascisse of generated points
 #define MAX_Y 10000  //maximum value for ordinate of generated points
 
 typedef struct {
+	double x;
+	double y;
+} point;
+
+typedef struct {
 
 	//input data
 	int nnodes;
 	double* demand;
-	double* xcoord;
-	double* ycoord;
+	point* nodes;
 	int depot;
 	double capacity;
 	int nveh;
@@ -27,6 +33,7 @@ typedef struct {
 	int max_nodes; 							// max n. of branching nodes in the final run (-1 unlimited)
 	double cutoff; 							// cutoff (upper bound) for master
 	int integer_costs;
+	int verbose;
 
 	//global data
 	double	tstart;
@@ -48,3 +55,4 @@ typedef struct {
 	int zstart;
 } instance;
 
+#endif   /* TSP_H_ */ 
