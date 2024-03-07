@@ -2,7 +2,7 @@
 linea di comando sia sbagliato, il messaggio di help deve essere dato invocando una funzione help() che dia tale messaggio,
 in modo che successivamente possiamo direttamente modificare la funzione di help. (MARY)
 (x MARY, appena hai finito lo 0 sarebbe bene mergiare i codici che abbiamo per avere una versione unica) (TOGHETHER!!!)
-1!!)OCCUPARSI MATRICE DEI COSTI c=3
+1!!)OCCUPARSI MATRICE DEI COSTI c=3 (NINO)
 MI RACCOMANDO SFRUTTARE SIMMETRIA DEI COSTI,
 occuparsi di creare una stringa come campo della struttura istance che
 definisca il tipo di distanza, ad esempio nel nostro caso tale variabile assummerà il valore
@@ -15,14 +15,14 @@ che spiega che non è ancora stato fatto
 spazi ad esempio non è necessario per un vettore di pochi byte)
 funzione tsp_init per inzializzare in modo banale una istanza (l'hanno fatto quelli che hanno presentato, non fondamentale ma puo essere utile)
 loro avevano messo banalmente tutto a 0 a NULL
-c=2
+c=2 (MARY)
 3!!)aggiungere i vari assert e fare funzione di debug per stampare del testo formattato che serve 
-in fase di debug
+in fase di debug (NINO)
 DEVE ESSERCI un print del tempo di esecuzione, organizzazione in pseudocodice da fornire della struttura dei
 flag di debugging (c=3) (NINO)
 4!)occuparsi della gestione dei path (decidere come va implementato un path)
 Basta un vettore? opppure preferibile un tipo strutturato contenente un vetotre e che magari specifica anche i nodi di inizio e di fine
-e che abbia una variabile (non necessariamente inizializzata) che rappresenti il costo del path. (c=2)
+e che abbia una variabile (non necessariamente inizializzata) che rappresenti il costo del path. (non serve ) (c=2)
 5!)funzione swap dei nodi (c=1)
 6)IMPLEMENTARE STRUTTURA GREEDY !NECESSARIO PIANO IMPLEMENTAZIONE! (c=9)
 6a) funzione per fare procedimento greedy stabilito nodo di inizio
@@ -30,15 +30,16 @@ e che abbia una variabile (non necessariamente inizializzata) che rappresenti il
 7 chill FATTO) funzione che crei directory se non sono gia esistenti (cartelle figures e data)
 (giustamente quando vendi un software sarebbe piu elegante non metterci dentro delle cartelle vuote in attesa di ricevere dati o figure,
 sarebbe piu eleganti che tali cartelle vengano create alla necessità) (c=1) (NINO)
-8!!)metodo per confrontare double (c=1)
+8!!)metodo per confrontare double (c=1) (MARY)
 (deve restituire ovviamente 1 se diff double<= precisione 0 otherwise)
 9)funzione che si occupi di aggiornare best_val best_time e best_sol, mi raccomando per best_time deve essere usata la
-funzione di time stamp usata anche per il debugging quindi ricicla quella funzione senza crearne una nuova. (c=2)
+funzione di time stamp usata anche per il debugging quindi ricicla quella funzione senza crearne una nuova. (c=2) (NINO)
 10 Cond. Neces. 9 & 6 DONE) tsp_check_sol soluzione corretta se restituisce un path che è un hamiltionian cycle (i nodi devono essere visitati una sola volta)
 quindi per controllo utilizzare un vettore di count che conti le visite ai nodi tale vettore deve avere ogni elemtno pari a 1 otherwise stampare messaggio di errore.
 inoltre bisogna checkare che effittivamente il costo del path ottimo corrisponda a best_val, per ora questo è una verifica abbastanza inutile
 ma il prof ha detto di farla perche piu avanti potrebbe essere piu facile avere come incumbent una soluzione diversa da quella che ha generato il best_val. (c=3)
 
 OTHER STUFF TO DO
-11) fare funzione di debug per stampare path e funzione per stampare vettori di nodi (il path è costituito anche da un vettore di nodi quindi la funzione fatta per il vettore di nodi
-va riutilizzata anche per stampare il path)
+
+OPT 2 (MARY).
+11) fare il make (MARY)
