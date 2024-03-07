@@ -23,8 +23,8 @@ void tsp_debug(int flag, char* format, ...)
 void print_point(const char text_to_print[], const point* p) {
 	int x = (int)(p->x);
 	int y = (int)(p->y);
-	printf("%s", text_to_print);
-	printf("(%d, %d)\n", x, y);
+	tsp_debug(1,"%s", text_to_print);
+	tsp_debug(1,"(%d, %d)\n", x, y);
 }
 /* Print the coordinates of the nodes of the graph
 * IP text_to_print.
@@ -33,10 +33,10 @@ void print_point(const char text_to_print[], const point* p) {
 */
 void print_nodes(const char text_to_print[], const instance *inst, int n) {
 	int i;
-	printf("%s", text_to_print);
+	tsp_debug(1,"%s", text_to_print);
 	point* current_point = inst->nodes;
 	for (i = 0; i < n; i++) {
-		printf("node[%d]: ", i);
+		tsp_debug(1,"node[%d]: ", i);
 		print_point("",current_point);
 		current_point++;
 	}
