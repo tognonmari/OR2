@@ -1,8 +1,5 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "tsp1.h"
 #include "utils.h"
-#include<stdarg.h>
 /* 
 * Conditional debugging function that prints
 * a formatted message to the console if the given flag is true.
@@ -129,7 +126,73 @@ int plot_graph(const char graph_data[], const char graph[]) {
 
 	fclose(gnuplotPipe);
 }
+//Utility methods for input parsing
 
+void parse_command_line(int argc, char** argv, instance *inst){
+
+    //Default parameters
+
+    inst->model_type = 0;
+	inst->old_benders = 0;
+	strcpy(inst->input_file, "NULL");
+	inst->randomseed = 0; 
+	inst->num_threads = 0;
+	inst->timelimit = -1; 
+	inst->cutoff = -1; 
+	inst->integer_costs = 0;
+    inst->verbose = 10;
+	inst->available_memory = 12000;   			
+	inst->max_nodes = -1; 	
+	inst->nnodes =0;					       
+
+    int help = 0; if ( argc < 1 ) help = 1;	
+	for ( int i = 1; i < argc; i++ ) 
+	{ 
+		if ( strcmp(argv[i], "-nnodes") == 0) { inst->nnodes = atoi(argv[++i]); continue; } 			// input file
+		if ( strcmp(argv[i],"-file") == 0 ) { strcpy(inst->input_file,argv[++i]); continue; } 			// input file
+		if ( strcmp(argv[i],"-input") == 0 ) { strcpy(inst->input_file,argv[++i]); continue; } 			// input file
+		if ( strcmp(argv[i],"-f") == 0 ) { strcpy(inst->input_file,argv[++i]); continue; } 				// input file
+		if ( strcmp(argv[i],"-time_limit") == 0 ) { inst->timelimit = atof(argv[++i]); continue; }		// total time limit
+		if ( strcmp(argv[i],"-model_type") == 0 ) { inst->model_type = atoi(argv[++i]); continue; } 	// model type
+		if ( strcmp(argv[i],"-old_benders") == 0 ) { inst->old_benders = atoi(argv[++i]); continue; } 	// old benders
+		if ( strcmp(argv[i],"-model") == 0 ) { inst->model_type = atoi(argv[++i]); continue; } 			// model type
+		if ( strcmp(argv[i],"-seed") == 0 ) { inst->randomseed = abs(atoi(argv[++i])); continue; } 		// random seed
+		if ( strcmp(argv[i],"-threads") == 0 ) { inst->num_threads = atoi(argv[++i]); continue; } 		// n. threads
+		if ( strcmp(argv[i],"-memory") == 0 ) { inst->available_memory = atoi(argv[++i]); continue; }	// available memory (in MB)
+		//if ( strcmp(argv[i],"-node_file") == 0 ) { strcpy(inst->node_file,argv[++i]); continue; }		// cplex's node file
+		if ( strcmp(argv[i],"-max_nodes") == 0 ) { inst->max_nodes = atoi(argv[++i]); continue; } 		// max n. of nodes
+		if ( strcmp(argv[i],"-cutoff") == 0 ) { inst->cutoff = atof(argv[++i]); continue; }				// master cutoff
+		if ( strcmp(argv[i],"-int") == 0 ) { inst->integer_costs = 1; continue; } 						// inteher costs
+		if ( strcmp(argv[i],"-help") == 0 ) { help = 1; continue; } 									// help
+		if ( strcmp(argv[i],"--help") == 0 ) { help = 1; continue; } 									// help
+		help = 1;
+    }      
+	
+	if ( help ) exit(1);
+}
+
+void print_instance_parameters(instance inst){
+    printf("-------- Selected input parameters: -------\n");
+	printf("File: %s\n", inst.input_file); 
+	printf("Time Limit: %lf\n", inst.timelimit); 
+	printf("Model Type: %d\n", inst.model_type); 
+	printf("Old Benders: %d\n", inst.old_benders); 
+	printf("Seed: %d\n", inst.randomseed); 
+	printf("Threads: %d\n", inst.num_threads);  
+	printf("Max Nodes: %d\n", inst.max_nodes); 
+	printf("Memory: %d\n", inst.available_memory); 
+	printf("Integer Costs: %d\n", inst.integer_costs); 
+	printf("Node File: %s\n", inst.node_file);
+	printf("Cutoff: %lf\n", inst.cutoff); 
+	printf("-------------------------------------------\n");
+}
+
+void free_instance(instance *inst){
+    //TODO: free memory accroding to how instance is allocated
+    free(inst->demand);
+    free(inst->nodes);
+
+}
 /*
 OR Esito(
 	0: elaborazione riuscita;
@@ -138,51 +201,3 @@ OR Esito(
 	-3: numero di parametri inseriti da linea di comando non corretto).
 	-4: buffer truncation;
 */ 
-//TODO Creare una funzione per ogni tipo di errore che lanci un messaggio su stderror adeguato e restituisca l'int associato all'errore.
-int main(int argc, char** argv) {
-	/*
-	*/
-	instance inst;
-	FILE (*data_file);
-	char data_file_name[256];
-	char figure_name[256];
-	int check_truncation;
-	
-	parse_command_line(argc, argv, &inst);
-	if (inst.verbose >= 10) {
-
-		print_instance_parameters(inst);
-
-	}
-	get_timer();
-	MKDIR("figures");
-	MKDIR("data");
-	generate_instance(&inst); //TODO n e SEED devono essere letti da linea di tastiera
-	// The name of the file have the form "graph_data_$nnodes_$randomseed.txt" where $randomseed is the seed used for the random generation
-	// and $nnodes is the size of the graph. The file is created in the directory "data".
-	check_truncation = snprintf(data_file_name, sizeof(data_file_name), "data/graph_data_%d_%d.txt", inst.nnodes, inst.randomseed);
-	if (check_truncation < 0 || check_truncation >= sizeof(data_file_name)) {
-		fprintf(stderr, "A buffer has been truncated.\n");
-		return -4;
-	}
-	data_file = fopen(data_file_name, "w");
-	if (data_file == NULL) {
-		fclose(data_file);
-		return -2;
-	}
-
-	// The name of the figure have the form "graph_$nnodes_$randomseed.png" where $randomseed is the seed used for the random generation
-	// and $nnodes is the size of the graph. The file is created in the directory "figures".
-	check_truncation = snprintf(figure_name, sizeof(figure_name), "figures/graph_%d_%d.png", inst.nnodes, inst.randomseed);
-	if (check_truncation < 0 || check_truncation >= sizeof(data_file_name)) {
-		fprintf(stderr, "A buffer has been truncated.\n");
-		return -4;
-	}
-	make_datafile(&inst, data_file);
-	plot_graph(data_file_name,figure_name);
-	//JUST FOR TESTING
-	print_nodes("The nodes of the graph are\n", &inst, inst.nnodes);
-	fclose(data_file);
-	free_instance(&inst);
-	return 0;
-}

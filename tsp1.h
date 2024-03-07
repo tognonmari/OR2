@@ -1,6 +1,8 @@
-#ifndef TSP_H_
-
-#define TSP_H_
+#ifndef TSP_H
+#define TSP_H
+#include<stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
 //parameters for the random values generation
 #define SEED 14
 #define MAX_X 10000  //maximum value for ascisse of generated points
@@ -55,4 +57,25 @@ typedef struct {
 	int zstart;
 } instance;
 
-#endif   /* TSP_H_ */ 
+int plot_graph(const char graph_data[], const char graph[]);
+
+void make_datafile(instance *inst, FILE* data_file);
+
+void generate_instance(instance *inst);
+
+void generate_nodes(int n, point* nodes, int max_x, int max_y);
+
+void generate_array(int n, double *array, int max_value);
+
+void print_nodes(const char text_to_print[], const instance *inst, int n);
+
+void print_point(const char text_to_print[], const point* p);
+
+void tsp_debug(int flag, char* format, ...);
+
+void free_instance(instance *inst);
+
+void print_instance_parameters(instance inst);
+
+void parse_command_line(int argc, char** argv, instance *inst);
+#endif
