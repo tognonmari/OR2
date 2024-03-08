@@ -1,5 +1,6 @@
 #include "tsp1.h"
 #include "utils.h"
+#include <math.h>
 /* 
 * Conditional debugging function that prints
 * a formatted message to the console if the given flag is true.
@@ -193,11 +194,25 @@ void free_instance(instance *inst){
     free(inst->nodes);
 
 }
-/*
-OR Esito(
-	0: elaborazione riuscita;
-	-1: apertura fallita di una pipe;
-	-2: apertura fallita di un file;
-	-3: numero di parametri inseriti da linea di comando non corretto).
-	-4: buffer truncation;
-*/ 
+
+double euclidean_dist(point p1, point p2){
+	return sqrt(pow(p1.x - p2.x,2) + pow(p1.y-p2.y,2));
+}
+
+
+double compute_path_length(point* path, int nodes_number){
+	point p1, p2;
+	
+	double path_length = 0;
+	for (int i = 0; i < nodes_number; i++){
+		p1 = path[i];
+		p2 = path[i+1];
+		path_length += euclidean_dist(p1,p2);
+	}
+	//last edge
+	p1 = path[0];
+
+	return (path_length+ euclidean_dist(p1,p2));
+}
+
+

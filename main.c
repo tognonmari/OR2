@@ -12,9 +12,9 @@ OR Esito(
 	-4: buffer truncation;
 */ 
 //TODO Creare una funzione per ogni tipo di errore che lanci un messaggio su stderror adeguato e restituisca l'int associato all'errore.
+
 int main(int argc, char** argv) {
-	/*
-	*/
+	
 	instance inst;
 	FILE (*data_file);
 	char data_file_name[256];
@@ -56,6 +56,9 @@ int main(int argc, char** argv) {
 	//JUST FOR TESTING
 	print_nodes("The nodes of the graph are\n", &inst, inst.nnodes);
 	fclose(data_file);
+	
 	free_instance(&inst);
 	return 0;
 }
+
+

@@ -78,4 +78,8 @@ void free_instance(instance *inst);
 void print_instance_parameters(instance inst);
 
 void parse_command_line(int argc, char** argv, instance *inst);
+
+double euclidean_dist(point p1, point p2);
+
+double compute_path_length(point* path, int nodes_number);
 #endif
