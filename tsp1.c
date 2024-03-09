@@ -2,20 +2,31 @@
 #include "utils.h"
 /* 
 * Conditional debugging function that prints
-* a formatted message to the console if the given flag is true.
+* a formatted message to the console if the given $flag is true,
+* the time of the execution is printed together with the message
+* if the $time_flag is true.
 */
-void tsp_debug(int flag, char* format, ...)
+void tsp_debug(int flag,int time_flag, char* format, ...)
 {
 	if (flag) {
 		va_list args;
 		va_start(args, format);
-		printf("\n%12.6f|", get_timer());
+		if (time_flag) { printf("\n%12.6f|", get_timer()); }
 		vprintf(format, args);
 		va_end(args);
 		return;
 	}
 }
-
+/*
+*/
+void print_triangular_matrix(const double** matrix, int nrows) {
+	for (int row = 0; row < nrows; row++) {
+		for (int col = 0; col <= row; col++) {
+			tsp_debug(1,0,"%.3f ", matrix[row][col]);
+		}
+		tsp_debug(1,0,"\n");
+	}
+}
 /* Print the coordinates of a point
 * IP text_to_print
 * IP p Point to print
@@ -23,8 +34,8 @@ void tsp_debug(int flag, char* format, ...)
 void print_point(const char text_to_print[], const point* p) {
 	int x = (int)(p->x);
 	int y = (int)(p->y);
-	tsp_debug(1,"%s", text_to_print);
-	tsp_debug(1,"(%d, %d)\n", x, y);
+	tsp_debug(1,1,"%s", text_to_print);
+	tsp_debug(1,1,"(%d, %d)\n", x, y);
 }
 /* Print the coordinates of the nodes of the graph
 * IP text_to_print.
@@ -33,10 +44,10 @@ void print_point(const char text_to_print[], const point* p) {
 */
 void print_nodes(const char text_to_print[], const instance *inst, int n) {
 	int i;
-	tsp_debug(1,"%s", text_to_print);
+	tsp_debug(1,1,"%s", text_to_print);
 	point* current_point = inst->nodes;
 	for (i = 0; i < n; i++) {
-		tsp_debug(1,"node[%d]: ", i);
+		tsp_debug(1,1,"node[%d]: ", i);
 		print_point("",current_point);
 		current_point++;
 	}
@@ -77,16 +88,43 @@ void generate_nodes(int n, point* nodes, int max_x, int max_y) {
 * x_i belongs to [0,$max_y]
 * IP n Number of nodes to generate
 * IP seed Seed of the pseudorandom sequence
-* OP inst Instance to be initialized with random nodes
+* IOP inst Instance to be initialized with random nodes
 */
 void generate_instance(instance *inst){
-
 	inst->nodes = (point*)malloc(inst->nnodes * sizeof(point));
 	srand(inst->randomseed);
 	depolarize_pseudornd_seq();
 	generate_nodes(inst->nnodes, inst->nodes, MAX_X, MAX_Y);
 }
-
+/*
+ * Calculates the Euclidean distance between two points in a two-dimensional space.
+ * This function uses the Euclidean distance formula:
+ * distance = sqrt((x2 - x1)^2 + (y2 - y1)^2)
+ * IP p1 Point 1.
+ * IP p2 Point 2.
+ * OR Euclidean distance between $p1 and $p2
+ */
+double get_distance(point* p1, point* p2) {
+	double x1, x2, y1, y2;
+	x1 = p1->x; x2 = p2->x; y1 = p1->y; y2 = p2->y;
+	double dist = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+	return dist;
+}
+/*
+* Compute the cost matrix, thus the matrix containing in each entry (i,j) the
+* distance between node i and node j.
+* IOP inst The $inst field $cost_matrix is computed with the distance of the nodes.
+*/
+void compute_cost_matrix(instance* inst) {
+	int nrow = inst->nnodes;
+	double** matrix = (double**)alloc_triangular_matrix(nrow, sizeof(double));
+	for (int i = 0; i < nrow; i++ ) {
+		for (int j = 0; j <= i; j++) {
+			matrix[i][j] = get_distance(&(inst->nodes[i]),&(inst->nodes[j]));
+		}
+	}
+	inst->cost_matrix = matrix;
+}
 /*
 * The file data_file is modified in the following way:
 * each line of the file contains the coordinates of each point
@@ -100,6 +138,7 @@ void make_datafile(instance *inst, FILE* data_file) {
 		int x =(int) (current_point->x);
 		int y =(int) (current_point->y);
 		fprintf(data_file, "%d %d\n", x, y);
+		printf("ciao");
 		current_point++;
 	}
 }
@@ -193,11 +232,3 @@ void free_instance(instance *inst){
     free(inst->nodes);
 
 }
-/*
-OR Esito(
-	0: elaborazione riuscita;
-	-1: apertura fallita di una pipe;
-	-2: apertura fallita di un file;
-	-3: numero di parametri inseriti da linea di comando non corretto).
-	-4: buffer truncation;
-*/ 

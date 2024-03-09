@@ -19,4 +19,8 @@ void depolarize_pseudornd_seq();
 
 double get_timer();
 
+void** alloc_matrix(int nrow, int ncol, size_t size_type);
+
+void** alloc_triangular_matrix(int nrow, size_t size_type);
+
 #endif

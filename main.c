@@ -10,7 +10,8 @@ OR Esito(
 	-2: apertura fallita di un file;
 	-3: numero di parametri inseriti da linea di comando non corretto).
 	-4: buffer truncation;
-*/ 
+	-5: finito spazio nell'heap (fallisce allocazione);
+*/
 //TODO Creare una funzione per ogni tipo di errore che lanci un messaggio su stderror adeguato e restituisca l'int associato all'errore.
 int main(int argc, char** argv) {
 	/*
@@ -52,9 +53,11 @@ int main(int argc, char** argv) {
 		return -4;
 	}
 	make_datafile(&inst, data_file);
-	plot_graph(data_file_name,figure_name);
+	//plot_graph(data_file_name,figure_name);
 	//JUST FOR TESTING
 	print_nodes("The nodes of the graph are\n", &inst, inst.nnodes);
+	compute_cost_matrix(&inst);
+	print_triangular_matrix((const double**)inst.cost_matrix, inst.nnodes);
 	fclose(data_file);
 	free_instance(&inst);
 	return 0;
