@@ -82,6 +82,10 @@ void print_instance_parameters(instance inst);
 
 void parse_command_line(int argc, char** argv, instance *inst);
 
+double euclidean_dist(point p1, point p2);
+
+double compute_path_length(point* path, int nodes_number);
+
 void print_triangular_matrix(const double** matrix, int nrows);
 
 void compute_cost_matrix(instance* inst);

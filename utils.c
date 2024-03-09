@@ -1,4 +1,5 @@
 #include "utils.h"
+#include <stdio.h>
 
 /*
 This function generates and discards 100 pseudorandom numbers using the rand() function.
@@ -23,6 +24,15 @@ double get_timer() {
 	clock_t current_time = clock();
 	double elapsed_time = (double)(current_time - start_time) / CLOCKS_PER_SEC;
 	return elapsed_time;
+}
+/* Returns 1 if two double differ by less than a parameter EPSILON, 0 otherwise
+*/
+int is_equal_double(double d1, double d2){
+	if (fabs(d1-d2)>=EPSILON){
+		return 0;
+	}
+	return 1;
+}
 }
 /*
 * Method for allocating matrices of size $nrow x $ncol where each element have size $size_type.

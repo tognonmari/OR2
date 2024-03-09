@@ -15,9 +15,13 @@
 #define MKDIR(dir) mkdir(dir, 0755)
 #endif
 
+#define EPSILON 1e-9
+
 void depolarize_pseudornd_seq();
 
 double get_timer();
+
+int is_equal_double(double d1, double d2);
 
 void** alloc_matrix(int nrow, int ncol, size_t size_type);
 

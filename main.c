@@ -13,9 +13,9 @@ OR Esito(
 	-5: finito spazio nell'heap (fallisce allocazione);
 */
 //TODO Creare una funzione per ogni tipo di errore che lanci un messaggio su stderror adeguato e restituisca l'int associato all'errore.
+
 int main(int argc, char** argv) {
-	/*
-	*/
+	
 	instance inst;
 	FILE (*data_file);
 	char data_file_name[256];
@@ -59,6 +59,9 @@ int main(int argc, char** argv) {
 	compute_cost_matrix(&inst);
 	print_triangular_matrix((const double**)inst.cost_matrix, inst.nnodes);
 	fclose(data_file);
+	
 	free_instance(&inst);
 	return 0;
 }
+
+
