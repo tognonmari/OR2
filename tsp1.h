@@ -38,6 +38,7 @@ typedef struct {
 	int verbose;
 
 	//global data
+	double** cost_matrix;					//cost_matrix[i][j] represent the distance between node i and node j.
 	double	tstart;
 	double zbest;							// best sol. available  
 	double tbest;							// time for the best sol. available  
@@ -67,11 +68,13 @@ void generate_nodes(int n, point* nodes, int max_x, int max_y);
 
 void generate_array(int n, double *array, int max_value);
 
+double get_distance(point* p1, point* p2);
+
 void print_nodes(const char text_to_print[], const instance *inst, int n);
 
 void print_point(const char text_to_print[], const point* p);
 
-void tsp_debug(int flag, char* format, ...);
+void tsp_debug(int flag,int flag_time, char* format, ...);
 
 void free_instance(instance *inst);
 
@@ -83,4 +86,9 @@ double euclidean_dist(point* p1, point* p2);
 
 void opt2_optimize_best_sol(instance *inst);
 
+double compute_path_length(point* path, int nodes_number);
+
+void print_triangular_matrix(const double** matrix, int nrows);
+
+void compute_cost_matrix(instance* inst);
 #endif

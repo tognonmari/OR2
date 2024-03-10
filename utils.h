@@ -23,4 +23,8 @@ double get_timer();
 
 int is_equal_double(double d1, double d2);
 
+void** alloc_matrix(int nrow, int ncol, size_t size_type);
+
+void** alloc_triangular_matrix(int nrow, size_t size_type);
+
 #endif
