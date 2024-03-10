@@ -127,7 +127,6 @@ int plot_graph(const char graph_data[], const char graph[]) {
 
 	fclose(gnuplotPipe);
 }
-//Utility methods for input parsing
 
 void parse_command_line(int argc, char** argv, instance *inst){
 
@@ -192,27 +191,76 @@ void free_instance(instance *inst){
     //TODO: free memory accroding to how instance is allocated
     free(inst->demand);
     free(inst->nodes);
+	free(inst->best_sol);
 
 }
-
-double euclidean_dist(point p1, point p2){
-	return sqrt(pow(p1.x - p2.x,2) + pow(p1.y-p2.y,2));
-}
-
-
-double compute_path_length(point* path, int nodes_number){
-	point p1, p2;
+/*
+	Returns euclidean distance between two points.
+	IP: two points passed by reference
+	OP: the Euclidean Distance between the two points
+*/
+double euclidean_dist(point* p1, point* p2){
 	
-	double path_length = 0;
-	for (int i = 0; i < nodes_number; i++){
-		p1 = path[i];
-		p2 = path[i+1];
-		path_length += euclidean_dist(p1,p2);
-	}
-	//last edge
-	p1 = path[0];
-
-	return (path_length+ euclidean_dist(p1,p2));
+	double dx = p1->x -p2->x;
+	double dy = p1->y-p2->y;
+	return sqrt(pow(dx,2) + pow(dy,2));
 }
 
+/*
+	Given a solution (i.e. a path), it swaps the positions of two nodes if an improvement is found.
+	IP: instance inst passed by reference
+	OP: formally none, but inst's best_sol is modified
+*/
+void swap_2_opt(int* path, int i, int j){
+
+	int temp = path[i+1];
+	path[i+1] = path[j];
+	path[j] = temp;
+
+}
+
+
+/*
+	Given an instance inst, it performs opt-2 refinement.
+	IP: instance inst passed by reference
+	OP: formally none, but inst's best_sol and zbest are updated if an improvement is found
+*/
+void opt2_optimize_best_sol(instance *inst){
+
+	//Preliminary steps: parameters and pointers initialization
+
+	int nodes_number = inst->nnodes;
+	double path_length = inst->zbest;
+	int* path = (inst->best_sol);
+	point* nodes_list = inst->nodes;
+
+	//Opt-2 algorithm
+
+	int improvement = 1;
+
+	while(improvement ==1){
+
+		improvement =0;
+
+		for (int i =0; i< nodes_number-1; i++){
+
+			for (int j= i+1; j<nodes_number; j++){
+
+				double delta = -euclidean_dist(&nodes_list[path[i]],&nodes_list[path[i+1]])-euclidean_dist(&nodes_list[path[j]],&nodes_list[path[j+1]])+euclidean_dist(&nodes_list[path[i]], &nodes_list[path[j]])+euclidean_dist(&nodes_list[path[i+1]],&nodes_list[path[j+1]]);
+				if(delta <0){
+
+					swap_2_opt(path, i, j); //swap operations if an improvement is found
+					path_length += delta;
+					improvement = 1;
+
+				}
+			}
+		}
+	}
+
+	//updating new best cost
+
+	inst->zbest = path_length;
+
+}
 

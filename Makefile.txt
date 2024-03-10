@@ -1,5 +1,5 @@
 main : main.c tsp1.o utils.o
-	gcc main.c utils.o tsp1.o -o main
+	gcc main.c utils.o tsp1.o tsp1.h -o main
 
 tsp1.o : tsp1.c
 	gcc -c tsp1.c -o tsp1.o

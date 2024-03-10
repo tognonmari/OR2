@@ -12,7 +12,7 @@ OR Esito(
 	-4: buffer truncation;
 */ 
 //TODO Creare una funzione per ogni tipo di errore che lanci un messaggio su stderror adeguato e restituisca l'int associato all'errore.
-
+/*
 int main(int argc, char** argv) {
 	
 	instance inst;
@@ -60,5 +60,31 @@ int main(int argc, char** argv) {
 	free_instance(&inst);
 	return 0;
 }
+*/
 
+
+
+int main(int argc, char** argv){
+
+	point p1 = { .x = 1, .y = 0};
+	point p2 = { .x = 3, .y = 1};
+	point p3 = { .x = 0, .y = 1};
+	point p4 = { .x = 2, .y = 0};
+	point p5 = { .x = 2, .y = 4};
+	
+	point path[] = {p1, p2, p3, p4, p5};
+
+
+	instance inst;
+	inst.nodes=path;
+	inst.nnodes = 5;
+	int arr[] = {0,1,2,3,4};
+	inst.best_sol = arr;
+	inst.zbest = compute_path_length(path, inst.nnodes);
+	printf("Length of the path before 2-opt : %f\n", inst.zbest);
+	opt2_optimize_best_sol(&inst);
+	printf("Length of the path after 2-opt : %f\n", inst.zbest);
+	print_path(path, 5);
+
+}
 
