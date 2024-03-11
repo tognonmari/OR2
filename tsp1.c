@@ -30,7 +30,7 @@ void print_best_sol(int flag, instance* inst) {
 	tsp_debug(flag, 0, "zbest = %.2f\n",inst->zbest);
 	tsp_debug(flag, 0, "tbest = %12.6f\n",inst->tbest);
 	tsp_debug(flag, 0, "the best path is:\n");
-	if(flag){ print_path("", inst->best_sol, inst->nnodes); }
+	if(flag){ print_path("", inst->best_path, inst->nnodes); }
 }
 /*
 */
@@ -193,7 +193,6 @@ int plot_graph(const char graph_data[], const char graph[]) {
 
 	fclose(gnuplotPipe);
 }
-//Utility methods for input parsing
 
 void parse_command_line(int argc, char** argv, instance *inst){
 
@@ -258,14 +257,19 @@ void free_instance(instance *inst){
     //TODO: free memory accroding to how instance is allocated
     free(inst->demand);
     free(inst->nodes);
+	free(inst->best_sol);
 
 }
-//!! ci sono due versioni, io avevo fatto get distance che è uguale ma non mi piace toglierti le funzioni
-//! senza dirti nulla quindi per ora ho lasciato, ma dovresti passare i punti per indirizzo, quindi usare 
-//! get_distance e nel tuo compute_path_length dovresti fare
-//! path_length += get_distance(&p1,&p2);
-double euclidean_dist(point p1, point p2){
-	return sqrt(pow(p1.x - p2.x,2) + pow(p1.y-p2.y,2));
+/*
+	Returns euclidean distance between two points.
+	IP: two points passed by reference
+	OP: the Euclidean Distance between the two points
+*/
+double euclidean_dist(point* p1, point* p2){
+	
+	double dx = p1->x -p2->x;
+	double dy = p1->y-p2->y;
+	return sqrt(pow(dx,2) + pow(dy,2));
 }
 
 
@@ -276,12 +280,71 @@ double compute_path_length(point* path, int nodes_number){
 	for (int i = 0; i < nodes_number; i++){
 		p1 = path[i];
 		p2 = path[i+1];
-		path_length += euclidean_dist(p1,p2);
+		path_length += euclidean_dist(&p1,&p2);
 	}
 	//last edge
 	p1 = path[0];
 
-	return (path_length+ euclidean_dist(p1,p2));
+	return (path_length+ euclidean_dist(&p1,&p2));
+}
+
+
+/*
+	Given a solution (i.e. a path), it swaps the positions of two nodes if an improvement is found.
+	IP: instance inst passed by reference
+	OP: formally none, but inst's best_sol is modified
+*/
+void swap_2_opt(int* path, int i, int j){
+
+	int temp = path[i+1];
+	path[i+1] = path[j];
+	path[j] = temp;
+
+}
+
+
+/*
+	Given an instance inst, it performs opt-2 refinement.
+	IP: instance inst passed by reference
+	OP: formally none, but inst's best_sol and zbest are updated if an improvement is found
+*/
+void opt2_optimize_best_sol(instance* inst) {
+
+	//Preliminary steps: parameters and pointers initialization
+
+	int nodes_number = inst->nnodes;
+	double path_length = inst->zbest;
+	int* path = (inst->best_sol);
+	point* nodes_list = inst->nodes;
+
+	//Opt-2 algorithm
+
+	int improvement = 1;
+
+	while (improvement == 1) {
+
+		improvement = 0;
+
+		for (int i = 0; i < nodes_number - 1; i++) {
+
+			for (int j = i + 1; j < nodes_number; j++) {
+
+				double delta = -euclidean_dist(&nodes_list[path[i]], &nodes_list[path[i + 1]]) - euclidean_dist(&nodes_list[path[j]], &nodes_list[path[j + 1]]) + euclidean_dist(&nodes_list[path[i]], &nodes_list[path[j]]) + euclidean_dist(&nodes_list[path[i + 1]], &nodes_list[path[j + 1]]);
+				if (delta < 0) {
+
+					swap_2_opt(path, i, j); //swap operations if an improvement is found
+					path_length += delta;
+					improvement = 1;
+
+				}
+			}
+		}
+	}
+
+	//updating new best cost
+
+	inst->zbest = path_length;
+
 }
 /*
  * Generic swap function for swapping data of arbitrary types.
@@ -336,7 +399,6 @@ point* search_min(const point* p, const point* end, double* current_cost){
 	double min_distance = DBL_MAX;  
 	point* closest_node = NULL;
 	point* current = (point*)p + 1;
-
 	while (current <= end) {
 		double distance = get_distance(current, p);
 
@@ -413,9 +475,12 @@ void greedy_tsp(instance *inst){
 		tsp_debug(1, 0, "zbest = %.2f\n", min_path_cost);
 		tsp_debug(1, 0, "tbest = %.4f\n", inst->tbest);
 	}
-	inst->best_sol = min_path;
+	inst->best_path = min_path;
 	inst->zbest = min_path_cost;
 	tsp_debug(1, 0, "BEST  \n");
 	tsp_debug(1, 0, "zbest = %.2f\n", inst->zbest);
 	tsp_debug(1, 0, "tbest = %.4f\n", inst->tbest);
 }
+
+
+

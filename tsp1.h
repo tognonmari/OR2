@@ -43,7 +43,8 @@ typedef struct {
 	double	tstart;
 	double zbest;							// best sol. available  
 	double tbest;							// time for the best sol. available  
-	point* best_sol;						// best sol. available    
+	int* best_sol;							// best sol. available    
+	point* best_path;
 	double	best_lb;						// best lower bound available  
 	double* load_min;						// minimum load when leaving a node
 	double* load_max;						// maximum load when leaving a node
@@ -87,7 +88,9 @@ void print_instance_parameters(instance inst);
 
 void parse_command_line(int argc, char** argv, instance *inst);
 
-double euclidean_dist(point p1, point p2);
+double euclidean_dist(point* p1, point* p2);
+
+void opt2_optimize_best_sol(instance *inst);
 
 double compute_path_length(point* path, int nodes_number);
 
