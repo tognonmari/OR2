@@ -34,6 +34,7 @@ int main(int argc, char** argv) {
 	generate_instance(&inst); //TODO n e SEED devono essere letti da linea di tastiera
 	// The name of the file have the form "graph_data_$nnodes_$randomseed.txt" where $randomseed is the seed used for the random generation
 	// and $nnodes is the size of the graph. The file is created in the directory "data".
+	/**/
 	check_truncation = snprintf(data_file_name, sizeof(data_file_name), "data/graph_data_%d_%d.txt", inst.nnodes, inst.randomseed);
 	if (check_truncation < 0 || check_truncation >= sizeof(data_file_name)) {
 		fprintf(stderr, "A buffer has been truncated.\n");
@@ -58,8 +59,9 @@ int main(int argc, char** argv) {
 	print_nodes("The nodes of the graph are\n", &inst, inst.nnodes);
 	compute_cost_matrix(&inst);
 	print_triangular_matrix((const double**)inst.cost_matrix, inst.nnodes);
+	greedy_tsp(&inst);
+	print_best_sol(1, &inst);
 	fclose(data_file);
-	
 	free_instance(&inst);
 	return 0;
 }

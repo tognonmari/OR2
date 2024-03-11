@@ -1,6 +1,5 @@
 #include "utils.h"
 #include <stdio.h>
-
 /*
 This function generates and discards 100 pseudorandom numbers using the rand() function.
 * The purpose is to mitigate polarization effects in the pseudorandom sequence.
@@ -32,7 +31,6 @@ int is_equal_double(double d1, double d2){
 		return 0;
 	}
 	return 1;
-}
 }
 /*
 * Method for allocating matrices of size $nrow x $ncol where each element have size $size_type.

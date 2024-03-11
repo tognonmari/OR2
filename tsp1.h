@@ -3,6 +3,7 @@
 #include<stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <float.h>
 //parameters for the random values generation
 #define SEED 14
 #define MAX_X 10000  //maximum value for ascisse of generated points
@@ -42,7 +43,7 @@ typedef struct {
 	double	tstart;
 	double zbest;							// best sol. available  
 	double tbest;							// time for the best sol. available  
-	double* best_sol;						// best sol. available    
+	point* best_sol;						// best sol. available    
 	double	best_lb;						// best lower bound available  
 	double* load_min;						// minimum load when leaving a node
 	double* load_max;						// maximum load when leaving a node
@@ -68,9 +69,13 @@ void generate_nodes(int n, point* nodes, int max_x, int max_y);
 
 void generate_array(int n, double *array, int max_value);
 
-double get_distance(point* p1, point* p2);
+double get_distance(const point* p1,const point* p2);
 
 void print_nodes(const char text_to_print[], const instance *inst, int n);
+
+void print_path(const char text_to_print[], const point* path, int n);
+
+void print_best_sol(int flag, instance* inst);
 
 void print_point(const char text_to_print[], const point* p);
 
@@ -89,4 +94,15 @@ double compute_path_length(point* path, int nodes_number);
 void print_triangular_matrix(const double** matrix, int nrows);
 
 void compute_cost_matrix(instance* inst);
+
+void swap(void* a, void* b, size_t size);
+
+void copy_array(void* a1, const void* a2);
+
+point* search_min(const point* p, const point* end, double* current_cost);
+
+point* compute_greedy_path(int index_first, instance* inst, double* path_cost);
+
+void greedy_tsp(instance* inst);
+
 #endif

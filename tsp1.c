@@ -1,6 +1,10 @@
 #include "tsp1.h"
 #include "utils.h"
 #include <math.h>
+#include <malloc.h>
+#include <string.h>
+#include "assert.h"
+
 /* 
 * Conditional debugging function that prints
 * a formatted message to the console if the given $flag is true,
@@ -17,6 +21,16 @@ void tsp_debug(int flag,int time_flag, char* format, ...)
 		va_end(args);
 		return;
 	}
+}
+/*
+* Function that prints the best_solution of $inst if the given $flag is true.
+*/
+void print_best_sol(int flag, instance* inst) {
+	tsp_debug(flag, 1, "BEST SOLUTION:\n");
+	tsp_debug(flag, 0, "zbest = %.2f\n",inst->zbest);
+	tsp_debug(flag, 0, "tbest = %12.6f\n",inst->tbest);
+	tsp_debug(flag, 0, "the best path is:\n");
+	if(flag){ print_path("", inst->best_sol, inst->nnodes); }
 }
 /*
 */
@@ -51,6 +65,19 @@ void print_nodes(const char text_to_print[], const instance *inst, int n) {
 		tsp_debug(1,1,"node[%d]: ", i);
 		print_point("",current_point);
 		current_point++;
+	}
+}
+/* Print the coordinates of the point of a path
+* IP text_to_print.
+* IP path Path to print
+* IP n Size of the path
+*/
+void print_path(const char text_to_print[], const point* path, int n) {
+	int i;
+	tsp_debug(1, 1, "%s", text_to_print);
+	for (i = 0; i < n; i++) {
+		tsp_debug(1, 1, "node[%d]: ", i);
+		print_point("", &path[i] );
 	}
 }
 /*
@@ -105,7 +132,7 @@ void generate_instance(instance *inst){
  * IP p2 Point 2.
  * OR Euclidean distance between $p1 and $p2
  */
-double get_distance(point* p1, point* p2) {
+double get_distance(const point* p1,const point* p2) {
 	double x1, x2, y1, y2;
 	x1 = p1->x; x2 = p2->x; y1 = p1->y; y2 = p2->y;
 	double dist = sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
@@ -233,7 +260,10 @@ void free_instance(instance *inst){
     free(inst->nodes);
 
 }
-
+//!! ci sono due versioni, io avevo fatto get distance che è uguale ma non mi piace toglierti le funzioni
+//! senza dirti nulla quindi per ora ho lasciato, ma dovresti passare i punti per indirizzo, quindi usare 
+//! get_distance e nel tuo compute_path_length dovresti fare
+//! path_length += get_distance(&p1,&p2);
 double euclidean_dist(point p1, point p2){
 	return sqrt(pow(p1.x - p2.x,2) + pow(p1.y-p2.y,2));
 }
@@ -253,6 +283,139 @@ double compute_path_length(point* path, int nodes_number){
 
 	return (path_length+ euclidean_dist(p1,p2));
 }
+/*
+ * Generic swap function for swapping data of arbitrary types.
+ * This function takes two pointers to data ($a and $b) and the size of each data element.
+ * IP a,b Pointers to the first and the second data elements.
+ * IP size Size of each data element in bytes.
+ */
+void swap(void* a, void* b, size_t size) {
+	void* temp = malloc(size);
+	assert(temp != NULL);
+	memcpy(temp, a, size);
+	memcpy(a, b, size);
+	memcpy(b, temp, size);
+	free(temp);
+}
+/*
+ * Copies data from one dynamically allocated array to another.
+ * This function checks if the sizes of the input arrays in the heap are equal.
+ * If the sizes match, it performs a memory copy from the source array $a2 to
+ * the destination array $a1. 
+ * IP a1 Pointer to the destination array.
+ * IP a2 Pointer to the source array.
+ */
+void copy_array(void* a1, const void* a2) {
+	size_t size_a1 = _msize(a1);
+	/*
+	* the(void*)a2 cast is used to reassure the compiler that we are intentionally treating a2 as a non-constant pointer
+	* for the purposes of this specific function call.
+	*/
+	size_t size_a2 = _msize((void*)a2);  
+	if (size_a1 == size_a2) {
+		memcpy(a1, a2, size_a1);
+	}
+	else {
+		fprintf(stderr, "Error: The program tried to copy arrays that don't have the same space available in the heap.\n");
+	}
+}
+/*
+* Searches for the node with the minimum distance to $p from the points allocated in [p+1 ; end] (address space).
+*
+* This function iterates through the nodes starting from the specified current node
+* and calculates the distance between each node and the reference node (p).
+* It updates the minimum distance and the pointer to the closest node accordingly.
+* The computed minimum distance is stored in the variable pointed to by current_cost.
+*
+* IP p Pointer to the reference node for distance calculation.
+* IP end Pointer to the last node in the search range.
+* OP current_cost Pointer to a variable to store the computed minimum distance.
+* OR Pointer to the node with the minimum distance.
+*/
+point* search_min(const point* p, const point* end, double* current_cost){
+	double min_distance = DBL_MAX;  
+	point* closest_node = NULL;
+	point* current = (point*)p + 1;
 
+	while (current <= end) {
+		double distance = get_distance(current, p);
 
+		if (distance < min_distance) {
+			min_distance = distance;
+			closest_node = current;
+			(*current_cost) = min_distance;  
+		}
+		current++;
+	}
+	return closest_node;
+}
+/*
+* Computes a greedy path starting from a specified index and calculates its cost.
+* This function constructs a greedy path starting from the node at the given index.
+* It iteratively selects the closest node to the last visited node, swaps it
+* into the path, and calculates the cost of the path.
+* 
+* IP index_first Index of the starting node for the greedy path.
+* IP inst Pointer to the instance containing node information.
+* OP path_cost Pointer to a variable to store the computed path cost.
+* OR A pointer to the constructed greedy path.
+*/
+point* compute_greedy_path(int index_first, instance* inst, double* path_cost) {
+	int n = inst->nnodes;
+	point* path = malloc(n * sizeof(point));
+	copy_array(path, inst->nodes);
+	swap(&(path[0]),&(path[index_first]), sizeof(point));
+	point* next = &(path[1]); //pointer to the next node to visit in the path (at the start path[0] is already correct)
+	point* end = &(path[n - 1]); //pointer to the ending node of the path
+	point* min; //point to the closest node of the last node visited;
+	double current_cost = 0;
+	double aggregate_cost = 0;
+	while (next < end) {
+		min = search_min((next - 1), end, &current_cost);
+		swap(next, min, sizeof(point));
+		next++;
+		aggregate_cost += current_cost;
+	}
+	(*path_cost) = aggregate_cost;
+	return path;
+}
+/*
+* This function must update the data of $inst related to the best solution using
+* a greedy approach that provides a good solution for the tsp problem.
+* The idea is to build a path in which the initial node 0 (position 0 in the vector representing the path) 
+* is arbitrarily chosen among the nodes of the graph, 
+* while node i is chosen by selecting the node at minimum distance from node i-1.
+* INVARIANT FOR THE PATH BUILDED IN GREEDY TSP.
+* Let PATH = [v1, v2, ..., vK] the sequence of visited node we have that
+* for each (1 <= i <= k-1) : d(v_i, v_i+1) <= d(v_i, u) for each u not yet visited.
+* IOP inst Pointer to the instance containing node information. The following field are updated:
+*	tbest Execution time to find the best solution.
+*	zbest Cost of the best solution.
+*	best_sol Path of nodes representing the best solution.
+*/
+void greedy_tsp(instance *inst){
+	int n = inst->nnodes;
+	double current_path_cost;
+	double min_path_cost;
+	point* path;
+	point* min_path = compute_greedy_path(0, inst, &min_path_cost);
+	inst->tbest = get_timer();
+	for (int i = 1; i < n; i++) {
+		path = compute_greedy_path(i,inst,&current_path_cost);
+		//print_path(" PATH:\n",path,n);
+		if (current_path_cost < min_path_cost) {
+			min_path_cost = current_path_cost;
+			min_path = path;
+			inst->tbest = get_timer();
+			free(min_path);
+		}
+		tsp_debug(1, 0, "iter %d  \n", i);
+		tsp_debug(1, 0, "zbest = %.2f\n", min_path_cost);
+		tsp_debug(1, 0, "tbest = %.4f\n", inst->tbest);
+	}
+	inst->best_sol = min_path;
+	inst->zbest = min_path_cost;
+	tsp_debug(1, 0, "BEST  \n");
+	tsp_debug(1, 0, "zbest = %.2f\n", inst->zbest);
+	tsp_debug(1, 0, "tbest = %.4f\n", inst->tbest);
 }
