@@ -5,7 +5,7 @@
 
 /*
 OR Esito(
-	0: elaborazione riuscita;
+	 0: elaborazione riuscita;
 	-1: apertura fallita di una pipe;
 	-2: apertura fallita di un file;
 	-3: numero di parametri inseriti da linea di comando non corretto).
@@ -17,7 +17,7 @@ int main(int argc, char** argv) {
 	
 	instance inst;
 	FILE (*data_file);
-	char data_file_name[256];
+	char data_file_name[1];
 	char figure_name[256];
 	int check_truncation;
 	
@@ -36,24 +36,22 @@ int main(int argc, char** argv) {
 	/**/
 	check_truncation = snprintf(data_file_name, sizeof(data_file_name), "data/graph_data_%d_%d.txt", inst.nnodes, inst.randomseed);
 	if (check_truncation < 0 || check_truncation >= sizeof(data_file_name)) {
-		fprintf(stderr, "A buffer has been truncated.\n");
-		return -4;
+		return main_error_text(-4, "Buffer: %d char\nText: %d char", sizeof(data_file_name), check_truncation);
 	}
 	data_file = fopen(data_file_name, "w");
 	if (data_file == NULL) {
 		fclose(data_file);
-		return -2;
+		return main_error_text(-2,"File: %s",data_file_name);
 	}
 
 	// The name of the figure have the form "graph_$nnodes_$randomseed.png" where $randomseed is the seed used for the random generation
 	// and $nnodes is the size of the graph. The file is created in the directory "figures".
 	check_truncation = snprintf(figure_name, sizeof(figure_name), "figures/graph_%d_%d.png", inst.nnodes, inst.randomseed);
-	if (check_truncation < 0 || check_truncation >= sizeof(data_file_name)) {
-		fprintf(stderr, "A buffer has been truncated.\n");
-		return -4;
+	if (check_truncation < 0 || check_truncation >= sizeof(figure_name)) {
+		return main_error_text(-4, "Buffer: %d char, Text: %d char", sizeof(figure_name), check_truncation);
 	}
 	make_datafile(&inst, data_file);
-	//plot_graph(data_file_name,figure_name);
+	plot_graph(data_file_name,figure_name);
 	//JUST FOR TESTING
 	print_nodes("The nodes of the graph are\n", &inst, inst.nnodes);
 	compute_cost_matrix(&inst);

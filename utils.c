@@ -1,5 +1,39 @@
+
 #include "utils.h"
 #include <stdio.h>
+
+int main_error_text(int error, char* format, ...) {
+	va_list args;
+	va_start(args, format);
+	switch (error) {
+	case 0:
+		fprintf(stderr, "Successful processing.\n");
+		break;
+	case -1:
+		fprintf(stderr, "Failed to open a pipe.\n");
+		break;
+	case -2:
+		fprintf(stderr, "Failed to open a file.\n");
+		break;
+	case -3:
+		fprintf(stderr, "Incorrect number of command line parameters.\n");
+		break;
+	case -4:
+		fprintf(stderr, "Buffer truncation.\n");
+		break;
+	case -5:
+		fprintf(stderr, "Out of heap space (allocation failed).\n");
+		break;
+	default:
+		fprintf(stderr, "Unknown error.\n");
+	}
+	vprintf(format, args);
+	va_end(args);
+	return error;
+}
+int main_error(int error) {
+	return main_error_text(error, NULL);
+}
 /*
 This function generates and discards 100 pseudorandom numbers using the rand() function.
 * The purpose is to mitigate polarization effects in the pseudorandom sequence.

@@ -179,8 +179,8 @@ int plot_graph(const char graph_data[], const char graph[]) {
 	FILE* gnuplotPipe = popen("gnuplot -persistent", "w");
 
 	if (gnuplotPipe == NULL) {
-		fprintf(stderr, "Error starting GNUPLOT.\n");
-		exit(-1);
+		fclose(gnuplotPipe);
+		exit(main_error_text(-1,"Failed to open the pipeline to gnuplot"));
 	}
 
 	// Send GNUPLOT commands through the pipe
