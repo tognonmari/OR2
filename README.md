@@ -29,3 +29,13 @@ della soluzione sia uguale a best_val.(dare errore)
 ATTENZIONE BISOGNA FARE UN METODO PER CONFRONTARE I DUOUBLE!! USARE UNA PRECISIONE COME COSTANTE.
 ULTERIORE OTTIMIZZAZIONE se nel plot ci sono degli intrecci nei path. se ci sono interecci allora probabilmente (dimostrabile dice il prof) la soluzione non è cosi tanto buona.
 si puo fare un otttimizzazione con la funzione 2_opt per eliminare gli intrecci.(non obbligatorio, cercare in rete come fare la funzione 2_opt il prof non aveva tempo).
+
+LEZ 12/3
+verbose da leggere da linea di comando, verbose = 0 non voglio vedere niente, piu aumenta piu roba vedo.
+con verbosità alta devo controllare che ogni funzione worki.
+quando stampo le soluzioni controllare che la soluzione ci sia.
+il prof dice di dichiarare le variaibili inline quando possibile. 
+in opt2 si dovrebbe controllare tutti i possibili improvement e poi prendere il migliore. altrimenti potresti fare un improvement infinitesimo (e peggio potresti farne tantissimi), mentre devi fare gli improvement migliori!.
+trovi coppia i,j migliore per fare lo scambio.
+Alla fine di ogni greedy il costo della soluzione.
+basta mettere .gitkeep per pushare cartelle senza il conten
