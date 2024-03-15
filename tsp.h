@@ -112,7 +112,7 @@ int* search_min(const int* p, const int* end, const double** cost_matrix, double
 
 int* compute_greedy_path(int index_first, instance* inst, double* path_cost);
 
-void greedy_tsp(char flag, instance* inst);
+void greedy_tsp(instance* inst);
 
 void update_best(instance* inst, double z, double t, int* sol);
 

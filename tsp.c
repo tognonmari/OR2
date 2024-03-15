@@ -538,8 +538,9 @@ int* compute_greedy_path(int index_first, instance* inst, double* path_cost) {
 *	zbest Cost of the best solution.
 *	best_sol Sequence of indices representing the best solution.
 */
-void greedy_tsp(char flag, instance *inst){
+void greedy_tsp(instance *inst){
 	int n = inst->nnodes;
+	int verbose = inst->verbose;
 	double current_cost;
 	double min_cost;
 	int* sol;
@@ -556,14 +557,13 @@ void greedy_tsp(char flag, instance *inst){
 		else{
 			free(sol); //sol is not the best path, then i can free it
 		}
-		tsp_debug(flag, 0, "iter %d ", i);
-		tsp_debug(flag, 0, "cost = %.2f", current_cost);
-		tsp_debug(flag, 0, "zbest = %.2f", min_cost);
-		tsp_debug(flag, 1, "UPDATE");
+		tsp_debug((inst->verbose>99), 0, "iter %d ", i);
+		tsp_debug((inst->verbose>99), 0, "cost = %.2f", current_cost);
+		tsp_debug((inst->verbose>99), 0, "zbest = %.2f", min_cost);
 	}
-	tsp_debug(flag, 0, "BEST  \n");
-	tsp_debug(flag, 0, "zbest = %.2f\n", inst->zbest);
-	tsp_debug(flag, 0, "tbest = %.4f\n", inst->tbest);
+	tsp_debug((inst->verbose>0), 0, "BEST  \n");
+	tsp_debug((inst->verbose>0), 0, "zbest = %.2f\n", inst->zbest);
+	tsp_debug((inst->verbose>0), 0, "tbest = %.4f\n", inst->tbest);
 }
 
 /**

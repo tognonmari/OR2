@@ -58,11 +58,10 @@ int main(int argc, char** argv) {
 	//JUST FOR TESTING
 	print_nodes(1, "The nodes of the graph are\n", &inst, inst.nnodes);
 	compute_cost_matrix(&inst);
-	print_triangular_matrix(1,"The cost matrix is: \n", (const double**)inst.cost_matrix, inst.nnodes);
-	printf("ciao");
-	greedy_tsp(1, &inst);
-	print_best_sol(1, &inst);
-	plot_path(1, figure_name, inst.best_sol, inst.nodes, inst.nnodes);
+	print_triangular_matrix((inst.verbose>99),"The cost matrix is: \n", (const double**)inst.cost_matrix, inst.nnodes);
+	greedy_tsp(&inst);
+	print_best_sol((inst.verbose>0), &inst);
+	plot_path((inst.verbose>2), figure_name, inst.best_sol, inst.nodes, inst.nnodes);
 	free_instance(&inst);
 	return 0;
 }
