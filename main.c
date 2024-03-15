@@ -1,8 +1,10 @@
 #include <stdio.h>
-#include "tsp1.h"
+#include "tsp.h"
 #include "utils.h"
 
-
+/*
+@ho scoperto che in verità %f è per i float e per i double dovremmo usare %lf.
+*/
 /*
 OR Esito(
 	 0: elaborazione riuscita;
@@ -17,7 +19,7 @@ int main(int argc, char** argv) {
 	
 	instance inst;
 	FILE (*data_file);
-	char data_file_name[1];
+	char data_file_name[256];
 	char figure_name[256];
 	int check_truncation;
 	
@@ -30,7 +32,7 @@ int main(int argc, char** argv) {
 	get_timer();
 	MKDIR("figures");
 	MKDIR("data");
-	generate_instance(&inst); //TODO n e SEED devono essere letti da linea di tastiera
+	generate_instance(&inst); 
 	// The name of the file have the form "graph_data_$nnodes_$randomseed.txt" where $randomseed is the seed used for the random generation
 	// and $nnodes is the size of the graph. The file is created in the directory "data".
 	/**/
@@ -46,19 +48,21 @@ int main(int argc, char** argv) {
 
 	// The name of the figure have the form "graph_$nnodes_$randomseed.png" where $randomseed is the seed used for the random generation
 	// and $nnodes is the size of the graph. The file is created in the directory "figures".
-	check_truncation = snprintf(figure_name, sizeof(figure_name), "figures/graph_%d_%d.png", inst.nnodes, inst.randomseed);
+	check_truncation = snprintf(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst.nnodes, inst.randomseed);
 	if (check_truncation < 0 || check_truncation >= sizeof(figure_name)) {
 		return main_error_text(-4, "Buffer: %d char, Text: %d char", sizeof(figure_name), check_truncation);
 	}
 	make_datafile(&inst, data_file);
-	plot_graph(data_file_name,figure_name);
-	//JUST FOR TESTING
-	print_nodes("The nodes of the graph are\n", &inst, inst.nnodes);
-	compute_cost_matrix(&inst);
-	print_triangular_matrix((const double**)inst.cost_matrix, inst.nnodes);
-	greedy_tsp(&inst);
-	print_best_sol(1, &inst);
 	fclose(data_file);
+	// plot_graph(data_file_name,figure_name);
+	//JUST FOR TESTING
+	print_nodes(1, "The nodes of the graph are\n", &inst, inst.nnodes);
+	compute_cost_matrix(&inst);
+	print_triangular_matrix(1,"The cost matrix is: \n", (const double**)inst.cost_matrix, inst.nnodes);
+	printf("ciao");
+	greedy_tsp(1, &inst);
+	print_best_sol(1, &inst);
+	plot_path(1, figure_name, inst.best_sol, inst.nodes, inst.nnodes);
 	free_instance(&inst);
 	return 0;
 }

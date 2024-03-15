@@ -242,6 +242,33 @@ int plot_graph(const char graph_data[], const char graph[]) {
 
 	fclose(gnuplotPipe);
 }
+int plot_path(char flag, const char figure_name[], const int* indices, const point* points, int num_points) {
+    FILE* gnuplotPipe = popen("gnuplot -persist", "w");
+
+    if (gnuplotPipe == NULL) {
+        fclose(gnuplotPipe);
+		exit(main_error_text(-1,"Failed to open the pipeline to gnuplot"));
+    }
+
+    fprintf(gnuplotPipe, "set output '%s'\n", figure_name); //set output name
+	fprintf(gnuplotPipe, "set terminal png\n"); //set extension
+	fprintf(gnuplotPipe, "set title 'Greedy Path'\n"); 
+	fprintf(gnuplotPipe, "set key off\n"); //if key on the name of the file is printed on the plot
+	fprintf(gnuplotPipe, "set xrange [0:%d]\n",MAX_X);
+	fprintf(gnuplotPipe, "set yrange [0:%d]\n",MAX_Y);
+	fprintf(gnuplotPipe, "set pointsize 0.5\n");
+	fprintf(gnuplotPipe, "set grid \n");
+	fprintf(gnuplotPipe, "plot '-' with linespoints pt 1 lc rgb '#800080'\n");
+
+    for (int i = 0; i < num_points; ++i) {
+        fprintf(gnuplotPipe, "%lf %lf\n", points[indices[i]].x, points[indices[i]].y);
+    }
+	fprintf(gnuplotPipe, "%lf %lf\n", points[indices[0]].x, points[indices[0]].y);
+    fprintf(gnuplotPipe, "e\n"); //This line serves to terminate the input of data for the plot command in gnuplot.
+
+    fclose(gnuplotPipe);
+}
+
 
 void parse_command_line(int argc, char** argv, instance *inst){
 
