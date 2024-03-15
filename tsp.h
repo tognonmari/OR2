@@ -5,9 +5,8 @@
 #include <stdlib.h>
 #include <float.h>
 //parameters for the random values generation
-#define SEED 14
-#define MAX_X 10000  //maximum value for ascisse of generated points
-#define MAX_Y 10000 //maximum value for ordinate of generated points
+#define MAX_X 1000  //maximum value for ascisse of generated points
+#define MAX_Y 1000//maximum value for ordinate of generated points
 
 typedef struct {
 	double x;

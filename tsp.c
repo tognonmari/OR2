@@ -450,7 +450,7 @@ void copy_array(void* a1, const void* a2) {
 * OR Pointer to the node with the minimum distance.
 * @note A node is represented by a int value which is its label, thus its position in the instance point array $(inst->nodes).
 */
-int* search_min(const int* p, const int* end, const double** cost_matrix, double* current_cost){
+int* search_min(const int* p, const int* end, const double** cost_matrix, double* min){
 	double min_distance = DBL_MAX;  
 	int* closest_node = NULL;
 	int* current = (int*)p + 1;
@@ -458,11 +458,11 @@ int* search_min(const int* p, const int* end, const double** cost_matrix, double
 		double distance = get_cost_matrix(cost_matrix, *p, *current);
 		if (distance < min_distance) {
 			min_distance = distance;
-			closest_node = current;
-			(*current_cost) = min_distance;  
+			closest_node = current; 
 		}
 		current++;
 	}
+	(*min) = min_distance; 
 	return closest_node;
 }
 /*
@@ -492,6 +492,8 @@ int* compute_greedy_path(int index_first, instance* inst, double* path_cost) {
 		next++;
 		aggregate_cost += current_cost;
 	}
+	current_cost = get_cost_matrix((const double**)(inst->cost_matrix), *(end-1), *end);
+	aggregate_cost += current_cost;
 	(*path_cost) = aggregate_cost;
 	return path;
 }
