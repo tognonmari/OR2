@@ -1,8 +1,8 @@
-main : main.c tsp1.o utils.o
-	gcc main.c utils.o tsp1.o tsp1.h -o main
+main : main.c tsp.o utils.o
+	gcc main.c utils.o tsp.o tsp.h -o main
 
-tsp1.o : tsp1.c
-	gcc -c tsp1.c -o tsp1.o
+tsp.o : tsp.c
+	gcc -c tsp.c -o tsp.o
 
 utils.o : utils.c 
 	gcc -c utils.c -o utils.o
