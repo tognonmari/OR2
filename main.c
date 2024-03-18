@@ -54,42 +54,18 @@ int main(int argc, char** argv) {
 	}
 	make_datafile(&inst, data_file);
 	fclose(data_file);
-	// plot_graph(data_file_name,figure_name);
+	plot_graph(data_file_name,figure_name);
 	//JUST FOR TESTING
-	print_nodes(1, "The nodes of the graph are\n", &inst, inst.nnodes);
+	//print_nodes(1, "The nodes of the graph are\n", &inst, inst.nnodes);
 	compute_cost_matrix(&inst);
 	print_triangular_matrix((inst.verbose>99),"The cost matrix is: \n", (const double**)inst.cost_matrix, inst.nnodes);
 	greedy_tsp(&inst);
+	print_best_sol((inst.verbose>-1),&inst);
+	//plot_path((inst.verbose>-1), figure_name, inst.best_sol, inst.nodes, inst.nnodes);
+	opt2_optimize_best_sol(&inst);
+	plot_path((inst.verbose>-1), figure_name, inst.best_sol, inst.nodes, inst.nnodes);
 	print_best_sol((inst.verbose>0), &inst);
-	plot_path((inst.verbose>2), figure_name, inst.best_sol, inst.nodes, inst.nnodes);
+	//plot_path((inst.verbose>-1), figure_name, inst.best_sol, inst.nodes, inst.nnodes);
 	free_instance(&inst);
 	return 0;
 }
-
-
-/*
-int main(int argc, char** argv){
-
-	point p1 = { .x = 1, .y = 0};
-	point p2 = { .x = 3, .y = 1};
-	point p3 = { .x = 0, .y = 1};
-	point p4 = { .x = 2, .y = 0};
-	point p5 = { .x = 2, .y = 4};
-	
-	point path[] = {p1, p2, p3, p4, p5};
-
-
-	instance inst;
-	inst.nodes=path;
-	inst.nnodes = 5;
-	int arr[] = {0,1,2,3,4};
-	inst.best_sol = arr;
-	inst.zbest = compute_path_length(path, inst.nnodes);
-	printf("Length of the path before 2-opt : %f\n", inst.zbest);
-	opt2_optimize_best_sol(&inst);
-	printf("Length of the path after 2-opt : %f\n", inst.zbest);
-	print_path(path, 5);
-
-}
-
-*/
