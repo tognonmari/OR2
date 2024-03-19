@@ -416,12 +416,10 @@ void opt2_optimize_best_sol(instance* inst) {
 	int* path = inst->best_sol;
 	point* nodes_list = inst->nodes;
 	double path_length = inst->zbest;
-	double best_delta = -1;
-	int w = 0 ;
+	double best_delta = 0;
     while (best_delta < 0)
     {
 		
-		char improvement = 0;
         best_delta = 0;
         int best_i = -1;
         int best_j = -1;
@@ -429,32 +427,27 @@ void opt2_optimize_best_sol(instance* inst) {
         {
             for (int j = i + 2; j <= n-1; j++)
             {
-				//printf("I am swapping nodes %d and %d\n", i, j);
                 double current_dist= get_distance(&nodes_list[inst->best_sol[i%n]], &nodes_list[inst->best_sol[(i+1)%n]]) + get_distance(&nodes_list[inst->best_sol[j%n]], &nodes_list[inst->best_sol[(j+1)%n]]);
                 double changed_dist = get_distance(&nodes_list[inst->best_sol[i%n]], &nodes_list[inst->best_sol[j%n]]) + get_distance(&nodes_list[inst->best_sol[(i+1)%n]], &nodes_list[inst->best_sol[(j+1)%n]]);
                 double delta = changed_dist - current_dist;
+
                 if (delta < best_delta)
                 {
                     best_i = i%n;
                     best_j = j%n;
                     best_delta = delta;
-					improvement=1;
                 }
             }
         }
-        if (improvement)
+        if (best_delta<0)
         {
 			
             swap_2_opt(inst->best_sol, (best_i + 1)%n, (best_j)%n);
-			double real_length = compute_path_length(path, n, inst->nodes);
-			//printf("\npath_length : %.2f NOW at iter (%d), BEST DELTA = %.2f , REAL LENGTH = %.2f",path_length, w, best_delta, real_length);
             path_length += best_delta;
         }
-		w++;
     }
 
 	inst->zbest = path_length;
-	//printf("best sol after optimization is: %12.6f", inst->zbest);
 
 }
 /*
