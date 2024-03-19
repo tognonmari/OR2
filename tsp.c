@@ -43,7 +43,7 @@ void tsp_debug_inline(char flag, char* format, ...)
 */
 void print_best_sol(char flag, instance* inst) {
 	tsp_debug(flag, 1, "BEST SOLUTION:\n");
-	tsp_debug(flag, 0, "zbest = %.2f\n",inst->zbest);
+	tsp_debug(flag, 0, "zbest = %.2lf\n",inst->zbest);
 	tsp_debug(flag, 0, "tbest = %12.6f\n",inst->tbest);
 	tsp_debug(flag, 0, "the best path is:");
 	print_path(flag,"", inst->best_sol, inst->nodes, inst->nnodes);
@@ -282,7 +282,7 @@ void parse_command_line(int argc, char** argv, instance *inst){
 	inst->timelimit = -1; 
 	inst->cutoff = -1; 
 	inst->integer_costs = 0;
-    inst->verbose = 10;
+    inst->verbose = VERBOSE;
 	inst->available_memory = 12000;   			
 	inst->max_nodes = -1; 	
 	inst->nnodes =0;					       
@@ -343,21 +343,34 @@ void free_matrix(void** matrix, int rows) {
 	free_matrix((void**)(inst->cost_matrix), inst->nnodes);
 }
 
-double compute_path_length(point* path, int nodes_number){
-	point p1, p2;
+double compute_path_length(int* path, int nodes_number, point* nodes){
+	int a, b;
 	
 	double path_length = 0;
-	for (int i = 0; i < nodes_number; i++){
-		p1 = path[i];
-		p2 = path[i+1];
-		path_length += get_distance(&p1,&p2);
+	for (int i = 0; i < nodes_number - 1; i++){
+		a = path[i];
+		b = path[i+1];
+		path_length += get_distance(&nodes[a],&nodes[b]);
 	}
 	//last edge
-	p1 = path[0];
+	a = path[0];
 
-	return (path_length + get_distance(&p1,&p2));
+	return (path_length + get_distance(&nodes[a],&nodes[b]));
 }
 
+void reverse_sequence(int* path, int min, int max){
+
+	int* s = &path[min+1];
+	int* t = &path[max-1];
+	while (s<t){
+
+		swap(s,t);
+		s++;
+		t--;
+
+	}
+
+}
 
 /*
 	Given a solution (i.e. a path), it swaps the positions of two nodes if an improvement is found.
@@ -366,9 +379,19 @@ double compute_path_length(point* path, int nodes_number){
 */
 void swap_2_opt(int* path, int i, int j){
 
-	int temp = path[i+1];
-	path[i+1] = path[j];
+	//swapping the extremes
+	int temp = path[i];
+	path[i] = path[j];
 	path[j] = temp;
+	int min = i;
+	int max = j;
+	if(i>j){
+		min = j;
+		max = i;
+	}
+	//reverse the sequence
+	
+	reverse_sequence(path, min, max);
 
 }
 /*
@@ -383,46 +406,55 @@ void swap(int* a, int* b) {
 }
 
 /*
-	Given an instance inst, it performs opt-2 refinement.
+	Given an instance inst, it performs opt-2 refinement. WARNING: NOT FINISHED YET, IT DOESN'T UPDATE THE COST CORRECTLY. HOWEVER; THE FINAL CYCLE DOESN'T HAVE ANY KNOTS
 	IP: instance inst passed by reference
 	OP: formally none, but inst's best_sol and zbest are updated if an improvement is found
 */
 void opt2_optimize_best_sol(instance* inst) {
 
-	//Preliminary steps: parameters and pointers initialization
-
-	int nodes_number = inst->nnodes;
-	double path_length = inst->zbest;
-	int* path = (inst->best_sol);
+	int n = inst->nnodes;
+	int* path = inst->best_sol;
 	point* nodes_list = inst->nodes;
-
-	//Opt-2 algorithm
-
-	int improvement = 1;
-
-	while (improvement == 1) {
-
-		improvement = 0;
-
-		for (int i = 0; i < nodes_number - 1; i++) {
-
-			for (int j = i + 1; j < nodes_number; j++) {
-
-				double delta = -get_distance(&nodes_list[path[i]], &nodes_list[path[i + 1]]) - get_distance(&nodes_list[path[j]], &nodes_list[path[j + 1]]) + get_distance(&nodes_list[path[i]], &nodes_list[path[j]]) + get_distance(&nodes_list[path[i + 1]], &nodes_list[path[j + 1]]);
-				if (delta < 0) {
-
-					swap_2_opt(path, i, j); //swap operations if an improvement is found
-					path_length += delta;
-					improvement = 1;
-
-				}
-			}
-		}
-	}
-
-	//updating new best cost
+	double path_length = inst->zbest;
+	double best_delta = -1;
+	int w = 0 ;
+    while (best_delta < 0)
+    {
+		
+		char improvement = 0;
+        best_delta = 0;
+        int best_i = -1;
+        int best_j = -1;
+        for (int i = 0; i <= n - 2; i++)
+        {
+            for (int j = i + 2; j <= n-1; j++)
+            {
+				//printf("I am swapping nodes %d and %d\n", i, j);
+                double current_dist= get_distance(&nodes_list[inst->best_sol[i%n]], &nodes_list[inst->best_sol[(i+1)%n]]) + get_distance(&nodes_list[inst->best_sol[j%n]], &nodes_list[inst->best_sol[(j+1)%n]]);
+                double changed_dist = get_distance(&nodes_list[inst->best_sol[i%n]], &nodes_list[inst->best_sol[j%n]]) + get_distance(&nodes_list[inst->best_sol[(i+1)%n]], &nodes_list[inst->best_sol[(j+1)%n]]);
+                double delta = changed_dist - current_dist;
+                if (delta < best_delta)
+                {
+                    best_i = i%n;
+                    best_j = j%n;
+                    best_delta = delta;
+					improvement=1;
+                }
+            }
+        }
+        if (improvement)
+        {
+			
+            swap_2_opt(inst->best_sol, (best_i + 1)%n, (best_j)%n);
+			double real_length = compute_path_length(path, n, inst->nodes);
+			//printf("\npath_length : %.2f NOW at iter (%d), BEST DELTA = %.2f , REAL LENGTH = %.2f",path_length, w, best_delta, real_length);
+            path_length += best_delta;
+        }
+		w++;
+    }
 
 	inst->zbest = path_length;
+	//printf("best sol after optimization is: %12.6f", inst->zbest);
 
 }
 /*
