@@ -301,6 +301,8 @@ void parse_command_line(int argc, char** argv, instance *inst){
 		if ( strcmp(argv[i],"-seed") == 0 ) { inst->randomseed = abs(atoi(argv[++i])); continue; } 		// random seed
 		if ( strcmp(argv[i],"-threads") == 0 ) { inst->num_threads = atoi(argv[++i]); continue; } 		// n. threads
 		if ( strcmp(argv[i],"-memory") == 0 ) { inst->available_memory = atoi(argv[++i]); continue; }	// available memory (in MB)
+		if ( strcmp(argv[i], "-verbose")==0) { inst->verbose = atoi(argv[++i]); continue;}				// verbosity
+		if ( strcmp(argv[i], "-v") ==0 ) {inst->verbose = atoi(argv[++i]);continue;}					// verbosity
 		//if ( strcmp(argv[i],"-node_file") == 0 ) { strcpy(inst->node_file,argv[++i]); continue; }		// cplex's node file
 		if ( strcmp(argv[i],"-max_nodes") == 0 ) { inst->max_nodes = atoi(argv[++i]); continue; } 		// max n. of nodes
 		if ( strcmp(argv[i],"-cutoff") == 0 ) { inst->cutoff = atof(argv[++i]); continue; }				// master cutoff
@@ -616,5 +618,45 @@ void init_path(int* path, size_t n){
 	}
 }
 
+char is_feasible_solution(instance* inst, int* sol_path, double sol_cost){
+
+	int n = inst->nnodes;
+	//check for repeated vertices or out of range content of path
+	int* visited = (int*)calloc(inst->nnodes, sizeof(int));
+
+	if (visited == NULL){
+		exit(main_error(-6));
+	}
+
+	for (int i =0; i<=n-1; i++){
+
+		if(sol_path[i]<0 || sol_path[i]>n-1){
+
+			return 0;
+
+		}
+
+		if (visited[sol_path[i]]==0){
+
+			visited[sol_path[i]]++;
+
+		}
+		else{
+
+			return 0;
+
+		}
+
+
+	}
+
+	free(visited);
+
+	//check cost coincides with the path length 
+
+	double path_length = compute_path_length(sol_path, n, inst->nodes);
+
+	return is_equal_double(path_length, sol_cost, EPSILON);
+}
 
 

@@ -121,4 +121,6 @@ void init_path(int* path, size_t n);
 
 double compute_path_length(int* path, int nodes_number, point* nodes);
 
+char is_feasible_solution(instance* inst, int* sol_path, double sol_cost);
+
 #endif
