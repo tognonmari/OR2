@@ -72,4 +72,4 @@ Per l'incumbent checkare sempre anche se scambi perggiorativi, per comodita.
 
 18/03
 come suggerimento mettere dentro la funzione di update il controllo che updata solo se è migliorativo il costo, FARE CONTROLLO CHE SIA EFFETTIBAMENTE UN TOUR.
-Cercare di imparare il debug.
+Cercare di imparare il debug. tenure (1*sin(counter *1/50)+1)

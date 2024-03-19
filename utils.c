@@ -116,3 +116,4 @@ void** alloc_triangular_matrix(int nrow, size_t size_type) {
 	}
 	return matrix;
 }
+

@@ -13,6 +13,7 @@ OR Esito(
 	-3: numero di parametri inseriti da linea di comando non corretto).
 	-4: buffer truncation;
 	-5: finito spazio nell'heap (fallisce allocazione);
+	-6: Time limit exceeded
 */
 //TODO Creare una funzione per ogni tipo di errore che lanci un messaggio su stderror adeguato e restituisca l'int associato all'errore.
 int main(int argc, char** argv) {
