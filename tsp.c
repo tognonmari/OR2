@@ -418,10 +418,11 @@ void opt2_optimize_best_sol(instance* inst) {
 	int* path = inst->best_sol;
 	point* nodes_list = inst->nodes;
 	double path_length = inst->zbest;
-	double best_delta = 0;
+	double best_delta = -1;
+	
     while (best_delta < 0)
-    {
-		
+    {	
+		char improvement = 0;		
         best_delta = 0;
         int best_i = -1;
         int best_j = -1;
@@ -435,15 +436,15 @@ void opt2_optimize_best_sol(instance* inst) {
 
                 if (delta < best_delta)
                 {
+					improvement = 1;
                     best_i = i%n;
                     best_j = j%n;
                     best_delta = delta;
                 }
             }
         }
-        if (best_delta<0)
+        if (improvement)
         {
-			
             swap_2_opt(inst->best_sol, (best_i + 1)%n, (best_j)%n);
             path_length += best_delta;
         }
@@ -625,6 +626,7 @@ char is_feasible_solution(instance* inst, int* sol_path, double sol_cost){
 	int* visited = (int*)calloc(inst->nnodes, sizeof(int));
 
 	if (visited == NULL){
+
 		exit(main_error(-6));
 	}
 
