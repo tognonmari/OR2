@@ -282,7 +282,7 @@ void parse_command_line(int argc, char** argv, instance *inst){
 	inst->timelimit = -1; 
 	inst->cutoff = -1; 
 	inst->integer_costs = 0;
-    inst->verbose = 10;
+    inst->verbose = VERBOSE;
 	inst->available_memory = 12000;   			
 	inst->max_nodes = -1; 	
 	inst->nnodes =0;					       
@@ -343,21 +343,34 @@ void free_matrix(void** matrix, int rows) {
 	free_matrix((void**)(inst->cost_matrix), inst->nnodes);
 }
 
-double compute_path_length(point* path, int nodes_number){
-	point p1, p2;
+double compute_path_length(int* path, int nodes_number, point* nodes){
+	int a, b;
 	
 	double path_length = 0;
-	for (int i = 0; i < nodes_number; i++){
-		p1 = path[i];
-		p2 = path[i+1];
-		path_length += get_distance(&p1,&p2);
+	for (int i = 0; i < nodes_number - 1; i++){
+		a = path[i];
+		b = path[i+1];
+		path_length += get_distance(&nodes[a],&nodes[b]);
 	}
 	//last edge
-	p1 = path[0];
+	a = path[0];
 
-	return (path_length + get_distance(&p1,&p2));
+	return (path_length + get_distance(&nodes[a],&nodes[b]));
 }
 
+void reverse_sequence(int* path, int min, int max){
+
+	int* s = &path[min+1];
+	int* t = &path[max-1];
+	while (s<t){
+
+		swap(s,t);
+		s++;
+		t--;
+
+	}
+
+}
 
 /*
 	Given a solution (i.e. a path), it swaps the positions of two nodes if an improvement is found.
@@ -366,9 +379,19 @@ double compute_path_length(point* path, int nodes_number){
 */
 void swap_2_opt(int* path, int i, int j){
 
+	//swapping the extremes
 	int temp = path[i];
 	path[i] = path[j];
 	path[j] = temp;
+	int min = i;
+	int max = j;
+	if(i>j){
+		min = j;
+		max = i;
+	}
+	//reverse the sequence
+	
+	reverse_sequence(path, min, max);
 
 }
 /*
@@ -394,9 +417,11 @@ void opt2_optimize_best_sol(instance* inst) {
 	point* nodes_list = inst->nodes;
 	double path_length = inst->zbest;
 	double best_delta = -1;
-
+	int w = 0 ;
     while (best_delta < 0)
     {
+		
+		char improvement = 0;
         best_delta = 0;
         int best_i = -1;
         int best_j = -1;
@@ -413,19 +438,23 @@ void opt2_optimize_best_sol(instance* inst) {
                     best_i = i%n;
                     best_j = j%n;
                     best_delta = delta;
+					improvement=1;
                 }
             }
         }
-        if (best_delta < 0)
+        if (improvement)
         {
+			
             swap_2_opt(inst->best_sol, (best_i + 1)%n, (best_j)%n);
+			double real_length = compute_path_length(path, n, inst->nodes);
+			//printf("\npath_length : %.2f NOW at iter (%d), BEST DELTA = %.2f , REAL LENGTH = %.2f",path_length, w, best_delta, real_length);
             path_length += best_delta;
         }
-
+		w++;
     }
 
 	inst->zbest = path_length;
-	printf("best sol after optimization is: %lf", inst->zbest);
+	//printf("best sol after optimization is: %12.6f", inst->zbest);
 
 }
 /*

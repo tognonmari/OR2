@@ -54,18 +54,20 @@ int main(int argc, char** argv) {
 	}
 	make_datafile(&inst, data_file);
 	fclose(data_file);
-	plot_graph(data_file_name,figure_name);
 	//JUST FOR TESTING
 	//print_nodes(1, "The nodes of the graph are\n", &inst, inst.nnodes);
 	compute_cost_matrix(&inst);
 	print_triangular_matrix((inst.verbose>99),"The cost matrix is: \n", (const double**)inst.cost_matrix, inst.nnodes);
 	greedy_tsp(&inst);
-	print_best_sol((inst.verbose>-1),&inst);
-	//plot_path((inst.verbose>-1), figure_name, inst.best_sol, inst.nodes, inst.nnodes);
-	opt2_optimize_best_sol(&inst);
+	print_best_sol((inst.verbose>2),&inst);
 	plot_path((inst.verbose>-1), figure_name, inst.best_sol, inst.nodes, inst.nnodes);
-	print_best_sol((inst.verbose>0), &inst);
-	//plot_path((inst.verbose>-1), figure_name, inst.best_sol, inst.nodes, inst.nnodes);
+	opt2_optimize_best_sol(&inst);
+	check_truncation = snprintf(figure_name, sizeof(figure_name), "figures/greedy_%d_%d_2opt.png", inst.nnodes, inst.randomseed);
+	if (check_truncation < 0 || check_truncation >= sizeof(figure_name)) {
+		return main_error_text(-4, "Buffer: %d char, Text: %d char", sizeof(figure_name), check_truncation);
+	}
+	plot_path((inst.verbose>-1), figure_name, inst.best_sol, inst.nodes, inst.nnodes);
+	print_best_sol((inst.verbose>2), &inst);
 	free_instance(&inst);
 	return 0;
 }

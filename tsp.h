@@ -5,9 +5,10 @@
 #include <stdlib.h>
 #include <float.h>
 //parameters for the random values generation
-#define MAX_X 1000  //maximum value for ascisse of generated points
-#define MAX_Y 1000//maximum value for ordinate of generated points
-
+#define MAX_X 10000  //maximum value for ascisse of generated points
+#define MAX_Y 10000//maximum value for ordinate of generated points
+//default verbose
+#define VERBOSE 0
 typedef struct {
 	double x;
 	double y;
@@ -96,7 +97,7 @@ void parse_command_line(int argc, char** argv, instance *inst);
 
 void opt2_optimize_best_sol(instance *inst);
 
-double compute_path_length(point* path, int nodes_number);
+void reverse_sequence(int* path, int min, int max);
 
 void compute_cost_matrix(instance* inst);
 
@@ -117,4 +118,7 @@ void greedy_tsp(instance* inst);
 void update_best(instance* inst, double z, double t, int* sol);
 
 void init_path(int* path, size_t n);
+
+double compute_path_length(int* path, int nodes_number, point* nodes);
+
 #endif
