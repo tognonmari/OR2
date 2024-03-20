@@ -9,6 +9,17 @@
 #define MAX_Y 10000//maximum value for ordinate of generated points
 //default verbose
 #define VERBOSE 0
+
+typedef enum {
+
+	NOT_DEF,
+	RANDOM_SOL,
+	NN,
+	OPT_2,
+	TABU
+
+} solver_id;
+
 typedef struct {
 	double x;
 	double y;
@@ -18,24 +29,14 @@ typedef struct {
 
 	//input data
 	int nnodes;
-	double* demand;
 	point* nodes;
-	int depot;
-	double capacity;
-	int nveh;
 
 	// parameters 
-	int model_type;
-	int old_benders;
+	solver_id solver;
 	int randomseed;
-	int num_threads;
 	double timelimit;						// overall time limit, in sec.s
 	char input_file[1000];		  			// input file
-	char node_file[1000];		  			// cplex node file
 	int available_memory;
-	int max_nodes; 							// max n. of branching nodes in the final run (-1 unlimited)
-	double cutoff; 							// cutoff (upper bound) for master
-	int integer_costs;
 	int verbose;
 
 	//global data
@@ -91,7 +92,7 @@ void free_matrix(void** matrix, int rows);
 
 void free_instance(instance *inst);
 
-void print_instance_parameters(instance inst);
+void print_instance_parameters(instance* inst);
 
 void parse_command_line(int argc, char** argv, instance *inst);
 
@@ -123,4 +124,10 @@ double compute_path_length(int* path, int nodes_number, point* nodes);
 
 char is_feasible_solution(instance* inst, int* sol_path, double sol_cost);
 
-#endif
+solver_id parse_solver(char* solver_input);
+
+void tsp_solve(instance* inst);
+
+void update_solver(instance* inst);
+
+#endif 
