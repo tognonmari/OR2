@@ -34,4 +34,6 @@ void** alloc_matrix(int nrow, int ncol, size_t size_type);
 
 void** alloc_triangular_matrix(int nrow, size_t size_type);
 
+void* alloc_triangular_matrix_as_array(int nrow, size_t size_type);
+
 #endif

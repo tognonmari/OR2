@@ -8,6 +8,9 @@
 #define MAX_X 10000  //maximum value for ascisse of generated points
 #define MAX_Y 10000//maximum value for ordinate of generated points
 //default verbose
+<<<<<<< HEAD
+#define VERBOSE 50
+=======
 #define VERBOSE 0
 
 typedef enum {
@@ -20,6 +23,7 @@ typedef enum {
 
 } solver_id;
 
+>>>>>>> a388ecb2eba8c50bb0897d35427cb28547bed972
 typedef struct {
 	double x;
 	double y;
@@ -40,7 +44,7 @@ typedef struct {
 	int verbose;
 
 	//global data
-	double** cost_matrix;					//cost_matrix[i][j] represent the distance between node i and node j.
+	float* dist_matrix;
 	double	tstart;
 	double zbest;							// best sol. available  
 	double tbest;							// time for the best sol. available  
@@ -84,6 +88,8 @@ void print_point(char flag, const char text_to_print[], const point* p);
 
 void print_triangular_matrix(char flag,const char text[], const double** matrix, int nrows);
 
+void print_triangular_matrix_as_array(char flag, const char text_to_print[], const float* matrix, int nrows);
+
 void tsp_debug(char flag,int flag_time, char* format, ...);
 
 void tsp_debug_inline(char flag, char* format, ...);
@@ -100,9 +106,11 @@ void opt2_optimize_best_sol(instance *inst);
 
 void reverse_sequence(int* path, int min, int max);
 
-void compute_cost_matrix(instance* inst);
+void compute_dist_matrix(instance* inst);
 
 double get_cost_matrix(const double** matrix, int a, int b);
+
+float get_dist_matrix(const float* matrix, int row, int col);
 
 void swap_space(void* a, void* b, size_t size);
 
@@ -110,7 +118,7 @@ void swap(int* a, int* b);
 
 void copy_array(void* a1, const void* a2);
 
-int* search_min(const int* p, const int* end, const double** cost_matrix, double* current_cost);
+int* search_min(const int* p, const int* end, const float* cost_matrix, double* current_cost);
 
 int* compute_greedy_path(int index_first, instance* inst, double* path_cost);
 

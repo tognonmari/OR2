@@ -63,7 +63,26 @@ void print_triangular_matrix(char flag, const char text_to_print[], const double
 	for (int row = 0; row < nrows; row++) {
 		tsp_debug_inline(flag,"\n");
 		for (int col = 0; col <= row; col++) {
-			tsp_debug_inline(flag,"%8.1f ", matrix[row][col]);
+			tsp_debug_inline(flag,"%8.1f ", get_cost_matrix(matrix,row,col));
+		}
+	}
+}
+/**
+ * Prints the elements of a triangular matrix up to the main diagonal.
+ * IP flag Print flag
+ * IP matrix A pointer to a 2D array representing the triangular matrix saved in memory with a contiguos 1D array.
+ * IP nrows The number of rows in the triangular matrix.
+ * OV The triangular matrix represented by $matrix if $flag and if ($nrows<=10)
+ */
+void print_triangular_matrix_as_array(char flag, const char text_to_print[], const float* matrix, int nrows) {
+	if(nrows>10){ return; }
+	if(text_to_print[0]!= '\0'){
+		tsp_debug(flag,0,"%s", text_to_print);
+	}
+	for (int row = 0; row < nrows; row++) {
+		tsp_debug_inline(flag,"\n");
+		for (int col = 0; col <= row; col++) {
+			tsp_debug_inline(flag,"%8.1f ", get_dist_matrix(matrix,row,col));
 		}
 	}
 }
@@ -182,20 +201,32 @@ double get_distance(const point* p1, const point* p2) {
 	return dist;
 }
 /*
-* Compute the cost matrix, thus the matrix containing in each entry (i,j) the
+* Compute the dist matrix, thus the matrix containing in each entry (i,j) the
 * distance between node i and node j.
-* IOP inst The $inst field $cost_matrix is computed with the distance of the nodes.
+* IOP inst The $inst field $cost_matrix is computed with the distance of the nodes.
 */
-void compute_cost_matrix(instance* inst) {
+void compute_dist_matrix(instance* inst){
 	int nrow = inst->nnodes;
-	double** matrix = (double**)alloc_triangular_matrix(nrow, sizeof(double));
-	
+	float* matrix = (float*)alloc_triangular_matrix_as_array(nrow, sizeof(float));
+	float* curr = matrix;
 	for (int i = 0; i < nrow; i++ ) {
 		for (int j = 0; j <= i; j++) {
-			matrix[i][j] = get_distance(&(inst->nodes[i]),&(inst->nodes[j]));
+			(*curr) = get_distance(&(inst->nodes[i]),&(inst->nodes[j]));
+			curr++;
 		}
 	}
-	inst->cost_matrix = matrix;
+	inst->dist_matrix = matrix;
+}
+/*
+ * Ottiene il valore di un elemento della matrice simmetrica $matrix
+ * IP matrix La matrice simmetrica.
+ * IP a L'indice di riga (0-based).
+ * IP b L'indice di colonna (0-based).
+ * OR Il valore dell'entry associata ad a e b.
+ */
+float get_dist_matrix(const float* matrix, int row, int col){
+	if(col<=row) {return matrix[(row * (row+1) / 2) + col];}
+	return matrix[(col * (col+1) / 2) + row];
 }
 /*
  * Ottiene il valore di un elemento della matrice simmetrica $matrix
@@ -354,7 +385,7 @@ void free_instance(instance *inst){
     // free(inst->demand);
     free(inst->nodes);
 	free(inst->best_sol);
-	free_matrix((void**)(inst->cost_matrix), inst->nnodes);
+	free(inst->dist_matrix);
 }
 
 double compute_path_length(int* path, int nodes_number, point* nodes){
@@ -530,12 +561,12 @@ void copy_array(void* a1, const void* a2) {
 * OR Pointer to the node with the minimum distance.
 * @note A node is represented by a int value which is its label, thus its position in the instance point array $(inst->nodes).
 */
-int* search_min(const int* p, const int* end, const double** cost_matrix, double* min){
+int* search_min(const int* p, const int* end, const float* dist_matrix, double* min){
 	double min_distance = DBL_MAX;  
 	int* closest_node = NULL;
 	int* current = (int*)p + 1;
 	while (current <= end) {
-		double distance = get_cost_matrix(cost_matrix, *p, *current);
+		double distance = get_dist_matrix(dist_matrix, *p, *current);
 		if (distance < min_distance) {
 			min_distance = distance;
 			closest_node = current; 
@@ -567,13 +598,13 @@ int* compute_greedy_path(int index_first, instance* inst, double* path_cost) {
 	double current_cost = 0;
 	double aggregate_cost = 0;
 	while (next < end) {
-		min = search_min((next - 1), end, (const double**)(inst->cost_matrix), &current_cost);
+		min = search_min((next - 1), end, (const float*)(inst->dist_matrix), &current_cost);
 		swap(next, min);
 		next++;
 		aggregate_cost += current_cost;
 	}
-	current_cost = get_cost_matrix((const double**)(inst->cost_matrix), *(end-1), *end);
-	aggregate_cost += (current_cost + get_cost_matrix((const double**)(inst->cost_matrix), (path[0]), *(end)));
+	current_cost = get_dist_matrix((const float*)(inst->dist_matrix), *(end-1), *end);
+	aggregate_cost += (current_cost + get_dist_matrix((const float*)(inst->dist_matrix), path[0], *end);
 	(*path_cost) = aggregate_cost;
 	return path;
 }

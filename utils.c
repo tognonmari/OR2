@@ -76,12 +76,12 @@ void** alloc_matrix(int nrow, int ncol, size_t size_type) {
 	void** matrix = malloc(nrow * sizeof(void*));
 
 	if (matrix == NULL) {
-		exit(-5);
+		exit(main_error(-5));
 	}
 	for (int i = 0; i < nrow; i++) {
 		matrix[i] = malloc(ncol * size_type);
 		if (matrix[i] == NULL) {
-			exit(-5);
+			exit(main_error(-5));
 		}
 	}
 	return matrix;
@@ -105,14 +105,23 @@ void** alloc_triangular_matrix(int nrow, size_t size_type) {
 	void** matrix = malloc(nrow * sizeof(void*));
 
 	if (matrix == NULL) {
-		exit(-5);
+		exit(main_error(-5));
 	}
 	for (int i = 0; i < nrow; i++) {
 		matrix[i] = malloc( (i+1) * size_type);
 		if (matrix[i] == NULL) {
-			exit(-5);
+			exit(main_error(-5));
 		}
 	}
 	return matrix;
 }
 
+void* alloc_triangular_matrix_as_array(int nrow, size_t size_type){
+	size_t size_matrix = (nrow * (nrow + 1) ) / 2;
+	void* matrix = calloc(size_matrix, size_type);
+
+	if(matrix == NULL){
+		exit(main_error(-5));
+	}
+	return matrix;
+}
