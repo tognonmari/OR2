@@ -69,6 +69,8 @@ void make_datafile(instance *inst, FILE* data_file);
 
 void generate_instance(instance *inst);
 
+void generate_figure_name(char buffer[], size_t bufferSize, const char *format, ...);
+
 void generate_nodes(int n, point* nodes, int max_x, int max_y);
 
 void generate_array(int n, double *array, int max_value);

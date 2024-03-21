@@ -22,7 +22,10 @@ int main_error_text(int error, char* format, ...) {
 		fprintf(stderr, "Incorrect number of command line parameters.\n");
 		break;
 	case -4:
-		fprintf(stderr, "Buffer truncation.\n");
+		fprintf(stderr, "Buffer truncation. \n");
+		if(format != NULL){
+			fprintf(stderr, "Buffer: %d char, Text: %d char. \n", va_arg(args,int), va_arg(args,int));
+		}
 		break;
 	case -5:
 		fprintf(stderr, "Out of heap space (allocation failed).\n");
@@ -136,3 +139,4 @@ void* alloc_triangular_matrix_as_array(int nrow, size_t size_type){
 	}
 	return matrix;
 }
+

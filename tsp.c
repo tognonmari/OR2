@@ -163,6 +163,15 @@ void generate_nodes(int n, point* nodes, int max_x, int max_y) {
 		pointer_nodes++;
 	}
 }
+void generate_figure_name(char buffer[], size_t bufferSize, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    int length = vsnprintf(buffer, bufferSize, format, args);
+	if (length >= bufferSize) {
+        exit(main_error_text(-4, "%d %d", bufferSize, length));
+    }
+    va_end(args);    
+}
 
 /*
 * A complete graph is implicited defined by its nodes -> this function generates $n nodes
@@ -737,18 +746,26 @@ solver_id parse_solver(char* solver_input){
 
 
 void tsp_solve(instance* inst){
+	get_timer();
+	MKDIR("figures");
+	char figure_name[64];
+	int check_truncation;
 	switch (inst->solver) {
 	case NN:
-		get_timer();
 		greedy_tsp(inst);
 		print_best_sol((inst->verbose>-1), inst);
+		generate_figure_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
+		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		break;
 	case OPT_2:
-		get_timer();
 		greedy_tsp(inst);
 		print_best_sol((inst->verbose>=5), inst);
+		generate_figure_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
+		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		//optimize 
 		opt2_optimize_best_sol(inst);
+		generate_figure_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d_opt2.png", inst->nnodes, inst->randomseed);
+		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		print_best_sol((inst->verbose>=5), inst);
 		break;
 	case TABU:
