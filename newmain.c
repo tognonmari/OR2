@@ -15,6 +15,7 @@ OR Esito(
 	-5: finito spazio nell'heap (fallisce allocazione);
 	-6: Time limit exceeded
     -7: Wrong solver definition
+    -8: parametri inseriti da linea di comando errati.
 */
 //TODO Creare una funzione per ogni tipo di errore che lanci un messaggio su stderror adeguato e restituisca l'int associato all'errore.
 
@@ -46,14 +47,13 @@ int main(int argc, char** argv) {
     //STEP 5: solve + plots
 
     tsp_solve(&inst);
-    printf("Successfully solved.\n");
     //Step 7 : free memory
 
     free_instance(&inst);
 
     //Step 8 : return
-
-    return 0;
+ 
+    return main_error(0);
 
 
 

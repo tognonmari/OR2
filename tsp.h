@@ -8,14 +8,12 @@
 #define MAX_X 10000  //maximum value for ascisse of generated points
 #define MAX_Y 10000//maximum value for ordinate of generated points
 //default verbose
-<<<<<<< HEAD
 #define VERBOSE 50
-=======
-#define VERBOSE 0
 
 typedef enum {
 
 	NOT_DEF,
+	BAD_DEF,
 	RANDOM_SOL,
 	NN,
 	OPT_2,
@@ -23,7 +21,6 @@ typedef enum {
 
 } solver_id;
 
->>>>>>> a388ecb2eba8c50bb0897d35427cb28547bed972
 typedef struct {
 	double x;
 	double y;
