@@ -73,3 +73,9 @@ Per l'incumbent checkare sempre anche se scambi perggiorativi, per comodita.
 18/03
 come suggerimento mettere dentro la funzione di update il controllo che updata solo se è migliorativo il costo, FARE CONTROLLO CHE SIA EFFETTIBAMENTE UN TOUR.
 Cercare di imparare il debug. tenure (1*sin(counter *1/50)+1)
+
+20/03
+VNS è un'alternativa a tabu search. 
+In tabu search la fase di 2opt si chiama intensificazione mentre la fase di peggioramento del costo è detta diversificazione. on la tabu list diversifichiamo, ma è un modo molto laborioso per farlo e che richiede scelte (tenure, tenere edge o nodi tabu). Immaginiamo che una volta arrivatati all'ottimo diamo un calcio a random alla soluzione, provando a ottimizzarne con 2opt una tutta random. Il fatto è che nella sol trovata con 2opt verosimilmente il 90% degli archi è giusto, quindi così è un po' uno spreco. 
+Creiamo quindi una gerarchia di intorni: 2opt, 3opt,4opt etc... Quando con  2opt abbiamo trovato il min a partire da una certa sol (greedy), togliamo 3 archi dal ciclo e passiamo ad una soluzione nell'intorno di 3olpt del min appena trovato. Se vedo che la sol non è abbastanza diversificata posso prevedere di fare "calci" di 3 più volte consecutive senza intensificazione, o calci più grandi. Ovviamente più archi togliamo, più possibilità diverse abbiamo poi di riconnettere i pezzetti a formare un ciclo. Sia la scelta degli archi da togliere che come riconnetterli possono essere scelte random. Possiamo anche valutare di fare kick di taglie diverse o random ad ogni iterazione, o implementare un kick generico che vada bene per più possibili archi da togliere. 
+HW: implementare 3 kick, giocare con i parametri, grafico iterazioni di 2 opt e costi, generico di 2opt, predisporre test bed come detto in classe, preparare anche automatizzazione dei risultati. 
