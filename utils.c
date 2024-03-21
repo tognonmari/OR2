@@ -24,6 +24,8 @@ int main_error_text(int error, char* format, ...) {
 	case -5:
 		fprintf(stderr, "Out of heap space (allocation failed).\n");
 		break;
+	case -6:
+		fprintf(stderr, "Failed to allocate memory.\n");
 	default:
 		fprintf(stderr, "Unknown error.\n");
 	}
@@ -60,11 +62,8 @@ double get_timer() {
 }
 /* Returns 1 if two double differ by less than a parameter EPSILON, 0 otherwise
 */
-int is_equal_double(double d1, double d2){
-	if (fabs(d1-d2)>=EPSILON){
-		return 0;
-	}
-	return 1;
+char is_equal_double(double d1, double d2, double epsilon){
+	return (fabs(d1-d2)<epsilon);
 }
 /*
 * Method for allocating matrices of size $nrow x $ncol where each element have size $size_type.

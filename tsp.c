@@ -173,10 +173,18 @@ void generate_nodes(int n, point* nodes, int max_x, int max_y) {
 * IOP inst Instance to be initialized with random nodes using $(inst->randomseed) as rarndom seed
 */
 void generate_instance(instance *inst){
-	inst->nodes = (point*)malloc(inst->nnodes * sizeof(point));
+	
 	srand(inst->randomseed);
 	depolarize_pseudornd_seq();
+
+	//only generate random instance if file name is not provided, so only if no tsplib inst is specified
+	
+	inst->nodes = (point*)malloc(inst->nnodes * sizeof(point));
 	generate_nodes(inst->nnodes, inst->nodes, MAX_X, MAX_Y);
+	
+	compute_cost_matrix(inst);
+	
+	print_triangular_matrix((inst->verbose>0),"The cost matrix is: \n", (const double**)inst->cost_matrix, inst->nnodes);
 }
 /*
  * Calculates the Euclidean distance between two points in a two-dimensional space.
@@ -306,19 +314,19 @@ void parse_command_line(int argc, char** argv, instance *inst){
 
     //Default parameters
 
-    inst->model_type = 0;
-	inst->old_benders = 0;
-	strcpy(inst->input_file, "NULL");
+    // inst->model_type = 0;
+	// inst->old_benders = 0;
+	strcpy(inst->input_file, "0");
 	inst->randomseed = 0; 
-	inst->num_threads = 0;
+	// inst->num_threads = 0;
 	inst->timelimit = -1; 
-	inst->cutoff = -1; 
-	inst->integer_costs = 0;
+	// inst->cutoff = -1; 
+	// inst->integer_costs = 0;
     inst->verbose = VERBOSE;
 	inst->available_memory = 12000;   			
-	inst->max_nodes = -1; 	
+	// inst->max_nodes = -1; 	
 	inst->nnodes =0;					       
-
+	inst->solver = NOT_DEF;
     int help = 0; if ( argc < 1 ) help = 1;	
 	for ( int i = 1; i < argc; i++ ) 
 	{ 
@@ -327,16 +335,20 @@ void parse_command_line(int argc, char** argv, instance *inst){
 		if ( strcmp(argv[i],"-input") == 0 ) { strcpy(inst->input_file,argv[++i]); continue; } 			// input file
 		if ( strcmp(argv[i],"-f") == 0 ) { strcpy(inst->input_file,argv[++i]); continue; } 				// input file
 		if ( strcmp(argv[i],"-time_limit") == 0 ) { inst->timelimit = atof(argv[++i]); continue; }		// total time limit
-		if ( strcmp(argv[i],"-model_type") == 0 ) { inst->model_type = atoi(argv[++i]); continue; } 	// model type
-		if ( strcmp(argv[i],"-old_benders") == 0 ) { inst->old_benders = atoi(argv[++i]); continue; } 	// old benders
-		if ( strcmp(argv[i],"-model") == 0 ) { inst->model_type = atoi(argv[++i]); continue; } 			// model type
+		if ( strcmp(argv[i], "-solver") == 0){ inst->solver = parse_solver(argv[++i]); continue; }		//solver
+		if ( strcmp(argv[i], "-s") == 0){ inst->solver = parse_solver(argv[++i]); continue; }			//solver
+		// if ( strcmp(argv[i],"-model_type") == 0 ) { inst->model_type = atoi(argv[++i]); continue; } 	// model type
+		// if ( strcmp(argv[i],"-old_benders") == 0 ) { inst->old_benders = atoi(argv[++i]); continue; } 	// old benders
+		// if ( strcmp(argv[i],"-model") == 0 ) { inst->model_type = atoi(argv[++i]); continue; } 			// model type
 		if ( strcmp(argv[i],"-seed") == 0 ) { inst->randomseed = abs(atoi(argv[++i])); continue; } 		// random seed
-		if ( strcmp(argv[i],"-threads") == 0 ) { inst->num_threads = atoi(argv[++i]); continue; } 		// n. threads
+		// if ( strcmp(argv[i],"-threads") == 0 ) { inst->num_threads = atoi(argv[++i]); continue; } 		// n. threads
 		if ( strcmp(argv[i],"-memory") == 0 ) { inst->available_memory = atoi(argv[++i]); continue; }	// available memory (in MB)
+		if ( strcmp(argv[i], "-verbose")==0) { inst->verbose = atoi(argv[++i]); continue;}				// verbosity
+		if ( strcmp(argv[i], "-v") ==0 ) {inst->verbose = atoi(argv[++i]);continue;}					// verbosity
 		//if ( strcmp(argv[i],"-node_file") == 0 ) { strcpy(inst->node_file,argv[++i]); continue; }		// cplex's node file
-		if ( strcmp(argv[i],"-max_nodes") == 0 ) { inst->max_nodes = atoi(argv[++i]); continue; } 		// max n. of nodes
-		if ( strcmp(argv[i],"-cutoff") == 0 ) { inst->cutoff = atof(argv[++i]); continue; }				// master cutoff
-		if ( strcmp(argv[i],"-int") == 0 ) { inst->integer_costs = 1; continue; } 						// inteher costs
+		// if ( strcmp(argv[i],"-max_nodes") == 0 ) { inst->max_nodes = atoi(argv[++i]); continue; } 		// max n. of nodes
+		// if ( strcmp(argv[i],"-cutoff") == 0 ) { inst->cutoff = atof(argv[++i]); continue; }				// master cutoff
+		// if ( strcmp(argv[i],"-int") == 0 ) { inst->integer_costs = 1; continue; } 						// inteher costs
 		if ( strcmp(argv[i],"-help") == 0 ) { help = 1; continue; } 									// help
 		if ( strcmp(argv[i],"--help") == 0 ) { help = 1; continue; } 									// help
 		help = 1;
@@ -345,19 +357,19 @@ void parse_command_line(int argc, char** argv, instance *inst){
 	if ( help ) exit(1);
 }
 
-void print_instance_parameters(instance inst){
+void print_instance_parameters(instance* inst){
     printf("-------- Selected input parameters: -------\n");
-	printf("File: %s\n", inst.input_file); 
-	printf("Time Limit: %lf\n", inst.timelimit); 
-	printf("Model Type: %d\n", inst.model_type); 
-	printf("Old Benders: %d\n", inst.old_benders); 
-	printf("Seed: %d\n", inst.randomseed); 
-	printf("Threads: %d\n", inst.num_threads);  
-	printf("Max Nodes: %d\n", inst.max_nodes); 
-	printf("Memory: %d\n", inst.available_memory); 
-	printf("Integer Costs: %d\n", inst.integer_costs); 
-	printf("Node File: %s\n", inst.node_file);
-	printf("Cutoff: %lf\n", inst.cutoff); 
+	printf("File: %s\n", inst->input_file); 
+	printf("Time Limit: %lf\n", inst->timelimit); 
+	// printf("Model Type: %d\n", inst.model_type); 
+	// printf("Old Benders: %d\n", inst.old_benders); 
+	printf("Seed: %d\n", inst->randomseed); 
+	// printf("Threads: %d\n", inst.num_threads);  
+	// printf("Max Nodes: %d\n", inst.max_nodes); 
+	printf("Memory: %d\n", inst->available_memory); 
+	// printf("Integer Costs: %d\n", inst.integer_costs); 
+	// printf("Node File: %s\n", inst.node_file);
+	// printf("Cutoff: %lf\n", inst.cutoff); 
 	printf("-------------------------------------------\n");
 }
 
@@ -367,9 +379,10 @@ void free_matrix(void** matrix, int rows) {
     }
     free(matrix);
 
-}void free_instance(instance *inst){
+}
+void free_instance(instance *inst){
     //TODO: free memory accroding to how instance is allocated
-    free(inst->demand);
+    // free(inst->demand);
     free(inst->nodes);
 	free(inst->best_sol);
 	free(inst->dist_matrix);
@@ -390,6 +403,11 @@ double compute_path_length(int* path, int nodes_number, point* nodes){
 	return (path_length + get_distance(&nodes[a],&nodes[b]));
 }
 
+/**
+ * Reverses a sequence within limits min and max, not included, in the array path. 
+ * IP: array of integers path, limits to the segment to reverse ( min and max )
+ * OP: none
+*/
 void reverse_sequence(int* path, int min, int max){
 
 	int* s = &path[min+1];
@@ -404,7 +422,7 @@ void reverse_sequence(int* path, int min, int max){
 
 }
 
-/*
+/**
 	Given a solution (i.e. a path), it swaps the positions of two nodes if an improvement is found.
 	IP: instance inst passed by reference
 	OP: formally none, but inst's best_sol is modified
@@ -437,10 +455,10 @@ void swap(int* a, int* b) {
     *b = temp;    
 }
 
-/*
-	Given an instance inst, it performs opt-2 refinement. WARNING: NOT FINISHED YET, IT DOESN'T UPDATE THE COST CORRECTLY. HOWEVER; THE FINAL CYCLE DOESN'T HAVE ANY KNOTS
-	IP: instance inst passed by reference
-	OP: formally none, but inst's best_sol and zbest are updated if an improvement is found
+/**
+ * 	Given an instance inst, it performs opt-2 refinement.
+ * IP: instance inst passed by reference
+ * OP: formally none, but inst's best_sol and zbest are updated if an improvement is found
 */
 void opt2_optimize_best_sol(instance* inst) {
 
@@ -448,45 +466,47 @@ void opt2_optimize_best_sol(instance* inst) {
 	int* path = inst->best_sol;
 	point* nodes_list = inst->nodes;
 	double path_length = inst->zbest;
+	printf("initial real path length: %lf", compute_path_length(path,n,nodes_list));
+	printf("initial zbest : %lf", path_length);
 	double best_delta = -1;
-	int w = 0 ;
+	
     while (best_delta < 0)
-    {
-		
-		char improvement = 0;
+    {	
+		char improvement = 0;		
         best_delta = 0;
         int best_i = -1;
         int best_j = -1;
-        for (int i = 0; i <= n - 2; i++)
+        for (int i = 0; i <= n -3; i++) //cambiato da n-2!
         {
             for (int j = i + 2; j <= n-1; j++)
             {
-				//printf("I am swapping nodes %d and %d\n", i, j);
                 double current_dist= get_distance(&nodes_list[inst->best_sol[i%n]], &nodes_list[inst->best_sol[(i+1)%n]]) + get_distance(&nodes_list[inst->best_sol[j%n]], &nodes_list[inst->best_sol[(j+1)%n]]);
                 double changed_dist = get_distance(&nodes_list[inst->best_sol[i%n]], &nodes_list[inst->best_sol[j%n]]) + get_distance(&nodes_list[inst->best_sol[(i+1)%n]], &nodes_list[inst->best_sol[(j+1)%n]]);
                 double delta = changed_dist - current_dist;
+
                 if (delta < best_delta)
                 {
+					improvement = 1;
                     best_i = i%n;
                     best_j = j%n;
                     best_delta = delta;
-					improvement=1;
                 }
             }
         }
         if (improvement)
         {
-			
+			printf("I am swapping nodes %d and %d\n", best_i+1,best_j);
             swap_2_opt(inst->best_sol, (best_i + 1)%n, (best_j)%n);
-			double real_length = compute_path_length(path, n, inst->nodes);
-			//printf("\npath_length : %.2f NOW at iter (%d), BEST DELTA = %.2f , REAL LENGTH = %.2f",path_length, w, best_delta, real_length);
             path_length += best_delta;
         }
-		w++;
     }
 
+	if(is_feasible_solution(inst,path,path_length)){
+
+		printf("Solution is feasible!\n");
+
+	}
 	inst->zbest = path_length;
-	//printf("best sol after optimization is: %12.6f", inst->zbest);
 
 }
 /*
@@ -584,7 +604,7 @@ int* compute_greedy_path(int index_first, instance* inst, double* path_cost) {
 		aggregate_cost += current_cost;
 	}
 	current_cost = get_dist_matrix((const float*)(inst->dist_matrix), *(end-1), *end);
-	aggregate_cost += current_cost;
+	aggregate_cost += (current_cost + get_dist_matrix((const float*)(inst->dist_matrix), path[0], *end);
 	(*path_cost) = aggregate_cost;
 	return path;
 }
@@ -654,6 +674,133 @@ void init_path(int* path, size_t n){
 		path++;
 	}
 }
+/**
+ * Checks whether sol_path and sol_cost consitute a feasible solution for inst
+ * IP: instance i
+ * IP: sol_path , candidate path
+ * IP: sol_cost, cost of the candidate solution 
+ * OP: 1 if sol_path and sol_Cost are coherent with one another and sol_path consitutes a valid path
+*/
+char is_feasible_solution(instance* inst, int* sol_path, double sol_cost){
+
+	int n = inst->nnodes;
+	int* counter = (int*) calloc(n, sizeof(int));
+	print_path(1, "path: \n", sol_path, inst->nodes,n);
+	//check for repeated vertices or out of range content of path
+	for (int i =0; i<=n-1; i++){
+
+		counter[sol_path[i]]++;
+
+	}
+	for(int i= 0; i<=n-1; i++){
+
+		if(counter[sol_path[i]]!=1){
+
+			free(counter);
+			return 0;
+
+		}
+	}
+
+	free(counter);
+
+	//check cost coincides with the path length 
+
+	double path_length = compute_path_length(sol_path, n, inst->nodes);
+	printf("Real Path length : %.2f\n", path_length);
+	printf("Sol passed length : %.2f\n",sol_cost);
+	return is_equal_double(path_length, sol_cost, EPSILON);
+}
+
+/**
+ * Utility method to return a solver given a command line input
+ * IP: string from command line
+ * OP: appropriate solver_id, NOT_DEF if incorrectly specified
+*/
+
+solver_id parse_solver(char* solver_input){
+
+	if ( strcmp(solver_input, "greedy") == 0 || strcmp(solver_input, "nn") == 0){
+		return NN;
+	}
+	else if ( strcmp(solver_input, "random") == 0 || strcmp(solver_input, "rand") == 0 ){
+		return RANDOM_SOL;
+	}
+	else if ( strcmp(solver_input, "2opt") == 0|| strcmp(solver_input, "opt2") == 0 ){
+		return OPT_2;
+	}
+	else if ( strcmp(solver_input, "tabu")){
+		return TABU;
+	}
+	else{
+		return NOT_DEF;
+	}
+
+}
+
+void tsp_solve(instance* inst){
+
+	if (inst->solver == NN){
+
+		//Select starting node mode
+
+		//actually solve
+		get_timer();
+		greedy_tsp(inst);
+		printf("real best sol length: %lf", compute_path_length(inst->best_sol,inst->nnodes,inst->nodes));
+		print_best_sol((inst->verbose>-1), inst);
+	}
+	else if(inst->solver == OPT_2){
+
+		//select starting node mode
+
+		//solve grredily
+		get_timer();
+		greedy_tsp(inst);
+		print_best_sol((inst->verbose>=5), inst);
+		//optimize 
+		opt2_optimize_best_sol(inst);
+		print_best_sol((inst->verbose>=5), inst);
+
+	}
+	else if (inst->solver == TABU){
+		// solve tabu 
+	}
+	else{
+
+		exit(main_error_text(-7, "Undefined solver.\n;"));
+
+	}
+
+}
+
+void update_solver(instance* inst){
+
+	int selection;
+	printf("----Choose a solver, from these options:----\n");
+	printf("0: Nearest Neighbor\n");
+	printf("1: Nearest Neighbor and OPT2\n");
+	printf("2: Nearest Neighbor and TABU search\n");
+	printf("---------------------------------------------\n");
+	scanf("%d",&selection);
+	switch(selection){
+		case 0:
+			{inst->solver = NN;
+			printf("successful update.\n");
+			break;}
+		case 1:
+			{inst->solver = OPT_2;
+			printf("successful update.\n");
+			break;}
+		case 2:
+			{inst->solver = TABU;
+			printf("successful update.\n");
+			break;}
+		default:
+			{inst->solver = NN;
+			printf("successful update.\n");
+			break;}
+	}
 
 
-
+}

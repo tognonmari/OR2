@@ -14,6 +14,7 @@ OR Esito(
 	-4: buffer truncation;
 	-5: finito spazio nell'heap (fallisce allocazione);
 	-6: Time limit exceeded
+	-7: 
 */
 //TODO Creare una funzione per ogni tipo di errore che lanci un messaggio su stderror adeguato e restituisca l'int associato all'errore.
 int main(int argc, char** argv) {
@@ -27,7 +28,7 @@ int main(int argc, char** argv) {
 	parse_command_line(argc, argv, &inst);
 	if (inst.verbose >= 10) {
 
-		print_instance_parameters(inst);
+		print_instance_parameters(&inst);
 
 	}
 	get_timer();
