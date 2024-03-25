@@ -1,0 +1,58 @@
+IDEA TABU:
+Per fare diventare una mossa tabu, basta congelare uno dei due vertici coinvolti,
+cioè supponiamo che abbiamo archi (i,i+1) e (j,j+1) e passiamo a (i,j) e (i+1, j+1) 
+(swap tra i+1 e j)
+adesso per non tornare "indietro" è sufficiente congelare uno dei 4 vertici, 
+in questo modo (supponiamo j tabu) non verranno considerati gli archi
+che hanno come estremo j e quindi non possiamo tornare indietro alla soluzione precedente.
+
+1) worsening moves can be accepted if no improving move are available (improving moves are blocked by tabu list)
+2) prohibitions (tabu) are used to DISCOURAGE the search from coming back to previously visited solution.
+3) when we inserted a node in tabu list we give it a tabu tenure value which starts
+from a initial value of TENURE (it depends), now the nodes.tabu_tenure is decremented by one
+at each iteration when tabu_tenure is 0 the moves related to that node are acceptable.
+In alternativa si puo scegliere di usare un contatore di iterazione e il nodo si scongela solo se
+iter > tabu[nodo] + tenure, dove tabu di nodo è semplicemente l'iterazione in cui il nodo è diventato tabu.
+Quest'ultima idea probabilmente funziona meglio in ottica di usare una tenure variabile, poichè la modifica della tenure
+ha effetto su tutti i nodi gia inseriti nella tabu list.
+
+IMPLEMENTAZIONE:(provo prima con una tenure fissa)
+nella struttura tabu ci serve
+best_sol
+iter
+tenure
+
+(tabu_search)
+STEP 1)(tabu_init)
+SET STOP CRITERION (stopping after a nr of iterations)
+Set tabu tenure t ( example t = sqrt(n))
+set iter counter of iteration iter = 0;
+-initialize tabu list [-max_int, -max_int, ...]
+Use greedy to find a tour 
+Let x curr sol
+x* = x best sol
+z* = best cost 
+STEP 2)
+while(stop criterion false)
+identify OPT2_neigborhood N(x) set by considering all possible solution reachable
+by a OPT2_move
+
+STEP 3) (tabu_find_best_admissible_move)
+Select best Admissible move from N(x) 
+(thus the best move among the non tabu-moves)
+and let the solution find in this way x'
+
+Step 4) (tabu_update)
+(tabu_update_current)
+Perform exchange: 
+x = x' z(x) = z(x')
+if (z(x) < z*)
+    then update best solution (tapu_update_best)
+(tabu_update_list)
+update tabu list by change teh contents of tabu list as following:
+-If solution not tabu add solution to tabu list nby change tabu[h] with 
+current iteration
+
+END while;
+
+Step 5) (tabu_free)

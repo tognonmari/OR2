@@ -1,9 +1,9 @@
 #include "tsp.h"
 #include "utils.h"
+#include "tabu.h"
 #include <math.h>
 #include <malloc.h>
 #include <string.h>
-#include "assert.h"
 
 /* 
 * Conditional debugging function that prints
@@ -544,9 +544,8 @@ void swap_space(void* a, void* b, size_t size) {
  * the destination array $a1. 
  * IP a1 Pointer to the destination array.
  * IP a2 Pointer to the source array.
- * ACTUALLY NOT USED!
- */
-void copy_array(void* a1, const void* a2) {
+ */ //MAI USATO
+void copy_array(void* a1, void* a2) {
 	size_t size_a1 = _msize(a1);
 	/*
 	* the(void*)a2 cast is used to reassure the compiler that we are intentionally treating a2 as a non-constant pointer
@@ -558,7 +557,27 @@ void copy_array(void* a1, const void* a2) {
 	}
 	else {
 		fprintf(stderr, "Error: The program tried to copy arrays that don't have the same space available in the heap.\n");
+		fprintf(stderr, "Size a1 = %d , size a2 = %d\n", (int)size_a1, (int)size_a2);
 	}
+}
+/*
+ * Copies data from one dynamically allocated array to another.
+ * This function checks if the sizes of the input arrays in the heap are equal.
+ * If the sizes match, it performs a memory copy from the source array a2 to
+ * the destination array a1.
+ *   OP a1 Pointer to the destination array.
+ *   IP a2 Pointer to the source array.
+ *   IP elem_size Size of each element in bytes.
+ *   IP num_elems Number of elements in the arrays.
+ */
+void copy_din_array(void *a1, const void *a2, size_t elem_size, size_t num_elems) {
+    if (a1 == NULL || a2 == NULL) {
+        fprintf(stderr, "Error: null pointers.\n");
+        exit(main_error(-9));
+    }
+    size_t total_size = elem_size * num_elems;
+	printf("\ntotal size = %d",(int) total_size);
+    memcpy(a1, a2, total_size);
 }
 /*
 * Searches for the node with the minimum distance to $p from the points allocated in [p+1 ; end] (address space).
@@ -602,7 +621,7 @@ int* search_min(const int* p, const int* end, const float* dist_matrix, double* 
 */
 int* compute_greedy_path(int index_first, instance* inst, double* path_cost) {
 	int n = inst->nnodes;
-	int* path =(int*) calloc(n , sizeof(int));
+	int* path =(int*) calloc(n , sizeof(int)); //manca un assert, non sarebbe meglio metterlo dentro init_path?
 	init_path(path, n);
 	swap(&(path[0]),&(path[index_first]));
 	int* next = &(path[1]); //pointer to the next node to visit in the path (at the start path[0] is already correct)
@@ -769,7 +788,10 @@ void tsp_solve(instance* inst){
 		print_best_sol((inst->verbose>=5), inst);
 		break;
 	case TABU:
-		// solve TABU
+		tabu_search(inst);
+		print_best_sol((inst->verbose>=5), inst);
+		generate_figure_name(figure_name, sizeof(figure_name), "figures/tabu_%d_%d.png", inst->nnodes, inst->randomseed);
+		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		break;
 	default:
 		exit(-7);
