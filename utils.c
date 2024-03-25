@@ -143,3 +143,19 @@ void* alloc_triangular_matrix_as_array(int nrow, size_t size_type){
 	return matrix;
 }
 
+/**
+ * Sorts an integer array
+*/
+void sort_int_array(int* arr, int n)
+{
+    int i, key, j;
+    for (i = 1; i < n; i++) {
+        key = arr[i];
+        j = i - 1;
+        while (j >= 0 && arr[j] > key) {
+            arr[j + 1] = arr[j];
+            j = j - 1;
+        }
+        arr[j + 1] = key;
+    }
+}
