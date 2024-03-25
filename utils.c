@@ -5,9 +5,12 @@
 int main_error_text(int error, char* format, ...) {
 	va_list args;
 	va_start(args, format);
+	void* first_par;
+	void* second_par;
+	fprintf(stderr, "\n");
 	switch (error) {
 	case 0:
-		fprintf(stderr, "Successful processing.\n");
+		fprintf(stderr, "Successful solved.\n");
 		break;
 	case -1:
 		fprintf(stderr, "Failed to open a pipe.\n");
@@ -19,17 +22,28 @@ int main_error_text(int error, char* format, ...) {
 		fprintf(stderr, "Incorrect number of command line parameters.\n");
 		break;
 	case -4:
-		fprintf(stderr, "Buffer truncation.\n");
+		fprintf(stderr, "Buffer truncation. \n");
+		if(format != NULL){
+			fprintf(stderr, "Buffer: %d char, Text: %d char. \n", va_arg(args,int), va_arg(args,int));
+		}
 		break;
 	case -5:
 		fprintf(stderr, "Out of heap space (allocation failed).\n");
 		break;
 	case -6:
-		fprintf(stderr, "Failed to allocate memory.\n");
+		fprintf(stderr, "Time limit exceeded.\n");
+		break;
+	case -7:
+		fprintf(stderr, "Wrong solver definition.\n");
+		break;
+	case -8:
+		first_par = (char*)va_arg(args, char*);
+		fprintf(stderr, "Wrong command parameter:\nHas been inserted not a valid value for -%s.\n",first_par);
+		break;
 	default:
 		fprintf(stderr, "Unknown error.\n");
 	}
-	vprintf(format, args);
+
 	va_end(args);
 	return error;
 }
@@ -125,3 +139,4 @@ void* alloc_triangular_matrix_as_array(int nrow, size_t size_type){
 	}
 	return matrix;
 }
+

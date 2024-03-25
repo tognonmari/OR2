@@ -42,11 +42,12 @@ void tsp_debug_inline(char flag, char* format, ...)
 * Function that prints the best_solution of $inst if the given $flag is true.
 */
 void print_best_sol(char flag, instance* inst) {
-	tsp_debug(flag, 1, "BEST SOLUTION:\n");
-	tsp_debug(flag, 0, "zbest = %.2lf\n",inst->zbest);
-	tsp_debug(flag, 0, "tbest = %12.6f\n",inst->tbest);
-	tsp_debug(flag, 0, "the best path is:");
-	print_path(flag,"", inst->best_sol, inst->nodes, inst->nnodes);
+	tsp_debug_inline(flag, "\n -------------- Best solution: --------------\n");
+	tsp_debug_inline(flag, "Best Distance (zbest): %.2lf\n",inst->zbest);
+	tsp_debug_inline(flag, "Best Solution found at time: %12.6f\n",inst->tbest);
+	tsp_debug_inline(flag && ( inst->verbose > 49 ), "The following sequence of nodes is the best solution to the problem:");
+	print_path(flag && ( inst->verbose > 49 ),"", inst->best_sol, inst->nodes, inst->nnodes);
+	tsp_debug_inline(flag, "\n ------------ End best solution: ------------\n");
 }
 /**
  * Prints the elements of a triangular matrix up to the main diagonal.
@@ -162,6 +163,15 @@ void generate_nodes(int n, point* nodes, int max_x, int max_y) {
 		pointer_nodes++;
 	}
 }
+void generate_figure_name(char buffer[], size_t bufferSize, const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    int length = vsnprintf(buffer, bufferSize, format, args);
+	if (length >= bufferSize) {
+        exit(main_error_text(-4, "%d %d", bufferSize, length));
+    }
+    va_end(args);    
+}
 
 /*
 * A complete graph is implicited defined by its nodes -> this function generates $n nodes
@@ -182,7 +192,7 @@ void generate_instance(instance *inst){
 	inst->nodes = (point*)malloc(inst->nnodes * sizeof(point));
 	generate_nodes(inst->nnodes, inst->nodes, MAX_X, MAX_Y);
 	
-	compute_cost_matrix(inst);
+	compute_dist_matrix(inst);
 	
 	print_triangular_matrix((inst->verbose>0),"The cost matrix is: \n", (const float**)inst->dist_matrix, inst->nnodes);
 }
@@ -359,11 +369,14 @@ void parse_command_line(int argc, char** argv, instance *inst){
 
 void print_instance_parameters(instance* inst){
     printf("-------- Selected input parameters: -------\n");
-	printf("File: %s\n", inst->input_file); 
-	printf("Time Limit: %lf\n", inst->timelimit); 
+	printf("File: %s\n", inst->input_file);
+	if(inst->timelimit > 0){ printf("Time Limit: %lf\n", inst->timelimit); }	
+	else{ printf("Time Limit: Unsetted\n"); }
 	// printf("Model Type: %d\n", inst.model_type); 
 	// printf("Old Benders: %d\n", inst.old_benders); 
+	printf("Number of nodes: %d\n", inst->nnodes);
 	printf("Seed: %d\n", inst->randomseed); 
+	printf("Level of verbosity: %d\n", inst->verbose);
 	// printf("Threads: %d\n", inst.num_threads);  
 	// printf("Max Nodes: %d\n", inst.max_nodes); 
 	printf("Memory: %d\n", inst->available_memory); 
@@ -466,8 +479,8 @@ void opt2_optimize_best_sol(instance* inst) {
 	int* path = inst->best_sol;
 	point* nodes_list = inst->nodes;
 	double path_length = inst->zbest;
-	printf("initial real path length: %lf", compute_path_length(path,n,nodes_list));
-	printf("initial zbest : %lf", path_length);
+	tsp_debug((inst->verbose > 49), 0,"Initial real path length: %lf", compute_path_length(path,n,nodes_list));
+	tsp_debug((inst->verbose > 49), 0,"initial zbest : %lf", path_length);
 	double best_delta = -1;
 	
     while (best_delta < 0)
@@ -495,7 +508,7 @@ void opt2_optimize_best_sol(instance* inst) {
         }
         if (improvement)
         {
-			printf("I am swapping nodes %d and %d\n", best_i+1,best_j);
+			tsp_debug((inst->verbose > 49), 0, "I am swapping nodes %d and %d", best_i+1,best_j);
             swap_2_opt(inst->best_sol, (best_i + 1)%n, (best_j)%n);
             path_length += best_delta;
         }
@@ -604,7 +617,7 @@ int* compute_greedy_path(int index_first, instance* inst, double* path_cost) {
 		aggregate_cost += current_cost;
 	}
 	current_cost = get_dist_matrix((const float*)(inst->dist_matrix), *(end-1), *end);
-	aggregate_cost += current_cost + get_dist_matrix((const float*)(inst->dist_matrix), path[0], *end);
+	aggregate_cost += (current_cost + get_dist_matrix((const float*)(inst->dist_matrix), path[0], *end));
 	(*path_cost) = aggregate_cost;
 	return path;
 }
@@ -645,9 +658,6 @@ void greedy_tsp(instance *inst){
 		tsp_debug((inst->verbose>99), 0, "cost = %.2f", current_cost);
 		tsp_debug((inst->verbose>99), 0, "zbest = %.2f", min_cost);
 	}
-	tsp_debug((inst->verbose>0), 0, "BEST  \n");
-	tsp_debug((inst->verbose>0), 0, "zbest = %.2f\n", inst->zbest);
-	tsp_debug((inst->verbose>0), 0, "tbest = %.4f\n", inst->tbest);
 }
 
 /**
@@ -707,8 +717,8 @@ char is_feasible_solution(instance* inst, int* sol_path, double sol_cost){
 	//check cost coincides with the path length 
 
 	double path_length = compute_path_length(sol_path, n, inst->nodes);
-	printf("Real Path length : %.2f\n", path_length);
-	printf("Sol passed length : %.2f\n",sol_cost);
+	tsp_debug((inst->verbose > 49), 0, "Real Path length : %.2f", path_length);
+	tsp_debug((inst->verbose > 49), 0, "Sol passed length : %.2f",sol_cost);
 	return is_equal_double(path_length, sol_cost, EPSILON);
 }
 
@@ -719,7 +729,6 @@ char is_feasible_solution(instance* inst, int* sol_path, double sol_cost){
 */
 
 solver_id parse_solver(char* solver_input){
-
 	if ( strcmp(solver_input, "greedy") == 0 || strcmp(solver_input, "nn") == 0){
 		return NN;
 	}
@@ -729,49 +738,42 @@ solver_id parse_solver(char* solver_input){
 	else if ( strcmp(solver_input, "2opt") == 0|| strcmp(solver_input, "opt2") == 0 ){
 		return OPT_2;
 	}
-	else if ( strcmp(solver_input, "tabu")){
+	else if ( strcmp(solver_input, "tabu") == 0){
 		return TABU;
 	}
-	else{
-		return NOT_DEF;
-	}
-
+	exit(main_error_text(-8, "%s","solver"));
 }
 
+
 void tsp_solve(instance* inst){
-
-	if (inst->solver == NN){
-
-		//Select starting node mode
-
-		//actually solve
-		get_timer();
+	get_timer();
+	MKDIR("figures");
+	char figure_name[64];
+	int check_truncation;
+	switch (inst->solver) {
+	case NN:
 		greedy_tsp(inst);
-		printf("real best sol length: %lf", compute_path_length(inst->best_sol,inst->nnodes,inst->nodes));
 		print_best_sol((inst->verbose>-1), inst);
-	}
-	else if(inst->solver == OPT_2){
-
-		//select starting node mode
-
-		//solve grredily
-		get_timer();
+		generate_figure_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
+		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		break;
+	case OPT_2:
 		greedy_tsp(inst);
 		print_best_sol((inst->verbose>=5), inst);
+		generate_figure_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
+		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		//optimize 
 		opt2_optimize_best_sol(inst);
+		generate_figure_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d_opt2.png", inst->nnodes, inst->randomseed);
+		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		print_best_sol((inst->verbose>=5), inst);
-
+		break;
+	case TABU:
+		// solve TABU
+		break;
+	default:
+		exit(-7);
 	}
-	else if (inst->solver == TABU){
-		// solve tabu 
-	}
-	else{
-
-		exit(main_error_text(-7, "Undefined solver.\n;"));
-
-	}
-
 }
 
 void update_solver(instance* inst){
