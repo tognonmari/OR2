@@ -4,6 +4,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <float.h>
+#include "assert.h"
 //parameters for the random values generation
 #define MAX_X 10000  //maximum value for ascisse of generated points
 #define MAX_Y 10000//maximum value for ordinate of generated points
@@ -115,7 +116,11 @@ void swap_space(void* a, void* b, size_t size);
 
 void swap(int* a, int* b);
 
-void copy_array(void* a1, const void* a2);
+void swap_2_opt(int* path, int i, int j);
+
+void copy_array(void* a1, void* a2);
+
+void copy_din_array(void *a1, const void *a2, size_t elem_size, size_t num_elems);
 
 int* search_min(const int* p, const int* end, const float* cost_matrix, double* current_cost);
 
@@ -136,5 +141,7 @@ solver_id parse_solver(char* solver_input);
 void tsp_solve(instance* inst);
 
 void update_solver(instance* inst);
+
+void update_best(instance* inst, double z, double t, int* sol);
 
 #endif 

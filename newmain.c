@@ -23,7 +23,6 @@ int main(int argc, char** argv) {
 
     // Step 1: declare the instance
     instance inst;
-
     //Step 2: parse the cmd line 
     parse_command_line(argc, argv, &inst);
 

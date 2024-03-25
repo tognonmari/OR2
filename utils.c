@@ -40,6 +40,9 @@ int main_error_text(int error, char* format, ...) {
 		first_par = (char*)va_arg(args, char*);
 		fprintf(stderr, "Wrong command parameter:\nHas been inserted not a valid value for -%s.\n",first_par);
 		break;
+	case -9:
+		fprintf(stderr, "Try to copy arrays of different size");
+		break;
 	default:
 		fprintf(stderr, "Unknown error.\n");
 	}

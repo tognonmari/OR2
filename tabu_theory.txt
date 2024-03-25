@@ -1,0 +1,68 @@
+IDEA TABU:
+Per fare diventare una mossa tabu, basta congelare uno dei due vertici coinvolti,
+cioè supponiamo che abbiamo archi (i,i+1) e (j,j+1) e passiamo a (i,j)
+e (i+1, j+1) adesso per non tornare "indietro" è sufficiente congelare il vertice
+i o il vertice j, in questo modo (supponiamo i tabu) non verranno considerati gli archi
+che hanno come estremo i e quindi non possiamo tornare indietro alla soluzione precedente.
+
+1) worsening moves can be accepted if no improving move are available (improving moves are blocked by tabu list)
+2) prohibitions (tabu) are used to DISCOURAGE the search from coming back to previously visited solution.
+3) when we inserted a node in tabu list we give it a tabu tenure value which starts
+from a initial value of TENURE (it depends), now the nodes.tabu_tenure is decremented by one
+at each iteration when tabu_tenure is 0 the moves related to that node are acceptable.
+In alternativa si puo scegliere di usare un contatore di iterazione e il nodo si scongela solo se
+iter > tabu[nodo] + tenure, dove tabu di nodo è semplicemente l'iterazione in cui il nodo è diventato tabu.
+Quest'ultima idea probabilmente funziona meglio in ottica di usare una tenure variabile, poichè la modifica della tenure
+ha effetto su tutti i nodi gia inseriti nella tabu list.
+
+IMPLEMENTAZIONE:(provo prima con una tenure fissa)
+nella struttura tabu ci serve
+best_sol
+iter
+tenure
+BEGIN
+1)
+SET STOP CRITERION (stopping after a nr of iterations)
+Set tabu tenure t ( example t = sqrt(n))
+-initialize tabu list [-max_int, -max_int, ...]
+
+2)(initial sol)
+Use greedy to find a tour 
+Let x curr sol
+x* = x best sol
+z* = best cost 
+Let iter counter of iterations iter = 0;
+3)
+while(stop criterion false)
+identify neighborhood set by creating many solutions with used move operation
+The move operation in the TSP is making swap between any two city randomly of the current solution x:
+each x has an associated Neighborhood N(x)
+
+STEP 3.1
+Select best ADMISSIBLE move from N(x) by choosing the solution has minimum z(x) let say x' from
+this transform curr sol x in x' and add its attibutes to the tabu list
+
+Check x' is Tabu:
+If no goto step 3.2
+else step 3.3
+
+Step 3.2 Perform exchange:
+x = x' z(x) = z(x') thus curr = x' curr_cost = z(x');
+if z(x) < z* then update best sol.
+Go to step 4
+
+Step 3.3 Check x' is Aspiration
+If yes Goto step 3.2 
+else check Neighbor set for another x'
+
+Step 4
+update tabu list by change teh contents of tabu list as following:
+-If solution not tabu add solution to tabu list nby change tabu[h] with 
+current iteration
+
+END while
+
+Step 5
+x* best sol of all visited solution
+
+
