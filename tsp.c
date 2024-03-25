@@ -55,7 +55,7 @@ void print_best_sol(char flag, instance* inst) {
  * IP nrows The number of rows in the triangular matrix.
  * OV The triangular matrix represented by $matrix if $flag and if ($nrows<=10)
  */
-void print_triangular_matrix(char flag, const char text_to_print[], const double** matrix, int nrows) {
+void print_triangular_matrix(char flag, const char text_to_print[], const float** matrix, int nrows) {
 	if(nrows>10){ return; }
 	if(text_to_print[0]!= '\0'){
 		tsp_debug(flag,0,"%s", text_to_print);
@@ -184,7 +184,7 @@ void generate_instance(instance *inst){
 	
 	compute_cost_matrix(inst);
 	
-	print_triangular_matrix((inst->verbose>0),"The cost matrix is: \n", (const double**)inst->cost_matrix, inst->nnodes);
+	print_triangular_matrix((inst->verbose>0),"The cost matrix is: \n", (const float**)inst->dist_matrix, inst->nnodes);
 }
 /*
  * Calculates the Euclidean distance between two points in a two-dimensional space.
@@ -604,7 +604,7 @@ int* compute_greedy_path(int index_first, instance* inst, double* path_cost) {
 		aggregate_cost += current_cost;
 	}
 	current_cost = get_dist_matrix((const float*)(inst->dist_matrix), *(end-1), *end);
-	aggregate_cost += (current_cost + get_dist_matrix((const float*)(inst->dist_matrix), path[0], *end);
+	aggregate_cost += current_cost + get_dist_matrix((const float*)(inst->dist_matrix), path[0], *end);
 	(*path_cost) = aggregate_cost;
 	return path;
 }
