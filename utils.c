@@ -77,6 +77,14 @@ double get_timer() {
 	double elapsed_time = (double)(current_time - start_time) / CLOCKS_PER_SEC;
 	return elapsed_time;
 }
+/*
+Returns true if the time limit is exceeded.
+@note get_timer() returns the time elapsed from the first invocation of get_timer() in seconds.
+*/
+char is_time_limit_exceeded(double time_limit){
+	double actual_time = get_timer();
+	return actual_time > time_limit;
+}
 /* Returns 1 if two double differ by less than a parameter EPSILON, 0 otherwise
 */
 char is_equal_double(double d1, double d2, double epsilon){

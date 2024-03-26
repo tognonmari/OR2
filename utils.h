@@ -28,6 +28,8 @@ void depolarize_pseudornd_seq();
 
 double get_timer();
 
+char is_time_limit_exceeded(double time_limit);
+
 char is_equal_double(double d1, double d2, double epsilon);
 
 void** alloc_matrix(int nrow, int ncol, size_t size_type);

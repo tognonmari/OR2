@@ -10,6 +10,27 @@ void printIntArray(const int *arr, int size) {
     }
     printf("]\n");
 }
+
+void tabu_init_plot_iter_and_cost(char flag, FILE* gnuplotPipe, int y_range_min, int y_range_max, instance* inst){
+    char figure_name[64];
+    if (gnuplotPipe == NULL) {
+        fclose(gnuplotPipe);
+		exit(main_error_text(-1,"Failed to open the pipeline to gnuplot"));
+    }
+    if(flag){
+        generate_figure_name(figure_name, sizeof(figure_name), "figures/tabu_%d_%d_cost.png", inst->nnodes, inst->randomseed);
+        fprintf(gnuplotPipe, "set output '%s'\n", figure_name); //set output name
+        fprintf(gnuplotPipe, "set terminal png\n"); //set extension
+        fprintf(gnuplotPipe, "set title 'Tabu Search cost'\n"); 
+        fprintf(gnuplotPipe, "set key off\n"); //if key on the name of the file is printed on the plot
+        fprintf(gnuplotPipe, "set xlabel 'iter'\n");
+        fprintf(gnuplotPipe, "set ylabel 'cost'\n");
+        fprintf(gnuplotPipe, "set yrange [%d:%d]\n",y_range_min, y_range_max);
+        fprintf(gnuplotPipe, "set pointsize 0.5\n");
+        fprintf(gnuplotPipe, "set grid \n");
+        fprintf(gnuplotPipe, "plot '-' with linespoints pt 1 lc rgb '#800080'\n");
+    }
+}
 /*
 Initialize each value of tabu_list to the minimum int
 */
@@ -20,7 +41,7 @@ int* init_tabu_list(size_t n){
     for(int i=0; i<n; i++){
 		(*pointer) = INT_MIN;
 		pointer++;
-	}
+	} 
     return tabu_list;
 }
 
@@ -53,13 +74,15 @@ Step 1) initialize tabu parameters (iter_stop, iter, tenure)
 Step 2) Initialize best_sol and curr_sol with a greedy path
 */
 void tabu_init(tabu* tabu, instance* inst){
-    tabu->iter_stop = MAX_ITER;
-    tabu->iter = 0;
-    tabu->tenure = 10;
+    tabu->iter_stop = MAX_ITER; 
+    tabu->iter = 0; 
+    tabu->tenure = TENURE;
     tabu->tabu_list = init_tabu_list(inst->nnodes);
     tabu->curr_sol = compute_tabu_init_sol(inst, tabu);
     tabu->best_sol = (int*) calloc(inst->nnodes, sizeof(int));
     assert(tabu->best_sol!=NULL);
+    tabu->pipe = popen("gnuplot -persist", "w");
+    tabu_init_plot_iter_and_cost( (inst->verbose)>=1, tabu->pipe,  (int)( (tabu->zcurr) * 0.75), (int)( (tabu->zcurr) * 0.8), inst);
     tabu_update_best(tabu, inst->nnodes);
 }
 char isTabu(tabu* tabu, int vertex){
@@ -69,7 +92,7 @@ void update_move(move* mov, int i1, int i2, double delta){
     mov->vertex_to_swap_1 = i1;
     mov->vertex_to_swap_2 = i2;
     mov->delta = delta;
-    mov->improvement = (delta < 0);
+    mov->improvement = ( delta < 0 );
 }
 /*
 Update $(tabu->best_admissible_move) with the current best move which is not a tabu move
@@ -91,11 +114,11 @@ char tabu_find_best_admissible_move(tabu* tabu, instance* inst){
     int best_j = -1;
     for (int i = 0; i <= n-3 ; i++){
         char jump_to_next_iter;
-        jump_to_next_iter = ( isTabu(tabu, curr[i]) || isTabu(tabu, curr[i+1]) );
-        if(jump_to_next_iter) {continue;}
+        jump_to_next_iter = ( isTabu(tabu, i) || isTabu(tabu, i+1) );
+        if(jump_to_next_iter) { continue;}
         for (int j = i+2; j <= n-1; j++){
-            jump_to_next_iter = ( isTabu(tabu, curr[j]) || isTabu(tabu, curr[(j+1)%n]) );
-            if(jump_to_next_iter) {continue;}
+            jump_to_next_iter = ( isTabu(tabu, j) || isTabu(tabu, (j+1)%n) );
+            if(jump_to_next_iter) { continue;}
             //length (i,i+1) and (j,j+1)
             double current_dist = (double)(get_dist_matrix((const float*)(dist_matrix), curr[i], curr[i+1] ) + get_dist_matrix((const float*)(dist_matrix), curr[j], curr[(j+1)%n] ));
             //length (i,j) and (i+1,j+1)
@@ -120,7 +143,7 @@ void tabu_update_current(tabu* tabu){
     int v2 = (tabu->best_admissible_move).vertex_to_swap_2;
     swap_2_opt(tabu->curr_sol, v1, v2);
     tabu->zcurr += (tabu->best_admissible_move).delta;
-    printf("\niter = %d, zcurr = %.2f", tabu->iter, tabu->zcurr);
+    fprintf(tabu->pipe, "%d %lf\n", tabu->iter, tabu->zcurr);
 }
 
 void tabu_update_list(tabu* tabu){
@@ -135,7 +158,22 @@ void tabu_update(tabu* tabu, int n){
         tabu_update_best(tabu, n);
     }
 }
+void tabu_debug(char flag, tabu* tabu, instance* inst){
+    move mov = tabu->best_admissible_move;
+    tsp_debug_inline(flag, "\nITER = %d\nSWAP BETWEEN %d %d\nDELTA =%.1f\n", tabu->iter, mov.vertex_to_swap_1, mov.vertex_to_swap_2, mov.delta);
+    tsp_debug_inline(flag, "TABU = ");
+    for(int i = 0; i<inst->nnodes; i++){
+        if(isTabu(tabu, i)){
+            tsp_debug_inline(flag, "%d ",i);
+        }
+    }
+    
+}
 
+void tabu_close_plot(FILE* gnuplotPipe){
+    fprintf(gnuplotPipe, "e\n"); //This line serves to terminate the input of data for the plot command in gnuplot.
+    fclose(gnuplotPipe);
+}
 void tabu_free(tabu* tabu){
     //free(tabu->best_sol); NON DEVI FARE QUESTO PERCHe inst best sol viene aggiornata a tabu best sol alla fine, quindi devi solo liberare inst best sol e lo fai gia in tsp_free
     free(tabu->curr_sol);
@@ -144,20 +182,18 @@ void tabu_free(tabu* tabu){
 
 void tabu_search(instance* inst){
     tabu tab;
-    printf("0");
     tabu_init(&tab, inst);
-    printf("\n0.5");
-    while(tab.iter <= MAX_ITER){
+    while(tab.iter <= tab.iter_stop && !(is_time_limit_exceeded(inst->timelimit)) ){
         if(tabu_find_best_admissible_move(&tab, inst)){
             tabu_update(&tab, inst->nnodes);
         }
         else {
-            tsp_debug((inst->verbose>0),1,"There aren't admissible moves: STOP at iter %d", tab.iter);
-            break;
+            tsp_debug((inst->verbose>0),0,"There aren't admissible moves at iter %d", tab.iter);
         }
+        tabu_debug(1, &tab, inst);
         (tab.iter)++;
     }
-    printf("COST = %.2f", tab.zbest);
+    tabu_close_plot(tab.pipe);
     update_best(inst, tab.zbest, tab.tbest, tab.best_sol);
     tabu_free(&tab);
 }

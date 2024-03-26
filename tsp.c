@@ -39,6 +39,7 @@ void tsp_debug_inline(char flag, char* format, ...)
 		return;
 	}
 }
+
 /*
 * Function that prints the best_solution of $inst if the given $flag is true.
 */
@@ -330,7 +331,7 @@ void parse_command_line(int argc, char** argv, instance *inst){
 	strcpy(inst->input_file, "0");
 	inst->randomseed = 0; 
 	// inst->num_threads = 0;
-	inst->timelimit = -1; 
+	inst->timelimit = 10; //seconds
 	// inst->cutoff = -1; 
 	// inst->integer_costs = 0;
     inst->verbose = VERBOSE;
@@ -577,7 +578,6 @@ void copy_din_array(void *a1, const void *a2, size_t elem_size, size_t num_elems
         exit(main_error(-9));
     }
     size_t total_size = elem_size * num_elems;
-	printf("\ntotal size = %d",(int) total_size);
     memcpy(a1, a2, total_size);
 }
 /*
@@ -790,7 +790,7 @@ void tsp_solve(instance* inst){
 		break;
 	case TABU:
 		tabu_search(inst);
-		print_best_sol((inst->verbose>=5), inst);
+		print_best_sol((inst->verbose>=1), inst);
 		generate_figure_name(figure_name, sizeof(figure_name), "figures/tabu_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		break;
