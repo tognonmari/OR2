@@ -346,7 +346,7 @@ void parse_command_line(int argc, char** argv, instance *inst){
 		if ( strcmp(argv[i],"-file") == 0 ) { strcpy(inst->input_file,argv[++i]); continue; } 			// input file
 		if ( strcmp(argv[i],"-input") == 0 ) { strcpy(inst->input_file,argv[++i]); continue; } 			// input file
 		if ( strcmp(argv[i],"-f") == 0 ) { strcpy(inst->input_file,argv[++i]); continue; } 				// input file
-		if ( strcmp(argv[i],"-time_limit") == 0 ) { inst->timelimit = atof(argv[++i]); continue; }		// total time limit
+		if ( strcmp(argv[i],"-tl") == 0 ) { inst->timelimit = atof(argv[++i]); continue; }		// total time limit
 		if ( strcmp(argv[i], "-solver") == 0){ inst->solver = parse_solver(argv[++i]); continue; }		//solver
 		if ( strcmp(argv[i], "-s") == 0){ inst->solver = parse_solver(argv[++i]); continue; }			//solver
 		// if ( strcmp(argv[i],"-model_type") == 0 ) { inst->model_type = atoi(argv[++i]); continue; } 	// model type

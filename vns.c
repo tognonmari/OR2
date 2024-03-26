@@ -156,7 +156,7 @@ void kick(instance* inst, int* sol_to_kick){
     }
     //Sort the array
     
-    sort_int_array(random_indexes, 3);
+    //sort_int_array(random_indexes, 3);
     //printf("Splitting at i = %d,, j= %d, k= %d\n", random_indexes[0], random_indexes[1], random_indexes[2]);
     //Step 2: Reconnect the edges - TODO: implement more than 1 way for reconnections
 

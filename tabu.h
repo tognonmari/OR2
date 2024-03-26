@@ -6,7 +6,7 @@
 #include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
-#define MAX_ITER 200
+#define MAX_ITER 1000
 #define Y_RANGE_MIN 125000
 #define Y_RANGE_MAX 140000
 #define TENURE 30
@@ -28,6 +28,7 @@ typedef struct{
     int tenure;
     int* tabu_list;
     int iter_stop;
+    char figure_cost_flag;
     FILE* pipe;
     move best_admissible_move;
 }tabu;
