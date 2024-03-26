@@ -82,11 +82,11 @@ void tabu_init(tabu* tabu, instance* inst){
     tabu->best_sol = (int*) calloc(inst->nnodes, sizeof(int));
     assert(tabu->best_sol!=NULL);
     tabu->pipe = popen("gnuplot -persist", "w");
-    tabu_init_plot_iter_and_cost( (inst->verbose)>=1, tabu->pipe,  (int)( (tabu->zcurr) * 0.75), (int)( (tabu->zcurr) * 0.8), inst);
+    tabu_init_plot_iter_and_cost( (inst->verbose)>=1, tabu->pipe,  (int)( (tabu->zcurr) * 0.75), (int)( (tabu->zcurr*0.8) ), inst);
     tabu_update_best(tabu, inst->nnodes);
 }
 char isTabu(tabu* tabu, int vertex){
-    return tabu->iter < tabu->tabu_list[vertex] + tabu->tenure;
+    return tabu->iter < tabu->tabu_list[tabu->curr_sol[vertex]] + tabu->tenure;
 }
 void update_move(move* mov, int i1, int i2, double delta){
     mov->vertex_to_swap_1 = i1;
@@ -117,7 +117,8 @@ char tabu_find_best_admissible_move(tabu* tabu, instance* inst){
         jump_to_next_iter = ( isTabu(tabu, i) || isTabu(tabu, i+1) );
         if(jump_to_next_iter) { continue;}
         for (int j = i+2; j <= n-1; j++){
-            jump_to_next_iter = ( isTabu(tabu, j) || isTabu(tabu, (j+1)%n) );
+            jump_to_next_iter = ( isTabu(tabu, j) || isTabu(tabu, (j+1)%n) ) || ( (i==0) && (j+1 == n) );
+            // se i = 0 e j+1 = n quindi j+1 %n = 0 allora sto considerando due lati adiacenti, mentre 2 opt deve considerare sempre lati non adaicenti
             if(jump_to_next_iter) { continue;}
             //length (i,i+1) and (j,j+1)
             double current_dist = (double)(get_dist_matrix((const float*)(dist_matrix), curr[i], curr[i+1] ) + get_dist_matrix((const float*)(dist_matrix), curr[j], curr[(j+1)%n] ));
@@ -148,11 +149,11 @@ void tabu_update_current(tabu* tabu){
 
 void tabu_update_list(tabu* tabu){
     int j = (tabu->best_admissible_move).vertex_to_swap_2;
-    (tabu->tabu_list)[j] = tabu->iter;
+    (tabu->tabu_list)[tabu->curr_sol[j]] = tabu->iter;
 }
 
 void tabu_update(tabu* tabu, int n){
-    tabu_update_list(tabu);
+    tabu_update_list(tabu); 
     tabu_update_current(tabu);
     if(tabu->zcurr < tabu-> zbest){
         tabu_update_best(tabu, n);

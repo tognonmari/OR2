@@ -6,7 +6,7 @@
 #include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
-#define MAX_ITER 500
+#define MAX_ITER 200
 #define Y_RANGE_MIN 125000
 #define Y_RANGE_MAX 140000
 #define TENURE 30

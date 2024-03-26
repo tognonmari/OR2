@@ -143,7 +143,7 @@ void kick(instance* inst, int* sol_to_kick){
     }
     //Sort the array
     
-    sort_int_array(random_indexes, 3);
+    //mi da errore undefined reference sort_int_array(random_indexes, 3);
 
     //Step 2: Reconnect the edges - TODO: implement more than 1 way for reconnections
 
