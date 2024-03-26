@@ -1,6 +1,7 @@
 #include "tsp.h"
 #include "utils.h"
 #include "tabu.h"
+#include "vns.h"
 #include <math.h>
 #include <malloc.h>
 #include <string.h>
@@ -57,7 +58,7 @@ void print_best_sol(char flag, instance* inst) {
  * IP nrows The number of rows in the triangular matrix.
  * OV The triangular matrix represented by $matrix if $flag and if ($nrows<=10)
  */
-void print_triangular_matrix(char flag, const char text_to_print[], const double** matrix, int nrows) {
+void print_triangular_matrix(char flag, const char text_to_print[], const float** matrix, int nrows) {
 	if(nrows>10){ return; }
 	if(text_to_print[0]!= '\0'){
 		tsp_debug(flag,0,"%s", text_to_print);
@@ -195,7 +196,7 @@ void generate_instance(instance *inst){
 	
 	compute_dist_matrix(inst);
 	
-	print_triangular_matrix((inst->verbose>0),"The cost matrix is: \n", (const double**)inst->dist_matrix, inst->nnodes);
+	//print_triangular_matrix((inst->verbose>0),"The cost matrix is: \n", (const float**)inst->dist_matrix, inst->nnodes);
 }
 /*
  * Calculates the Euclidean distance between two points in a two-dimensional space.
@@ -246,7 +247,7 @@ float get_dist_matrix(const float* matrix, int row, int col){
  * IP b L'indice di colonna (0-based).
  * OR Il valore dell'entry associata ad a e b.
  */
-double get_cost_matrix(const double** matrix, int a, int b){
+double get_cost_matrix(const float** matrix, int a, int b){
 	if(b<=a) { return matrix[a][b];}
 	return matrix[b][a];
 }
@@ -545,8 +546,8 @@ void swap_space(void* a, void* b, size_t size) {
  * the destination array $a1. 
  * IP a1 Pointer to the destination array.
  * IP a2 Pointer to the source array.
- */ //MAI USATO
-void copy_array(void* a1, void* a2) {
+ */
+void copy_array(void* a1, const void* a2) {
 	size_t size_a1 = _msize(a1);
 	/*
 	* the(void*)a2 cast is used to reassure the compiler that we are intentionally treating a2 as a non-constant pointer
@@ -714,7 +715,7 @@ char is_feasible_solution(instance* inst, int* sol_path, double sol_cost){
 
 	int n = inst->nnodes;
 	int* counter = (int*) calloc(n, sizeof(int));
-	print_path(1, "path: \n", sol_path, inst->nodes,n);
+	//print_path(1, "path: \n", sol_path, inst->nodes,n);
 	//check for repeated vertices or out of range content of path
 	for (int i =0; i<=n-1; i++){
 
@@ -736,8 +737,8 @@ char is_feasible_solution(instance* inst, int* sol_path, double sol_cost){
 	//check cost coincides with the path length 
 
 	double path_length = compute_path_length(sol_path, n, inst->nodes);
-	tsp_debug((inst->verbose > 49), 0, "Real Path length : %.2f", path_length);
-	tsp_debug((inst->verbose > 49), 0, "Sol passed length : %.2f",sol_cost);
+	//tsp_debug((inst->verbose > 49), 0, "Real Path length : %.2f", path_length);
+	//tsp_debug((inst->verbose > 49), 0, "Sol passed length : %.2f",sol_cost);
 	return is_equal_double(path_length, sol_cost, EPSILON);
 }
 
@@ -793,6 +794,16 @@ void tsp_solve(instance* inst){
 		generate_figure_name(figure_name, sizeof(figure_name), "figures/tabu_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		break;
+	case VNS:
+		printf("Initializing a greedy solution\n");
+    	greedy_tsp(inst);
+		print_best_sol((inst->verbose>=5), inst);
+		generate_figure_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
+		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		vns(inst);
+		print_best_sol((inst->verbose>=5), inst);
+		generate_figure_name(figure_name, sizeof(figure_name), "figures/vns_%d_%d.png", inst->nnodes, inst->randomseed);
+		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 	default:
 		exit(-7);
 	}
@@ -805,6 +816,7 @@ void update_solver(instance* inst){
 	printf("0: Nearest Neighbor\n");
 	printf("1: Nearest Neighbor and OPT2\n");
 	printf("2: Nearest Neighbor and TABU search\n");
+	printf("3: Nearest Neighbor and VNS\n");
 	printf("---------------------------------------------\n");
 	scanf("%d",&selection);
 	switch(selection){
@@ -818,6 +830,10 @@ void update_solver(instance* inst){
 			break;}
 		case 2:
 			{inst->solver = TABU;
+			printf("successful update.\n");
+			break;}
+		case 3:
+			{inst->solver = VNS;
 			printf("successful update.\n");
 			break;}
 		default:

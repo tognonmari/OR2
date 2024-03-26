@@ -18,7 +18,8 @@ typedef enum {
 	RANDOM_SOL,
 	NN,
 	OPT_2,
-	TABU
+	TABU,
+	VNS
 
 } solver_id;
 
@@ -86,7 +87,7 @@ void print_best_sol(char flag, instance* inst);
 
 void print_point(char flag, const char text_to_print[], const point* p);
 
-void print_triangular_matrix(char flag,const char text[], const double** matrix, int nrows);
+void print_triangular_matrix(char flag,const char text[], const float** matrix, int nrows);
 
 void print_triangular_matrix_as_array(char flag, const char text_to_print[], const float* matrix, int nrows);
 
@@ -108,7 +109,7 @@ void reverse_sequence(int* path, int min, int max);
 
 void compute_dist_matrix(instance* inst);
 
-double get_cost_matrix(const double** matrix, int a, int b);
+double get_cost_matrix(const float** matrix, int a, int b);
 
 float get_dist_matrix(const float* matrix, int row, int col);
 
@@ -118,7 +119,7 @@ void swap(int* a, int* b);
 
 void swap_2_opt(int* path, int i, int j);
 
-void copy_array(void* a1, void* a2);
+void copy_array(void* a1, const void* a2);
 
 void copy_din_array(void *a1, const void *a2, size_t elem_size, size_t num_elems);
 
@@ -144,4 +145,4 @@ void update_solver(instance* inst);
 
 void update_best(instance* inst, double z, double t, int* sol);
 
-#endif 
+#endif
