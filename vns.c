@@ -8,8 +8,8 @@
 
 vns_params parse_vns_params(){
 
-    int min =0;
-    int max=1;
+    int min;
+    int max;
     printf("----Choose a minimum number of kicks:----\n");
     scanf("%d",&min);
     printf("----Choose a maximium number of kicks:----\n");
@@ -35,8 +35,9 @@ void vns(instance* inst){
     double incumbent_cost = inst->zbest;
     //Step 2: Solve with vns upon the incumbent: need to rewrite opt 2
     printf("-----Starting vns heuristics:-------\n");
-    int max_iter = 100;
+    int max_iter = 1500;
     int t=0;
+    //opt2_optimize_best_sol(inst);
     while(t< max_iter){
 
         //while its possible do a single 2 opt move, modifying the correct values
@@ -46,25 +47,34 @@ void vns(instance* inst){
             improvement = opt2_move(inst, incumbent_sol, &incumbent_cost);
             swaps++;
         }
+        
+        char figure_name[64];
+	    generate_figure_name(figure_name, sizeof(figure_name), "figures/after2opt_%d_%d.png", inst->nnodes, inst->randomseed);
+	    plot_path((inst->verbose>-1),figure_name,incumbent_sol, inst->nodes, inst->nnodes);
         //printf("Finished intensification\n");
         //update the solution if we found a better one
         if (is_feasible_solution(inst, incumbent_sol, incumbent_cost) && incumbent_cost <inst->zbest){
 
-            //printf("Better solution found: updating the instance\n");
+            printf("Better solution found: updating the instance\n");
+            printf("zbest: %lf\n",incumbent_cost);
             copy_array(inst->best_sol, incumbent_sol);
             inst->zbest = incumbent_cost;
-            inst->tbest = get_timer();
+            inst->tbest = get_timer();  
 
         }
         
-        //printf("-----Starting diversification:-------\n");
-        //kicks to the incumbent for a random number of  times 
-        srand(inst->randomseed);
-        int kicks = rand() % (params.max_kicks - params.min_kicks+1) + params.min_kicks;
-        for(int i=0; i<kicks; i++){
+        srand(time(NULL));
+        params.min_kicks = 3;
+        params.max_kicks = 3;
+        //printf("I am kicking with min : %d, max: %d", params.min_kicks,params.max_kicks);
+        int kicks = (rand() % (params.max_kicks - params.min_kicks+1)) + params.min_kicks;
+        //printf("I want to kick %d times\n", kicks);
+        for (int jj = 0; jj<kicks; jj++){
             kick(inst, incumbent_sol);
+            //printf("kicking!\n");
         }
         
+       
         incumbent_cost = compute_path_length(incumbent_sol, inst->nnodes, inst->nodes);
 
         t += (swaps+kicks);
@@ -72,7 +82,7 @@ void vns(instance* inst){
     }
 
     free(incumbent_sol);
-
+    //opt2_optimize_best_sol(inst);
 }
 /**
  * Returns 0 if the path cannot be optimized any further with 2 opt moves
@@ -81,7 +91,7 @@ char opt2_move(instance* inst, int* incumbent_sol, double* incumbent_cost){
     
     int n = inst->nnodes;
     point* nodes_list = inst->nodes;
-    int best_delta =0;
+    double best_delta = 0;
     char improvement = 0;
     int best_i = -1;
     int best_j = -1;
@@ -95,13 +105,16 @@ char opt2_move(instance* inst, int* incumbent_sol, double* incumbent_cost){
 
             if (delta < best_delta)
             {
+                improvement =1;
+                //printf("found a new best delta\n");
                 best_i = i%n;
                 best_j = j%n;
                 best_delta = delta;
+                //printf("Best delta : %lf\n",best_delta);
             }
         }
     }
-    if (best_delta<0){
+    if (improvement){
 		//tsp_debug((inst->verbose > 49), 0, "I am swapping nodes %d and %d", best_i+1,best_j);
         swap_2_opt(incumbent_sol, (best_i + 1)%n, (best_j)%n);
         (*incumbent_cost) += best_delta;
@@ -117,7 +130,7 @@ char opt2_move(instance* inst, int* incumbent_sol, double* incumbent_cost){
 void kick(instance* inst, int* sol_to_kick){
 
     int n = inst->nnodes;
-    srand(inst->randomseed);
+    srand(time(NULL));
     int* random_indexes = (int*) calloc(3, sizeof(int));
     //Step 1: Extract 3 random edges and check their validity
     random_indexes[0] = rand() % n;
@@ -143,8 +156,8 @@ void kick(instance* inst, int* sol_to_kick){
     }
     //Sort the array
     
-    //mi da errore undefined reference sort_int_array(random_indexes, 3);
-
+    sort_int_array(random_indexes, 3);
+    //printf("Splitting at i = %d,, j= %d, k= %d\n", random_indexes[0], random_indexes[1], random_indexes[2]);
     //Step 2: Reconnect the edges - TODO: implement more than 1 way for reconnections
 
     int* kicked_sol = (int*) calloc(n, sizeof(int));
@@ -159,12 +172,19 @@ void kick(instance* inst, int* sol_to_kick){
         kicked_sol[r] = sol_to_kick[t];
         r++;
     }
+    
     //copy segment from i+1 to j both included
     for (int t = random_indexes[0]+1; t<=random_indexes[1]; t++){
         kicked_sol[r] = sol_to_kick[t];
         r++;
     }
-
+    
+    //copy remaining part of the array from k+1 to 0-1
+    for (int t = (random_indexes[2]+1); (t%inst->nnodes) !=0; t++){
+        kicked_sol[r] = sol_to_kick[t];
+        r++;
+    }
+    
     if (!is_feasible_solution(inst, kicked_sol,compute_path_length(kicked_sol,n,inst->nodes))){
         printf("Wrong kicking: revise implementation.\n");
     }
