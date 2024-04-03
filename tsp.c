@@ -761,6 +761,9 @@ solver_id parse_solver(char* solver_input){
 	else if ( strcmp(solver_input, "tabu") == 0){
 		return TABU;
 	}
+	else if( strcmp(solver_input, "vns")==0){
+		return VNS;
+	}
 	exit(main_error_text(-8, "%s","solver"));
 }
 
@@ -834,7 +837,7 @@ void update_solver(instance* inst){
 			break;}
 		case 3:
 			{inst->solver = VNS;
-			printf("successful update.\n");
+			printf("successful update. You selected vns.\n");
 			break;}
 		default:
 			{inst->solver = NN;
@@ -844,3 +847,4 @@ void update_solver(instance* inst){
 
 
 }
+

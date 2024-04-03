@@ -2,6 +2,7 @@
 #include "utils.h"
 #include "vns.h"
 
+
 /**
  * Gathers parameter information for vns from cmd line
 */
@@ -47,7 +48,6 @@ void vns(instance* inst){
             improvement = opt2_move(inst, incumbent_sol, &incumbent_cost);
             swaps++;
         }
-        
         char figure_name[64];
 	    generate_figure_name(figure_name, sizeof(figure_name), "figures/after2opt_%d_%d.png", inst->nnodes, inst->randomseed);
 	    plot_path((inst->verbose>-1),figure_name,incumbent_sol, inst->nodes, inst->nnodes);
@@ -67,11 +67,12 @@ void vns(instance* inst){
         params.min_kicks = 3;
         params.max_kicks = 3;
         //printf("I am kicking with min : %d, max: %d", params.min_kicks,params.max_kicks);
-        int kicks = (rand() % (params.max_kicks - params.min_kicks+1)) + params.min_kicks;
+        int kicks = 3;
         //printf("I want to kick %d times\n", kicks);
         for (int jj = 0; jj<kicks; jj++){
+            printf("kicking!\n");
             kick(inst, incumbent_sol);
-            //printf("kicking!\n");
+            
         }
         
        
@@ -156,7 +157,7 @@ void kick(instance* inst, int* sol_to_kick){
     }
     //Sort the array
     
-    //sort_int_array(random_indexes, 3);
+    sort_int_array(random_indexes, 3);
     //printf("Splitting at i = %d,, j= %d, k= %d\n", random_indexes[0], random_indexes[1], random_indexes[2]);
     //Step 2: Reconnect the edges - TODO: implement more than 1 way for reconnections
 
@@ -194,3 +195,16 @@ void kick(instance* inst, int* sol_to_kick){
     free(kicked_sol);
 }
 
+void sort_int_array(int* arr, int n)
+{
+    int i, key, j;
+    for (i = 1; i < n; i++) {
+        key = arr[i];
+        j = i - 1;
+        while (j >= 0 && arr[j] > key) {
+            arr[j + 1] = arr[j];
+            j = j - 1;
+        }
+        arr[j + 1] = key;
+    }
+}

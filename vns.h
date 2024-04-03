@@ -12,4 +12,6 @@ void vns(instance* inst);
 
 vns_params parse_vns_params();
 
-void kick(instance* inst, int* sol_to_kick);
+void kick(instance* inst, int* sol_to_kick); 
+
+void sort_int_array(int* arr, int n);
