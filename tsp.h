@@ -41,7 +41,7 @@ typedef struct {
 	char input_file[1000];		  			// input file
 	int available_memory;
 	int verbose;
-
+	int integer_costs;
 	//global data
 	float* dist_matrix;
 	double	tstart;

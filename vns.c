@@ -1,6 +1,7 @@
 #include "tsp.h"
 #include "utils.h"
 #include "vns.h"
+#include <stdlib.h>
 
 
 /**
@@ -8,13 +9,18 @@
 */
 
 vns_params parse_vns_params(){
-
+    char buf[2];
+    char buf2[2];
     int min;
     int max;
     printf("----Choose a minimum number of kicks:----\n");
-    scanf("%d",&min);
+    fgets(buf, 2, stdin);
+    min = atoi(buf);
+    printf("you chose as minimum %d\n", min);
     printf("----Choose a maximium number of kicks:----\n");
-    scanf("%d",&max);
+    fgets(buf2, 2, stdin);
+    max = atoi(buf2);
+    printf("you chose as maximum %d\n", max);
     assert(min<=max);
     printf("------------------------------------------\n");
 }
@@ -24,7 +30,7 @@ vns_params parse_vns_params(){
 */
 void vns(instance* inst){
 
-
+    
     //Step 1: Parse vns parameters + copy the current best_sol to optimize
     vns_params params = parse_vns_params();
 
@@ -38,7 +44,10 @@ void vns(instance* inst){
     printf("-----Starting vns heuristics:-------\n");
     int max_iter = 1500;
     int t=0;
+    //char figure_name[64];
     //opt2_optimize_best_sol(inst);
+    //generate_figure_name(figure_name, sizeof(figure_name), "figures/after2opt_%d_%d.png", inst->nnodes, inst->randomseed);
+	//plot_path((inst->verbose>-1),figure_name,incumbent_sol, inst->nodes, inst->nnodes);
     while(t< max_iter){
 
         //while its possible do a single 2 opt move, modifying the correct values
@@ -48,12 +57,12 @@ void vns(instance* inst){
             improvement = opt2_move(inst, incumbent_sol, &incumbent_cost);
             swaps++;
         }
-        char figure_name[64];
-	    generate_figure_name(figure_name, sizeof(figure_name), "figures/after2opt_%d_%d.png", inst->nnodes, inst->randomseed);
-	    plot_path((inst->verbose>-1),figure_name,incumbent_sol, inst->nodes, inst->nnodes);
+        
+	    //generate_figure_name(figure_name, sizeof(figure_name), "figures/after2opt_%d_%d.png", inst->nnodes, inst->randomseed);
+	    //plot_path((inst->verbose>-1),figure_name,incumbent_sol, inst->nodes, inst->nnodes);
         //printf("Finished intensification\n");
         //update the solution if we found a better one
-        if (is_feasible_solution(inst, incumbent_sol, incumbent_cost) && incumbent_cost <inst->zbest){
+        if (incumbent_cost <inst->zbest){
 
             printf("Better solution found: updating the instance\n");
             printf("zbest: %lf\n",incumbent_cost);
@@ -64,14 +73,15 @@ void vns(instance* inst){
         }
         
         srand(time(NULL));
-        params.min_kicks = 3;
-        params.max_kicks = 3;
+        //params.min_kicks = 3;
+        //params.max_kicks = 3;
         //printf("I am kicking with min : %d, max: %d", params.min_kicks,params.max_kicks);
-        int kicks = 3;
+        int kicks = 4;
         //printf("I want to kick %d times\n", kicks);
         for (int jj = 0; jj<kicks; jj++){
             printf("kicking!\n");
             kick(inst, incumbent_sol);
+            
             
         }
         
@@ -96,12 +106,17 @@ char opt2_move(instance* inst, int* incumbent_sol, double* incumbent_cost){
     char improvement = 0;
     int best_i = -1;
     int best_j = -1;
+    float* dist_matrix = inst->dist_matrix;
     for (int i = 0; i <= n -3; i++) //cambiato da n-2!
     {
         for (int j = i + 2; j <= n-1; j++)
         {
+            //double current_dist= (double)(get_dist_matrix((const float*) (dist_matrix),incumbent_sol[i], incumbent_sol[(i+1)]) +get_dist_matrix((const float*) (dist_matrix),incumbent_sol[j], incumbent_sol[(j+1)%n]));
+            //double changed_dist = (double)(get_dist_matrix((const float*) (dist_matrix),incumbent_sol[i], incumbent_sol[(j)])+ get_dist_matrix((const float*) (dist_matrix),incumbent_sol[i+1], incumbent_sol[(j+1)]%n));
+            
             double current_dist= get_distance(&nodes_list[incumbent_sol[i%n]], &nodes_list[incumbent_sol[(i+1)%n]]) + get_distance(&nodes_list[incumbent_sol[j%n]], &nodes_list[incumbent_sol[(j+1)%n]]);
             double changed_dist = get_distance(&nodes_list[incumbent_sol[i%n]], &nodes_list[incumbent_sol[j%n]]) + get_distance(&nodes_list[incumbent_sol[(i+1)%n]], &nodes_list[incumbent_sol[(j+1)%n]]);
+            
             double delta = changed_dist - current_dist;
 
             if (delta < best_delta)
@@ -156,8 +171,8 @@ void kick(instance* inst, int* sol_to_kick){
 
     }
     //Sort the array
-    
-    sort_int_array(random_indexes, 3);
+    qsort(random_indexes, 3, sizeof(int), cmp_int_increasing);
+    //sort_int_array(random_indexes, 3);
     //printf("Splitting at i = %d,, j= %d, k= %d\n", random_indexes[0], random_indexes[1], random_indexes[2]);
     //Step 2: Reconnect the edges - TODO: implement more than 1 way for reconnections
 
@@ -185,26 +200,13 @@ void kick(instance* inst, int* sol_to_kick){
         kicked_sol[r] = sol_to_kick[t];
         r++;
     }
-    
+    /*
     if (!is_feasible_solution(inst, kicked_sol,compute_path_length(kicked_sol,n,inst->nodes))){
         printf("Wrong kicking: revise implementation.\n");
     }
-
+    */
     //If everything is correct, then write kicked sol into sol to kick
     copy_array(sol_to_kick, kicked_sol);
     free(kicked_sol);
 }
 
-void sort_int_array(int* arr, int n)
-{
-    int i, key, j;
-    for (i = 1; i < n; i++) {
-        key = arr[i];
-        j = i - 1;
-        while (j >= 0 && arr[j] > key) {
-            arr[j + 1] = arr[j];
-            j = j - 1;
-        }
-        arr[j + 1] = key;
-    }
-}

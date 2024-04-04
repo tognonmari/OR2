@@ -333,7 +333,7 @@ void parse_command_line(int argc, char** argv, instance *inst){
 	// inst->num_threads = 0;
 	inst->timelimit = 10; //seconds
 	// inst->cutoff = -1; 
-	// inst->integer_costs = 0;
+	inst->integer_costs = 0;
     inst->verbose = VERBOSE;
 	inst->available_memory = 12000;   			
 	// inst->max_nodes = -1; 	
@@ -815,13 +815,16 @@ void tsp_solve(instance* inst){
 void update_solver(instance* inst){
 
 	int selection;
+	char buf[2];
 	printf("----Choose a solver, from these options:----\n");
 	printf("0: Nearest Neighbor\n");
 	printf("1: Nearest Neighbor and OPT2\n");
 	printf("2: Nearest Neighbor and TABU search\n");
 	printf("3: Nearest Neighbor and VNS\n");
 	printf("---------------------------------------------\n");
-	scanf("%d",&selection);
+	fgets(buf, 2, stdin);
+    selection = atoi(buf);
+	free(buf);
 	switch(selection){
 		case 0:
 			{inst->solver = NN;
@@ -837,7 +840,7 @@ void update_solver(instance* inst){
 			break;}
 		case 3:
 			{inst->solver = VNS;
-			printf("successful update. You selected vns.\n");
+			printf("successful update. \n");
 			break;}
 		default:
 			{inst->solver = NN;

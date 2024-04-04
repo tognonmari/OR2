@@ -1,4 +1,4 @@
-main : newmain.c tsp.o utils.o tabu.o vns.o
+main : newmain.c tsp.o utils.o tabu.o vns.o 
 	gcc newmain.c utils.o tsp.o tabu.o vns.o -o newmain
 
 vns.o : vns.c tsp.o utils.o

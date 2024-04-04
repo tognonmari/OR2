@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include "tsp.h"
 #include "utils.h"
+#include "TSPmodel.h"
+
 
 /*
 @ho scoperto che in verità %f è per i float e per i double dovremmo usare %lf.
@@ -34,6 +36,7 @@ int main(int argc, char** argv) {
 
     print_instance_parameters(&inst);
 
+    TSPopt(&inst);
     //Step 4 : choose a solver, if not done already
 
     if (inst.solver == NOT_DEF){

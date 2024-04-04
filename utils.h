@@ -38,6 +38,6 @@ void** alloc_triangular_matrix(int nrow, size_t size_type);
 
 void* alloc_triangular_matrix_as_array(int nrow, size_t size_type);
 
-void sort_int_array(int* arr, int n);
+int cmp_int_increasing(const void* a, const void* b);
 
 #endif
