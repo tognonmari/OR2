@@ -824,7 +824,7 @@ void update_solver(instance* inst){
 	printf("---------------------------------------------\n");
 	fgets(buf, 2, stdin);
     selection = atoi(buf);
-	free(buf);
+	
 	switch(selection){
 		case 0:
 			{inst->solver = NN;
