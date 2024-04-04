@@ -165,7 +165,7 @@ void generate_nodes(int n, point* nodes, int max_x, int max_y) {
 		pointer_nodes++;
 	}
 }
-void generate_figure_name(char buffer[], size_t bufferSize, const char *format, ...) {
+void generate_figure(char buffer[], size_t bufferSize, const char *format, ...) {
     va_list args;
     va_start(args, format);
     int length = vsnprintf(buffer, bufferSize, format, args);
@@ -266,6 +266,44 @@ void make_datafile(instance *inst, FILE* data_file) {
 		fprintf(data_file, "%d %d\n", x, y);
 		current_point++;
 	}
+}
+void plot_generator(instance* inst) {
+	int n = inst->nnodes;
+	FILE* out_lines;
+	FILE* out_points;
+	out_lines = fopen("data/data_lines.dat", "w");
+	out_points = fopen("data/data_points.dat", "w");
+	if (out_lines == NULL)
+	{
+		fclose(out_lines);
+		fclose(out_points);
+		exit(main_error_text(-2, "Failed to open the file %s", "data_lines.dat"));
+	}
+	if (out_points == NULL)
+	{
+		fclose(out_lines);
+		fclose(out_points);
+		exit(main_error_text(-2, "Failed to open the file %s", "data_points.dat"));
+	}
+	//print points
+	for (int i = 0; i < n; i++) {
+		fprintf(out_points, "%f %f \"%d\"\n", inst->nodes[i].x, inst->nodes[i].y, i);
+	}
+	fprintf(out_points, "%f %f \"%d\"\n", inst->nodes[0].x, inst->nodes[0].y, 0);
+	
+	//print lines
+	for (int i = 0; i < n; i++)
+	{
+		fprintf(out_lines, "%f %f\n", inst->nodes[inst->best_sol[i]].x, inst->nodes[inst->best_sol[i]].y);
+		fprintf(out_lines, "%f %f\n\n\n", inst->nodes[inst->best_sol[(i + 1)%n]].x, inst->nodes[inst->best_sol[(i + 1) % n]].y);
+		tsp_debug_inline((inst->verbose >= 99),"\n%d: plotting line from %d to %d", i, inst->best_sol[i], inst->best_sol[(i + 1) % n]);
+	}
+	
+	fclose(out_lines);
+	fclose(out_points);
+
+	chdir("plot");
+	system("gnuplot -persistent gp_points_and_lines.gp");
 }
 /*
 * Plot the input datafile using GNUPLOT
@@ -704,6 +742,17 @@ void init_path(int* path, size_t n){
 		path++;
 	}
 }
+void init_data_file(char flag, FILE* data_file, instance* inst){
+    char figure_name[64];
+    if(flag){
+         generate_figure(figure_name, sizeof(figure_name), "data/tabu_%d_%d_cost.dat", inst->nnodes, inst->randomseed);
+         data_file = fopen(figure_name, "w");
+         if(data_file == NULL){
+            fclose(data_file);
+            exit(main_error_text(-2,"Failed to open the file %s", figure_name));
+         }
+    }
+}
 /**
  * Checks whether sol_path and sol_cost consitute a feasible solution for inst
  * IP: instance i
@@ -771,42 +820,49 @@ solver_id parse_solver(char* solver_input){
 void tsp_solve(instance* inst){
 	get_timer();
 	MKDIR("figures");
+	MKDIR("data");
 	char figure_name[64];
 	int check_truncation;
 	switch (inst->solver) {
 	case NN:
 		greedy_tsp(inst);
 		print_best_sol((inst->verbose>-1), inst);
-		generate_figure_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
+		generate_figure(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
+		plot_generator(inst);
 		break;
 	case OPT_2:
 		greedy_tsp(inst);
 		print_best_sol((inst->verbose>=5), inst);
-		generate_figure_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
+		generate_figure(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		//optimize 
 		opt2_optimize_best_sol(inst);
-		generate_figure_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d_opt2.png", inst->nnodes, inst->randomseed);
+		generate_figure(figure_name, sizeof(figure_name), "figures/greedy_%d_%d_opt2.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		print_best_sol((inst->verbose>=5), inst);
 		break;
 	case TABU:
 		tabu_search(inst);
 		print_best_sol((inst->verbose>=1), inst);
-		generate_figure_name(figure_name, sizeof(figure_name), "figures/tabu_%d_%d.png", inst->nnodes, inst->randomseed);
+		generate_figure(figure_name, sizeof(figure_name), "figures/tabu_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		break;
 	case VNS:
 		printf("Initializing a greedy solution\n");
     	greedy_tsp(inst);
 		print_best_sol((inst->verbose>=5), inst);
-		generate_figure_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
+		generate_figure(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		vns(inst);
 		print_best_sol((inst->verbose>=5), inst);
-		generate_figure_name(figure_name, sizeof(figure_name), "figures/vns_%d_%d.png", inst->nnodes, inst->randomseed);
+		generate_figure(figure_name, sizeof(figure_name), "figures/vns_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 	default:
 		exit(-7);
 	}
