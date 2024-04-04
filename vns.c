@@ -48,7 +48,7 @@ void vns(instance* inst){
     //opt2_optimize_best_sol(inst);
     //generate_figure_name(figure_name, sizeof(figure_name), "figures/after2opt_%d_%d.png", inst->nnodes, inst->randomseed);
 	//plot_path((inst->verbose>-1),figure_name,incumbent_sol, inst->nodes, inst->nnodes);
-    while(t< max_iter){
+    while(!(is_time_limit_exceeded(inst->timelimit))){
 
         //while its possible do a single 2 opt move, modifying the correct values
         int swaps =0;

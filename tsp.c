@@ -523,7 +523,7 @@ void opt2_optimize_best_sol(instance* inst) {
 	tsp_debug((inst->verbose > 49), 0,"initial zbest : %lf", path_length);
 	double best_delta = -1;
 	
-    while (best_delta < 0)
+    while (best_delta < 0 && !(is_time_limit_exceeded(inst->timelimit)))
     {	
 		char improvement = 0;		
         best_delta = 0;
@@ -553,7 +553,10 @@ void opt2_optimize_best_sol(instance* inst) {
             path_length += best_delta;
         }
     }
+	if(is_time_limit_exceeded(inst->timelimit)){
 
+		tsp_debug((inst->verbose>=5),0, "Could not finish 2 opt before time limit: current time is %lf",get_timer());
+	}
 	if(is_feasible_solution(inst,path,path_length)){
 
 		printf("Solution is feasible!\n");
@@ -701,7 +704,8 @@ void greedy_tsp(instance *inst){
 	int* sol;
 	int* min_sol = compute_greedy_path(0, inst, &min_cost);
 	update_best(inst, min_cost, get_timer(), min_sol);
-	for (int i = 1; i < n; i++) {
+	int i;
+	for (i = 1; i < n; i++) {
 		sol = compute_greedy_path(i,inst,&current_cost);
 		if (current_cost < min_cost) {
 			free(min_sol); //I am going to update min_sol, then I can free the actual min_sol
@@ -715,6 +719,12 @@ void greedy_tsp(instance *inst){
 		tsp_debug((inst->verbose>99), 0, "iter %d ", i);
 		tsp_debug((inst->verbose>99), 0, "cost = %.2f", current_cost);
 		tsp_debug((inst->verbose>99), 0, "zbest = %.2f", min_cost);
+	}
+
+
+	//If we exited the cycle due to time constraints, print an error message saying the reached point
+	if(i<n){
+		tsp_debug(inst->verbose,0,"Could not finish greedy NN due to time constraints: visited up until node %d", i);
 	}
 }
 
@@ -880,7 +890,7 @@ void update_solver(instance* inst){
 	printf("---------------------------------------------\n");
 	fgets(buf, 2, stdin);
     selection = atoi(buf);
-	free(buf);
+	
 	switch(selection){
 		case 0:
 			{inst->solver = NN;

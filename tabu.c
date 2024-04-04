@@ -196,7 +196,7 @@ void tabu_free(tabu* tabu){
 void tabu_search(instance* inst){
     tabu tab;
     tabu_init(&tab, inst);
-    while(tab.iter <= tab.iter_stop && !(is_time_limit_exceeded(inst->timelimit)) ){
+    while(!(is_time_limit_exceeded(inst->timelimit)) ){
         if(tabu_find_best_admissible_move(&tab, inst)){
             tabu_update(&tab, inst->nnodes);
         }
