@@ -42,6 +42,7 @@ typedef struct {
 	int available_memory;
 	int verbose;
 	int integer_costs;
+	FILE* best_sol_data;
 	//global data
 	float* dist_matrix;
 	double	tstart;
@@ -71,7 +72,7 @@ void make_datafile(instance *inst, FILE* data_file);
 
 void generate_instance(instance *inst);
 
-void generate_figure_name(char buffer[], size_t bufferSize, const char *format, ...);
+void generate_figure(char buffer[], size_t bufferSize, const char *format, ...);
 
 void generate_nodes(int n, point* nodes, int max_x, int max_y);
 
@@ -132,6 +133,8 @@ void greedy_tsp(instance* inst);
 void update_best(instance* inst, double z, double t, int* sol);
 
 void init_path(int* path, size_t n);
+
+void init_data_file(char flag, FILE* data_file, instance* inst);
 
 double compute_path_length(int* path, int nodes_number, point* nodes);
 

@@ -30,6 +30,7 @@ typedef struct{
     int iter_stop;
     char figure_cost_flag;
     FILE* pipe;
+    FILE* data_iter_and_cost;
     move best_admissible_move;
 }tabu;
 
@@ -52,6 +53,8 @@ void tabu_update_current(tabu* tabu);
 void tabu_update_list(tabu* tabu);
 
 void tabu_update(tabu* tabu, int n);
+
+void tabu_close(char flag, FILE* gnuplotPipe, FILE* data_file);
 
 void tabu_free(tabu* tabu);
 

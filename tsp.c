@@ -287,15 +287,15 @@ void plot_generator(instance* inst) {
 	}
 	//print points
 	for (int i = 0; i < n; i++) {
-		fprintf(out_points, "%f %f \"%d\"\n", inst->nodes[i].x, inst->nodes[i].y, i);
+		fprintf(out_points, "%lf %lf \"%d\"\n", inst->nodes[i].x, inst->nodes[i].y, i);
 	}
-	fprintf(out_points, "%f %f \"%d\"\n", inst->nodes[0].x, inst->nodes[0].y, 0);
+	fprintf(out_points, "%lf %lf \"%d\"\n", inst->nodes[0].x, inst->nodes[0].y, 0);
 	
 	//print lines
 	for (int i = 0; i < n; i++)
 	{
-		fprintf(out_lines, "%f %f\n", inst->nodes[inst->best_sol[i]].x, inst->nodes[inst->best_sol[i]].y);
-		fprintf(out_lines, "%f %f\n\n\n", inst->nodes[inst->best_sol[(i + 1)%n]].x, inst->nodes[inst->best_sol[(i + 1) % n]].y);
+		fprintf(out_lines, "%lf %lf\n", inst->nodes[inst->best_sol[i]].x, inst->nodes[inst->best_sol[i]].y);
+		fprintf(out_lines, "%lf %lf\n\n\n", inst->nodes[inst->best_sol[(i + 1)%n]].x, inst->nodes[inst->best_sol[(i + 1) % n]].y);
 		tsp_debug_inline((inst->verbose >= 99),"\n%d: plotting line from %d to %d", i, inst->best_sol[i], inst->best_sol[(i + 1) % n]);
 	}
 	
@@ -303,7 +303,7 @@ void plot_generator(instance* inst) {
 	fclose(out_points);
 
 	chdir("plot");
-	system("gnuplot -persistent gp_points_and_lines.gp");
+	system("gnuplot -persistent gp_path.gp");
 }
 /*
 * Plot the input datafile using GNUPLOT
@@ -837,8 +837,8 @@ void tsp_solve(instance* inst){
 	case NN:
 		greedy_tsp(inst);
 		print_best_sol((inst->verbose>-1), inst);
-		generate_figure(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		//generate_figure(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
+		//plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		plot_generator(inst);
 		break;
