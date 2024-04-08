@@ -24,7 +24,7 @@ int main_error_text(int error, char* format, ...) {
 	case -4:
 		fprintf(stderr, "Buffer truncation. \n");
 		if(format != NULL){
-			fprintf(stderr, "Buffer: %d char, Text: %d char. \n", va_arg(args,int), va_arg(args,int));
+			fprintf(stderr, "Buffer: %d char, Text: %d char. \n", va_arg(args,int), (char*)va_arg(args,int));
 		}
 		break;
 	case -5:
@@ -38,15 +38,15 @@ int main_error_text(int error, char* format, ...) {
 		break;
 	case -8:
 		first_par = (char*)va_arg(args, char*);
-		fprintf(stderr, "Wrong command parameter:\nHas been inserted not a valid value for -%s.\n",first_par);
+		fprintf(stderr, "Wrong command parameter:\nHas been inserted not a valid value for -%s.\n",(char*) first_par);
 		break;
 	case -9:
-		fprintf(stderr, "Try to copy arrays of different size");
+		fprintf(stderr, "Error in cplex enviroment\n");
 		break;
 	default:
 		fprintf(stderr, "Unknown error.\n");
 	}
-
+	vprintf(format, args);
 	va_end(args);
 	return error;
 }
@@ -154,5 +154,44 @@ void* alloc_triangular_matrix_as_array(int nrow, size_t size_type){
 
 int cmp_int_increasing(const void* a, const void* b) {
 	return (*(int*)a - *(int*)b);
+}
+
+// Funzione per generare una stringa colore RGB in base al valore in input
+char* generate_color(int value) {
+	// Calcola i componenti RGB
+	int r = (100 - value) * 255 / 100;
+	int g = value * 255 / 100;
+	int b = 0; // Nessun blu per questa transizione
+
+	// Alloca spazio per la stringa colore (7 caratteri: #RRGGBB + terminatore)
+	char* colorString = (char*)malloc(10 * sizeof(char));
+	if (colorString == NULL) {
+		exit(0);
+	}
+
+	// Formatta la stringa colore
+	snprintf(colorString, 10, "'#%02X%02X%02X'", r, g, b);
+
+	return colorString;
+}
+
+// Funzione per concatenare due stringhe
+char* concatenate_strings(const char* str1, const char* str2) {
+	// Calcola la lunghezza totale della stringa risultante
+	size_t len1 = strlen(str1);
+	size_t len2 = strlen(str2);
+	size_t totalLen = len1 + len2;
+
+	// Alloca spazio per la stringa risultante
+	char* result = (char*)malloc((totalLen + 1) * sizeof(char));
+	if (result == NULL) {
+		exit(main_error(-5));
+	}
+
+	// Copia le stringhe in result
+	strcpy(result, str1);
+	strcat(result, str2);
+
+	return result;
 }
 

@@ -1,6 +1,16 @@
 
 #include "tabu.h"
-
+void tabu_init_data_iter_and_cost(char flag, FILE* data_file, int y_range_min, int y_range_max, instance* inst){
+    char figure_name[64];
+    if(flag){
+         generate_figure(figure_name, sizeof(figure_name), "data/tabu_%d_%d_cost.txt", inst->nnodes, inst->randomseed);
+         data_file = fopen(figure_name, "w");
+         if(data_file == NULL){
+            fclose(data_file);
+            exit(main_error_text(-2,"Failed to open the file %s", figure_name));
+         }
+    }
+}
 void tabu_init_plot_iter_and_cost(char flag, FILE* gnuplotPipe, int y_range_min, int y_range_max, instance* inst){
     char figure_name[64];
     if (gnuplotPipe == NULL) {
@@ -8,7 +18,7 @@ void tabu_init_plot_iter_and_cost(char flag, FILE* gnuplotPipe, int y_range_min,
 		exit(main_error_text(-1,"Failed to open the pipeline to gnuplot"));
     }
     if(flag){
-        generate_figure_name(figure_name, sizeof(figure_name), "figures/tabu_%d_%d_cost.png", inst->nnodes, inst->randomseed);
+        generate_figure(figure_name, sizeof(figure_name), "figures/tabu_%d_%d_cost.png", inst->nnodes, inst->randomseed);
         fprintf(gnuplotPipe, "set output '%s'\n", figure_name); //set output name
         fprintf(gnuplotPipe, "set terminal png\n"); //set extension
         fprintf(gnuplotPipe, "set title 'Tabu Search cost'\n"); 
@@ -74,6 +84,9 @@ void tabu_init(tabu* tabu, instance* inst){
     assert(tabu->best_sol!=NULL);
     tabu->pipe = popen("gnuplot -persist", "w");
     tabu_init_plot_iter_and_cost( tabu->figure_cost_flag, tabu->pipe,  (int)( (tabu->zcurr) * 0.8), (int)( (tabu->zcurr*0.85) ), inst);
+    init_data_file(tabu -> figure_cost_flag, tabu->data_iter_and_cost, inst);
+    //tabu_init_plot_iter_and_cost( tabu->figure_cost_flag, tabu->pipe,  215000, 220000, inst);
+
     tabu_update_best(tabu, inst->nnodes);
 }
 char isTabu(tabu* tabu, int vertex){
@@ -137,6 +150,7 @@ void tabu_update_current(tabu* tabu){
     tabu->zcurr += (tabu->best_admissible_move).delta;
     if(tabu->figure_cost_flag){
         fprintf(tabu->pipe, "%d %lf\n", tabu->iter, tabu->zcurr);
+        fprintf(tabu->data_iter_and_cost, "%d %lf\n", tabu->iter, tabu->zcurr);
     }
 }
 
@@ -165,12 +179,14 @@ void tabu_debug(char flag, tabu* tabu, instance* inst){
     
 }
 
-void tabu_close_plot(char flag, FILE* gnuplotPipe){
+void tabu_close(char flag, FILE* gnuplotPipe, FILE* data_file){
     if(flag){
         fprintf(gnuplotPipe, "e\n"); //This line serves to terminate the input of data for the plot command in gnuplot.
     }
     fclose(gnuplotPipe);
+    fclose(data_file);
 }
+
 void tabu_free(tabu* tabu){
     //free(tabu->best_sol); NON DEVI FARE QUESTO PERCHe inst best sol viene aggiornata a tabu best sol alla fine, quindi devi solo liberare inst best sol e lo fai gia in tsp_free
     free(tabu->curr_sol);
@@ -190,7 +206,7 @@ void tabu_search(instance* inst){
         tabu_debug((inst->verbose)>99, &tab, inst);
         (tab.iter)++;
     }
-    tabu_close_plot( tab.figure_cost_flag , tab.pipe);
+    tabu_close( tab.figure_cost_flag , tab.pipe, tab.data_iter_and_cost);
     update_best(inst, tab.zbest, tab.tbest, tab.best_sol);
     tabu_free(&tab);
 }
