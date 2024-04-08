@@ -18,6 +18,7 @@ OR Esito(
 	-6: Time limit exceeded
     -7: Wrong solver definition
     -8: parametri inseriti da linea di comando errati.
+    -9: error in CPLEX enviroment
 */
 //TODO Creare una funzione per ogni tipo di errore che lanci un messaggio su stderror adeguato e restituisca l'int associato all'errore.
 
@@ -50,7 +51,7 @@ int main(int argc, char** argv) {
 
     tsp_solve(&inst);
     //Step 7 : free memory
-
+    
     free_instance(&inst);
 
     //Step 8 : return

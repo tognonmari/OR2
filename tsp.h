@@ -9,7 +9,7 @@
 #define MAX_X 10000  //maximum value for ascisse of generated points
 #define MAX_Y 10000//maximum value for ordinate of generated points
 //default verbose
-#define VERBOSE 50
+#define VERBOSE 100
 
 typedef enum {
 
@@ -19,7 +19,8 @@ typedef enum {
 	NN,
 	OPT_2,
 	TABU,
-	VNS
+	VNS,
+	EX
 
 } solver_id;
 

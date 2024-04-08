@@ -267,44 +267,6 @@ void make_datafile(instance *inst, FILE* data_file) {
 		current_point++;
 	}
 }
-void plot_generator(instance* inst) {
-	int n = inst->nnodes;
-	FILE* out_lines;
-	FILE* out_points;
-	out_lines = fopen("data/data_lines.dat", "w");
-	out_points = fopen("data/data_points.dat", "w");
-	if (out_lines == NULL)
-	{
-		fclose(out_lines);
-		fclose(out_points);
-		exit(main_error_text(-2, "Failed to open the file %s", "data_lines.dat"));
-	}
-	if (out_points == NULL)
-	{
-		fclose(out_lines);
-		fclose(out_points);
-		exit(main_error_text(-2, "Failed to open the file %s", "data_points.dat"));
-	}
-	//print points
-	for (int i = 0; i < n; i++) {
-		fprintf(out_points, "%lf %lf \"%d\"\n", inst->nodes[i].x, inst->nodes[i].y, i);
-	}
-	fprintf(out_points, "%lf %lf \"%d\"\n", inst->nodes[0].x, inst->nodes[0].y, 0);
-	
-	//print lines
-	for (int i = 0; i < n; i++)
-	{
-		fprintf(out_lines, "%lf %lf\n", inst->nodes[inst->best_sol[i]].x, inst->nodes[inst->best_sol[i]].y);
-		fprintf(out_lines, "%lf %lf\n\n\n", inst->nodes[inst->best_sol[(i + 1)%n]].x, inst->nodes[inst->best_sol[(i + 1) % n]].y);
-		tsp_debug_inline((inst->verbose >= 99),"\n%d: plotting line from %d to %d", i, inst->best_sol[i], inst->best_sol[(i + 1) % n]);
-	}
-	
-	fclose(out_lines);
-	fclose(out_points);
-
-	chdir("plot");
-	system("gnuplot -persistent gp_path.gp");
-}
 /*
 * Plot the input datafile using GNUPLOT
 * IP graph_data Path of the data file to be plotted
@@ -313,7 +275,7 @@ void plot_generator(instance* inst) {
 * 	passing a file open for the writing can be problematic and make the plot a blank plot.
 */
 int plot_graph(const char graph_data[], const char graph[]) {
-	FILE* gnuplotPipe = popen("gnuplot -persist", "w");
+	FILE* gnuplotPipe =_popen("gnuplot -persist", "w");
 
 	if (gnuplotPipe == NULL) {
 		fclose(gnuplotPipe);
@@ -333,7 +295,7 @@ int plot_graph(const char graph_data[], const char graph[]) {
 	fclose(gnuplotPipe);
 }
 int plot_path(char flag, const char figure_name[], const int* indices, const point* points, int num_points) {
-    FILE* gnuplotPipe = popen("gnuplot -persist", "w");
+    FILE* gnuplotPipe =_popen("gnuplot -persist", "w");
 
     if (gnuplotPipe == NULL) {
         fclose(gnuplotPipe);
@@ -832,15 +794,16 @@ void tsp_solve(instance* inst){
 	MKDIR("figures");
 	MKDIR("data");
 	char figure_name[64];
-	int check_truncation;
+	int check_truncation = 0;
 	switch (inst->solver) {
 	case NN:
 		greedy_tsp(inst);
 		print_best_sol((inst->verbose>-1), inst);
-		//generate_figure(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
-		//plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
-		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
-		plot_generator(inst);
+		generate_figure(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
+		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		printf("prova");
+		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
+		//plot_generator(inst);
 		break;
 	case OPT_2:
 		greedy_tsp(inst);
@@ -851,7 +814,7 @@ void tsp_solve(instance* inst){
 		opt2_optimize_best_sol(inst);
 		generate_figure(figure_name, sizeof(figure_name), "figures/greedy_%d_%d_opt2.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
-		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
+		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		print_best_sol((inst->verbose>=5), inst);
 		break;
 	case TABU:
@@ -859,7 +822,7 @@ void tsp_solve(instance* inst){
 		print_best_sol((inst->verbose>=1), inst);
 		generate_figure(figure_name, sizeof(figure_name), "figures/tabu_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
-		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
+		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		break;
 	case VNS:
 		printf("Initializing a greedy solution\n");
@@ -872,7 +835,9 @@ void tsp_solve(instance* inst){
 		print_best_sol((inst->verbose>=5), inst);
 		generate_figure(figure_name, sizeof(figure_name), "figures/vns_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
-		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
+		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
+	case EX:
+		TSPopt(inst);
 	default:
 		exit(-7);
 	}
@@ -887,6 +852,7 @@ void update_solver(instance* inst){
 	printf("1: Nearest Neighbor and OPT2\n");
 	printf("2: Nearest Neighbor and TABU search\n");
 	printf("3: Nearest Neighbor and VNS\n");
+	printf("4: Exact Method with CPLEX, no subtour constraints\n");
 	printf("---------------------------------------------\n");
 	fgets(buf, 2, stdin);
     selection = atoi(buf);
@@ -908,6 +874,12 @@ void update_solver(instance* inst){
 			{inst->solver = VNS;
 			printf("successful update. \n");
 			break;}
+		case 4:
+		{
+			inst->solver = EX;
+			printf("successful update. \n");
+			break;
+		}
 		default:
 			{inst->solver = NN;
 			printf("successful update.\n");

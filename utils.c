@@ -24,7 +24,7 @@ int main_error_text(int error, char* format, ...) {
 	case -4:
 		fprintf(stderr, "Buffer truncation. \n");
 		if(format != NULL){
-			fprintf(stderr, "Buffer: %d char, Text: %d char. \n", va_arg(args,int), va_arg(args,int));
+			fprintf(stderr, "Buffer: %d char, Text: %d char. \n", va_arg(args,int), (char*)va_arg(args,int));
 		}
 		break;
 	case -5:
@@ -38,15 +38,15 @@ int main_error_text(int error, char* format, ...) {
 		break;
 	case -8:
 		first_par = (char*)va_arg(args, char*);
-		fprintf(stderr, "Wrong command parameter:\nHas been inserted not a valid value for -%s.\n",first_par);
+		fprintf(stderr, "Wrong command parameter:\nHas been inserted not a valid value for -%s.\n",(char*) first_par);
 		break;
 	case -9:
-		fprintf(stderr, "Try to copy arrays of different size");
+		fprintf(stderr, "Error in cplex enviroment\n");
 		break;
 	default:
 		fprintf(stderr, "Unknown error.\n");
 	}
-
+	vprintf(format, args);
 	va_end(args);
 	return error;
 }
