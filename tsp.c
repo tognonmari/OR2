@@ -5,6 +5,7 @@
 #include <math.h>
 #include <malloc.h>
 #include <string.h>
+#include <stdio.h>
 
 /* 
 * Conditional debugging function that prints
