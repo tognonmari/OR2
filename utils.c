@@ -156,3 +156,42 @@ int cmp_int_increasing(const void* a, const void* b) {
 	return (*(int*)a - *(int*)b);
 }
 
+// Funzione per generare una stringa colore RGB in base al valore in input
+char* generate_color(int value) {
+	// Calcola i componenti RGB
+	int r = (100 - value) * 255 / 100;
+	int g = value * 255 / 100;
+	int b = 0; // Nessun blu per questa transizione
+
+	// Alloca spazio per la stringa colore (7 caratteri: #RRGGBB + terminatore)
+	char* colorString = (char*)malloc(10 * sizeof(char));
+	if (colorString == NULL) {
+		exit(0);
+	}
+
+	// Formatta la stringa colore
+	snprintf(colorString, 10, "'#%02X%02X%02X'", r, g, b);
+
+	return colorString;
+}
+
+// Funzione per concatenare due stringhe
+char* concatenate_strings(const char* str1, const char* str2) {
+	// Calcola la lunghezza totale della stringa risultante
+	size_t len1 = strlen(str1);
+	size_t len2 = strlen(str2);
+	size_t totalLen = len1 + len2;
+
+	// Alloca spazio per la stringa risultante
+	char* result = (char*)malloc((totalLen + 1) * sizeof(char));
+	if (result == NULL) {
+		exit(main_error(-5));
+	}
+
+	// Copia le stringhe in result
+	strcpy(result, str1);
+	strcat(result, str2);
+
+	return result;
+}
+

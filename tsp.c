@@ -274,7 +274,7 @@ void make_datafile(instance *inst, FILE* data_file) {
 * @note ALWAYS CHECK THAT THE DATA PASSED BY PARAMETER IS CLOSED,
 * 	passing a file open for the writing can be problematic and make the plot a blank plot.
 */
-int plot_graph(const char graph_data[], const char graph[]) {
+void plot_graph(const char graph_data[], const char graph[]) {
 	FILE* gnuplotPipe =_popen("gnuplot -persist", "w");
 
 	if (gnuplotPipe == NULL) {
@@ -294,7 +294,7 @@ int plot_graph(const char graph_data[], const char graph[]) {
 
 	fclose(gnuplotPipe);
 }
-int plot_path(char flag, const char figure_name[], const int* indices, const point* points, int num_points) {
+void plot_path(char flag, const char figure_name[], const int* indices, const point* points, int num_points) {
     FILE* gnuplotPipe =_popen("gnuplot -persist", "w");
 
     if (gnuplotPipe == NULL) {
@@ -801,7 +801,6 @@ void tsp_solve(instance* inst){
 		print_best_sol((inst->verbose>-1), inst);
 		generate_figure(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
-		printf("prova");
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		//plot_generator(inst);
 		break;

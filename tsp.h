@@ -65,9 +65,9 @@ typedef struct {
 	int zstart;
 } instance;
 
-int plot_graph(const char graph_data[], const char graph[]);
+void plot_graph(const char graph_data[], const char graph[]);
 
-int plot_path(char flag, const char figure_name[], const int* indices, const point* points, int num_points);
+void plot_path(char flag, const char figure_name[], const int* indices, const point* points, int num_points);
 
 void make_datafile(instance *inst, FILE* data_file);
 

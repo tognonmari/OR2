@@ -40,4 +40,9 @@ void* alloc_triangular_matrix_as_array(int nrow, size_t size_type);
 
 int cmp_int_increasing(const void* a, const void* b);
 
+char* generate_color(int value);
+
+char* concatenate_strings(const char* str1, const char* str2);
+
+
 #endif
