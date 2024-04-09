@@ -14,11 +14,12 @@ void ben_add_sec(CPXENVptr env, CPXLPptr lp, multitour_sol* mlt_sol, const insta
 		int nnz = 0;
 		sprintf(cname[0], "SEC for %d comp", k);
 		char sense = 'L';
-		double rhs = 0.0;
+		double rhs = -1.0;
 		for (int i = 0; i < n; i++) {
 			if (mlt_sol->comp[i] != k) {
 				continue;
 			}
+			rhs += 1.0;
 			for (int j = i + 1; j < n; j++) {
 				if (mlt_sol->comp[j] != k) {
 					continue;
@@ -26,7 +27,6 @@ void ben_add_sec(CPXENVptr env, CPXLPptr lp, multitour_sol* mlt_sol, const insta
 				index[nnz] = xpos(i, j, inst);
 				value[nnz] = 1.0;
 				nnz++;
-				rhs += 1.0;
 			}
 		}
 		if(CPXaddrows(env, lp, 0, 1, nnz, &rhs, &sense, &izero, index, value, NULL, &cname[0])) { exit(main_error_text(-9, "CPXgetx() error")); }
@@ -83,11 +83,12 @@ void ben_solve(instance* inst) {
 	init_multitour_sol(&curr_sol, inst->nnodes);
 	build_sol((const double*)xstar, (const instance*)inst, curr_sol.succ, curr_sol.comp, &curr_sol.ncomp);
 	tsp_debug(inst->verbose >= 100, 1, "build_sol SUCCESSFUL: there are %d connected components", curr_sol.ncomp);
-	printf("\n\n NCOMP = %d \n\n ", curr_sol.ncomp);
 	char figure_name[64];
 	generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_multitour.png", inst->nnodes, inst->randomseed);
 	plot_multitour(inst->verbose >= 1, inst->verbose >= 100, figure_name, (const multitour_sol*)&curr_sol, inst->nodes);
 	ben_reduce_comp(env,lp, inst, &curr_sol);
+	generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_singletour.png", inst->nnodes, inst->randomseed);
+	plot_multitour(inst->verbose >= 1, inst->verbose >= 100, figure_name, (const multitour_sol*)&curr_sol, inst->nodes);
 	free_multitour_sol(&curr_sol);
 	// free and close cplex model   
 	CPXfreeprob(env, &lp);
