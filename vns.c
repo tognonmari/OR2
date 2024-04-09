@@ -46,7 +46,7 @@ void vns(instance* inst){
     int t=0;
     //char figure_name[64];
     //opt2_optimize_best_sol(inst);
-    //generate_figure_name(figure_name, sizeof(figure_name), "figures/after2opt_%d_%d.png", inst->nnodes, inst->randomseed);
+    //generate_name(figure_name, sizeof(figure_name), "figures/after2opt_%d_%d.png", inst->nnodes, inst->randomseed);
 	//plot_path((inst->verbose>-1),figure_name,incumbent_sol, inst->nodes, inst->nnodes);
     while(!(is_time_limit_exceeded(inst->timelimit))){
 
@@ -58,7 +58,7 @@ void vns(instance* inst){
             swaps++;
         }
         
-	    //generate_figure_name(figure_name, sizeof(figure_name), "figures/after2opt_%d_%d.png", inst->nnodes, inst->randomseed);
+	    //generate_name(figure_name, sizeof(figure_name), "figures/after2opt_%d_%d.png", inst->nnodes, inst->randomseed);
 	    //plot_path((inst->verbose>-1),figure_name,incumbent_sol, inst->nodes, inst->nnodes);
         //printf("Finished intensification\n");
         //update the solution if we found a better one

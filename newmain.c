@@ -48,7 +48,6 @@ int main(int argc, char** argv) {
     }
 
     //STEP 5: solve + plots
-
     tsp_solve(&inst);
     //Step 7 : free memory
     
