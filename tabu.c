@@ -82,7 +82,7 @@ void tabu_init(tabu* tabu, instance* inst){
     tabu->curr_sol = compute_tabu_init_sol(inst, tabu);
     tabu->best_sol = (int*) calloc(inst->nnodes, sizeof(int));
     assert(tabu->best_sol!=NULL);
-    tabu->pipe = popen("gnuplot -persist", "w");
+    tabu->pipe = _popen("gnuplot -persist", "w");
     tabu_init_plot_iter_and_cost( tabu->figure_cost_flag, tabu->pipe,  (int)( (tabu->zcurr) * 0.8), (int)( (tabu->zcurr*0.85) ), inst);
     init_data_file(tabu -> figure_cost_flag, tabu->data_iter_and_cost, inst);
     //tabu_init_plot_iter_and_cost( tabu->figure_cost_flag, tabu->pipe,  215000, 220000, inst);
