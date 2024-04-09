@@ -16,7 +16,7 @@ typedef struct {
 double dist(int i, int j, instance* inst);
 void build_model(instance* inst, CPXENVptr env, CPXLPptr lp);
 int xpos(int i, int j, instance* inst);
-void set_init_param(CPXENVptr env, const instance* inst);
+void set_init_param(CPXENVptr env, const instance* inst, char* log_name, size_t size);
 void init_multitour_sol(multitour_sol* sol, int n);
 void free_multitour_sol(multitour_sol* sol);
 void build_sol(const double* xstar, instance* inst, int* succ, int* comp, int* ncomp);

@@ -166,7 +166,7 @@ void generate_nodes(int n, point* nodes, int max_x, int max_y) {
 		pointer_nodes++;
 	}
 }
-void generate_figure(char buffer[], size_t bufferSize, const char *format, ...) {
+void generate_name(char buffer[], size_t bufferSize, const char *format, ...) {
     va_list args;
     va_start(args, format);
     int length = vsnprintf(buffer, bufferSize, format, args);
@@ -718,7 +718,7 @@ void init_path(int* path, size_t n){
 void init_data_file(char flag, FILE* data_file, instance* inst){
     char figure_name[64];
     if(flag){
-         generate_figure(figure_name, sizeof(figure_name), "data/tabu_%d_%d_cost.dat", inst->nnodes, inst->randomseed);
+         generate_name(figure_name, sizeof(figure_name), "data/tabu_%d_%d_cost.dat", inst->nnodes, inst->randomseed);
          data_file = fopen(figure_name, "w");
          if(data_file == NULL){
             fclose(data_file);
@@ -800,7 +800,7 @@ void tsp_solve(instance* inst){
 	case NN:
 		greedy_tsp(inst);
 		print_best_sol((inst->verbose>-1), inst);
-		generate_figure(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
+		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		//plot_generator(inst);
@@ -808,11 +808,11 @@ void tsp_solve(instance* inst){
 	case OPT_2:
 		greedy_tsp(inst);
 		print_best_sol((inst->verbose>=5), inst);
-		generate_figure(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
+		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		//optimize 
 		opt2_optimize_best_sol(inst);
-		generate_figure(figure_name, sizeof(figure_name), "figures/greedy_%d_%d_opt2.png", inst->nnodes, inst->randomseed);
+		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d_opt2.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		print_best_sol((inst->verbose>=5), inst);
@@ -820,7 +820,7 @@ void tsp_solve(instance* inst){
 	case TABU:
 		tabu_search(inst);
 		print_best_sol((inst->verbose>=1), inst);
-		generate_figure(figure_name, sizeof(figure_name), "figures/tabu_%d_%d.png", inst->nnodes, inst->randomseed);
+		generate_name(figure_name, sizeof(figure_name), "figures/tabu_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		break;
@@ -828,18 +828,21 @@ void tsp_solve(instance* inst){
 		printf("Initializing a greedy solution\n");
     	greedy_tsp(inst);
 		print_best_sol((inst->verbose>=5), inst);
-		generate_figure(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
+		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		vns(inst);
 		print_best_sol((inst->verbose>=5), inst);
-		generate_figure(figure_name, sizeof(figure_name), "figures/vns_%d_%d.png", inst->nnodes, inst->randomseed);
+		generate_name(figure_name, sizeof(figure_name), "figures/vns_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 	case EX:
 		TSPopt(inst);
+	case BEN:
+		ben_solve(inst);
+		
 	default:
-		exit(-7);
+		exit(main_error(-7));
 	}
 }
 
@@ -853,6 +856,7 @@ void update_solver(instance* inst){
 	printf("2: Nearest Neighbor and TABU search\n");
 	printf("3: Nearest Neighbor and VNS\n");
 	printf("4: Exact Method with CPLEX, no subtour constraints\n");
+	printf("5: Exact Method with CPLEX, with subtour constraints, Benders' method\n");
 	printf("---------------------------------------------\n");
 	fgets(buf, 2, stdin);
     selection = atoi(buf);
@@ -877,6 +881,12 @@ void update_solver(instance* inst){
 		case 4:
 		{
 			inst->solver = EX;
+			printf("successful update. \n");
+			break;
+		}
+		case 5:
+		{
+			inst->solver = BEN;
 			printf("successful update. \n");
 			break;
 		}

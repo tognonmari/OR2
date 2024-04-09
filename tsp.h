@@ -20,7 +20,8 @@ typedef enum {
 	OPT_2,
 	TABU,
 	VNS,
-	EX
+	EX,
+	BEN
 
 } solver_id;
 
@@ -73,7 +74,7 @@ void make_datafile(instance *inst, FILE* data_file);
 
 void generate_instance(instance *inst);
 
-void generate_figure(char buffer[], size_t bufferSize, const char *format, ...);
+void generate_name(char buffer[], size_t bufferSize, const char *format, ...);
 
 void generate_nodes(int n, point* nodes, int max_x, int max_y);
 

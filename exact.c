@@ -86,16 +86,19 @@ void build_model(const instance* inst, CPXENVptr env, CPXLPptr lp)
 	tsp_debug(inst->verbose >= 100, 1, "free cname SUCCESSFUL");
 }
 
-void set_init_param(CPXENVptr env, const instance* inst){
+void set_init_param(CPXENVptr env, const instance* inst, char* log_name, size_t size_log_name){
 	// increased precision for big-M models
 	CPXsetdblparam(env, CPX_PARAM_EPINT, 0.0);		// very important if big-M is present
 	CPXsetdblparam(env, CPX_PARAM_EPRHS, 1e-9);
-
+	CPXsetdblparam(env, CPX_PARAM_TILIM, inst->timelimit - get_timer());
 	CPXsetintparam(env, CPX_PARAM_MIPDISPLAY, 4);
 	if (inst->verbose >= 200) CPXsetintparam(env, CPX_PARAM_SCRIND, CPX_ON); // Cplex output on screen
-	CPXsetintparam(env, CPX_PARAM_RANDOMSEED, 123456);
+	//CPXsetintparam(env, CPX_PARAM_RANDOMSEED, 123456);
 
-	CPXsetdblparam(env, CPX_PARAM_TILIM, CPX_INFBOUND + 0.0);
+	//CPXsetdblparam(env, CPX_PARAM_TILIM, CPX_INFBOUND + 0.0);
+	MKDIR("logs");
+	generate_name(log_name, size_log_name, "logs/ben_%d_%d.txt", inst->nnodes, inst->randomseed);
+	CPXsetlogfilename(env, (const char*) log_name, "w");
 
 	//CPXsetintparam(env, CPX_PARAM_NODELIM, 0); 		// abort Cplex after the root node
 	//CPXsetintparam(env, CPX_PARAM_INTSOLLIM, 1);	// abort Cplex after the first incumbent update
@@ -153,6 +156,7 @@ void build_sol(const double* xstar, const instance* inst, int* succ, int* comp, 
 	}
 	free(degree);
 	tsp_debug(inst->verbose >= 100, 1, "checking degree constraints SUCCESSFUL");
+	*ncomp = 0;
 	for (int i = 0; i < n; i++)
 	{
 		succ[i] = -1;
@@ -239,14 +243,14 @@ void plot_multitour(char figure_flag,char debug_flag, const char figure_name[], 
 			i = succ[i];
 		}
 		fprintf(gnuplotPipe, "%lf %lf\n", points[i].x, points[i].y);
-		fprintf(gnuplotPipe, "e\n"); //This line serves to terminate the input of data for the plot command in gnuplot.
 		tsp_debug(debug_flag, 1, "Plot of component %d SUCCESSFUL",comp_counter);
 		comp_counter++;
 		// Usa replot per sovrapporre i plot successivi
 		if (comp_counter <= ncomp) {
-			fprintf(gnuplotPipe, "replot '-' with linespoints pt 1 lc rgb '%s'\n", generate_color(rand() % 101) );
+			fprintf(gnuplotPipe, "replot\n");
 		}
 	}
+	fprintf(gnuplotPipe, "e\n"); //This line serves to terminate the input of data for the plot command in gnuplot.
 	fclose(gnuplotPipe);
 	tsp_debug(debug_flag, 1, "Plot of multitour_sol SUCCESSFUL");
 }
@@ -255,13 +259,14 @@ int TSPopt(instance* inst)
 
 	// open CPLEX model
 	int error;
+	char log_name[64];
 	CPXENVptr env = CPXopenCPLEX(&error);
 	CPXLPptr lp = CPXcreateprob(env, &error, "TSP_Problem");
 	multitour_sol curr_sol;
 	build_model(inst, env, lp);
 	tsp_debug(inst->verbose>=100,1,"build_model SUCCESSFUL");
 	// Cplex's parameter setting
-	set_init_param(env, (const instance*) inst);
+	set_init_param(env, (const instance*) inst, log_name, sizeof(log_name));
 	tsp_debug(inst->verbose >= 100, 1, "set_init_param SUCCESSFUL");
 	if (CPXmipopt(env, lp)) { exit(main_error_text(-9, "CPXmipopt() error")); }
 	tsp_debug(inst->verbose >= 100, 1, "CPXmipopt SUCCESSFUL");
@@ -281,7 +286,7 @@ int TSPopt(instance* inst)
 	build_sol((const double*) xstar, (const instance*) inst, curr_sol.succ, curr_sol.comp, &curr_sol.ncomp);
 	tsp_debug(inst->verbose >= 100, 1, "build_sol SUCCESSFUL: there are %d connected components", curr_sol.ncomp);
 	char figure_name[64];
-	generate_figure(figure_name, sizeof(figure_name), "figures/exact_%d_%d.png", inst->nnodes, inst->randomseed);
+	generate_name(figure_name, sizeof(figure_name), "figures/exact_%d_%d.png", inst->nnodes, inst->randomseed);
 	plot_multitour(inst->verbose >=1, inst->verbose>=100, figure_name, (const multitour_sol*) &curr_sol, inst->nodes);
 	free(xstar);
 	free_multitour_sol(&curr_sol);
