@@ -8,11 +8,18 @@
  * Gathers parameter information for vns from cmd line
 */
 
-vns_params parse_vns_params(){
+vns_params parse_and_init_vns_params(){
+
+    //Initialization
+
+    vns_params pars;
     char buf[2];
     char buf2[2];
     int min;
     int max;
+
+    //Scanning for user input: 
+
     printf("----Choose a minimum number of kicks:----\n");
     fgets(buf, 2, stdin);
     min = atoi(buf);
@@ -23,6 +30,12 @@ vns_params parse_vns_params(){
     printf("you chose as maximum %d\n", max);
     assert(min<=max);
     printf("------------------------------------------\n");
+    pars.min_kicks = min;
+    pars.max_kicks = max;
+    pars.gnuplot_pipe = _popen("gnuplot -persist", "w");
+
+
+    return pars;
 }
 
 /**
@@ -31,8 +44,10 @@ vns_params parse_vns_params(){
 void vns(instance* inst){
 
     
-    //Step 1: Parse vns parameters + copy the current best_sol to optimize
-    vns_params params = parse_vns_params();
+    char plot_desired = inst->verbose >= 10;
+    
+    //Step 1: Parse vns parameters + copy the current best_sol to optimize + initializing gnuplot pipe with correct axis
+    vns_params params = parse_and_init_vns_params();
 
     // copying the current best sol to optimize with opt2 and then to kick
     int* incumbent_sol = (int*) calloc(inst->nnodes, sizeof(int));
@@ -40,11 +55,16 @@ void vns(instance* inst){
     copy_array(incumbent_sol, inst->best_sol);
 
     double incumbent_cost = inst->zbest;
+
+    //initializing gnuplot
+
+    vns_init_plot_iter_cost(plot_desired, params.gnuplot_pipe, inst);
+
     //Step 2: Solve with vns upon the incumbent: need to rewrite opt 2
     printf("-----Starting vns heuristics:-------\n");
     int max_iter = 1500;
-    int t=0;
-    //char figure_name[64];
+    int t=1;
+    srand(time(NULL));
     //opt2_optimize_best_sol(inst);
     //generate_name(figure_name, sizeof(figure_name), "figures/after2opt_%d_%d.png", inst->nnodes, inst->randomseed);
 	//plot_path((inst->verbose>-1),figure_name,incumbent_sol, inst->nodes, inst->nnodes);
@@ -56,6 +76,12 @@ void vns(instance* inst){
         while(improvement){
             improvement = opt2_move(inst, incumbent_sol, &incumbent_cost);
             swaps++;
+           
+            t++;
+        }
+
+        if (plot_desired) {
+            fprintf(params.gnuplot_pipe, "%d %lf\n", t, incumbent_cost);
         }
         
 	    //generate_name(figure_name, sizeof(figure_name), "figures/after2opt_%d_%d.png", inst->nnodes, inst->randomseed);
@@ -72,28 +98,33 @@ void vns(instance* inst){
 
         }
         
-        srand(time(NULL));
         //params.min_kicks = 3;
         //params.max_kicks = 3;
         //printf("I am kicking with min : %d, max: %d", params.min_kicks,params.max_kicks);
         int kicks = 4;
         //printf("I want to kick %d times\n", kicks);
         for (int jj = 0; jj<kicks; jj++){
-            printf("kicking!\n");
+            //printf("kicking!\n");
             kick(inst, incumbent_sol);
-            
-            
+
+            if (plot_desired) {
+
+                fprintf(params.gnuplot_pipe, "%d %lf\n", t, compute_path_length(incumbent_sol, inst->nnodes, inst->nodes));
+            }
+
+            t++;
         }
         
        
         incumbent_cost = compute_path_length(incumbent_sol, inst->nnodes, inst->nodes);
 
-        t += (swaps+kicks);
+        //t += (swaps+kicks);
        
     }
 
     free(incumbent_sol);
-    //opt2_optimize_best_sol(inst);
+    vns_close_plot_pipe(plot_desired, params.gnuplot_pipe);
+
 }
 /**
  * Returns 0 if the path cannot be optimized any further with 2 opt moves
@@ -146,7 +177,7 @@ char opt2_move(instance* inst, int* incumbent_sol, double* incumbent_cost){
 void kick(instance* inst, int* sol_to_kick){
 
     int n = inst->nnodes;
-    srand(time(NULL));
+    //srand(time(NULL));
     int* random_indexes = (int*) calloc(3, sizeof(int));
     //Step 1: Extract 3 random edges and check their validity
     random_indexes[0] = rand() % n;
@@ -210,3 +241,32 @@ void kick(instance* inst, int* sol_to_kick){
     free(kicked_sol);
 }
 
+
+void vns_init_plot_iter_cost(char flag, FILE* gnuplotPipe, instance* inst) {
+
+    char figure_name[64];
+    if (gnuplotPipe == NULL) {
+        fclose(gnuplotPipe);
+        exit(main_error_text(-1, "Failed to open the pipeline to gnuplot"));
+    }
+    if (flag) {
+        generate_name(figure_name, sizeof(figure_name), "figures/vns_%d_%d_cost.png", inst->nnodes, inst->randomseed);
+        fprintf(gnuplotPipe, "set output '%s'\n", figure_name); //set output name
+        fprintf(gnuplotPipe, "set terminal png \n"); //set extension
+        fprintf(gnuplotPipe, "set title 'VNS cost'\n");
+        fprintf(gnuplotPipe, "set key off\n"); //if key on the name of the file is printed on the plot
+        fprintf(gnuplotPipe, "set xlabel 'iter'\n");
+        fprintf(gnuplotPipe, "set ylabel 'cost'\n");
+        //fprintf(gnuplotPipe, "set yrange [%d:%d]\n",y_range_min, y_range_max);
+        fprintf(gnuplotPipe, "set pointsize 0.5\n");
+        fprintf(gnuplotPipe, "set grid \n");
+        fprintf(gnuplotPipe, "plot '-' with linespoints pt 0.3 lc rgb '#800080'\n");
+    }
+}
+
+void vns_close_plot_pipe(char flag, FILE* gnuplotPipe) {
+    if (flag) {
+        fprintf(gnuplotPipe, "e\n"); //This line serves to terminate the input of data for the plot command in gnuplot.
+    }
+    fclose(gnuplotPipe);
+}
