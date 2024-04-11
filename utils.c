@@ -7,7 +7,8 @@ int main_error_text(int error, char* format, ...) {
 	va_start(args, format);
 	void* first_par;
 	void* second_par;
-	fprintf(stderr, "\n");
+	fprintf(stderr, "\n\n");
+	fprintf(stderr,"----------------Exit Message:----------------\n");
 	switch (error) {
 	case 0:
 		fprintf(stderr, "Successful solved.\n");
@@ -43,11 +44,15 @@ int main_error_text(int error, char* format, ...) {
 	case -9:
 		fprintf(stderr, "Error in cplex enviroment\n");
 		break;
+	case -10:
+		fprintf(stderr, "Incompatible type error.\n");
+		break;
 	default:
 		fprintf(stderr, "Unknown error.\n");
 	}
 	vprintf(format, args);
 	va_end(args);
+	fprintf(stderr, "\n---------------------------------------------\n");
 	return error;
 }
 int main_error(int error) {

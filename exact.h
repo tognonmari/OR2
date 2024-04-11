@@ -11,8 +11,12 @@ typedef struct {
 	int* succ; // It contains the sequence of indices of the nodes involved in $xstar, observe that succ always starts with index 0. (succ
 	int ncomp; // Number of connected components.
 	int* comp; //comp[i] indicate the index of the connected component of node with index i;
+	int* z;
 } multitour_sol;
 #define EPS 1e-7
+void handleCPXResult(int flag, int result, char* format);
+void cpx_convert_succ_in_path(const multitour_sol* mlt, int* path, int n);
+int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const multitour_sol* sol);
 double dist(int i, int j, instance* inst);
 void build_model(instance* inst, CPXENVptr env, CPXLPptr lp);
 int xpos(int i, int j, instance* inst);

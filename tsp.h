@@ -50,7 +50,8 @@ typedef struct {
 	double	tstart;
 	double zbest;							// best sol. available  
 	double tbest;							// time for the best sol. available  
-	int* best_sol;							// best sol. available    
+	int* best_sol;							// best sol. available
+	char is_best_sol_avail;					// flag that tells if best sol. is available in the heap
 	double	best_lb;						// best lower bound available  
 	double* load_min;						// minimum load when leaving a node
 	double* load_max;						// maximum load when leaving a node

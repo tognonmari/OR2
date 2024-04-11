@@ -1,5 +1,96 @@
 #include "exact.h"
 
+//Function that handles CPX function results
+void handleCPXResult(int flag, int result, char* format) {
+	tsp_debug(flag,1, "%s", format);
+	switch (result) {
+	case CPX_STAT_OPTIMAL:
+		tsp_debug_inline(flag, " The optimal solution has been found");
+		break;
+	case CPX_STAT_INFEASIBLE:
+		tsp_debug_inline(flag, " Infeasible problem");
+		break;
+	case CPX_STAT_UNBOUNDED:
+		tsp_debug_inline(flag, " Unbounded problem");
+		break;
+	case CPX_STAT_ABORT_TIME_LIM:
+		tsp_debug(flag,1,"The resolution of the problem is ended due by exceeding internal CPX_PARAM_TILIM.\n");
+		break;
+	case CPXMIP_OPTIMAL:
+		tsp_debug_inline(flag, " An optimal solution has been found");
+		break;
+	case CPXMIP_TIME_LIM_FEAS:
+		tsp_debug_inline(flag, " CPXmipopt stopped because timelimit has been exceeded.");
+		tsp_debug(flag,0, "An integer feasible solution is been found for the problem.");
+		break;
+	case CPXMIP_OPTIMAL_TOL:
+		tsp_debug_inline(flag, " An optimal solution has been found.");
+		break;
+	case CPXMIP_TIME_LIM_INFEAS:
+		tsp_debug_inline(flag, " CPXmipopt stopped because timelimit has been exceeded.");
+		tsp_debug(flag, 0, "No feasible solution has been found for the problem.");
+		break;
+	default:
+		printf("\n\nWARNING it has been returned result: %d, which is not handled. Please add the case %d in exact.c -> handleCPXResult \n\n",result, result);
+	}
+}
+void cpx_convert_succ_in_path(const multitour_sol* mlt, int* path, int n) {
+	if (mlt->ncomp > 1) { exit(main_error_text(-10, "Cannot convert multitour in a full connected path\nYou must provide a single tour!")); }
+	int curr = 0;
+	path[0] = curr;
+	for (int i = 1; i < n; i++) {
+		curr = (mlt->succ)[curr];
+		path[i] = curr;
+	}
+}
+int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const multitour_sol* sol) {
+	double z;
+	int result = CPXgetstat(env, lp);
+	int* path;
+	int n = inst->nnodes;
+	switch (result) {
+	case CPXMIP_OPTIMAL:
+		tsp_debug(flag, 1, " Updating solution for the problem with an optimal one");
+		CPXgetobjval(env, lp, &z);
+		path = (int*)calloc(n, sizeof(int));
+		cpx_convert_succ_in_path(sol, path, n);
+		update_best(inst, z, get_timer(), path);
+		break;
+	case CPXMIP_TIME_LIM_FEAS:
+		if (sol->ncomp == 1) {
+			tsp_debug(flag, 1, "Updating solution for the problem with a feasible one");
+			CPXgetobjval(env, lp, &z);
+			path = (int*)calloc(n, sizeof(int));
+			cpx_convert_succ_in_path(sol, path, n);
+			update_best(inst, z, get_timer(), path);
+			break;
+		}
+		else {
+			CPXgetobjval(env, lp, &z);
+			tsp_debug(flag, 1, "Try to updating solution, but tsp require single tour solution");
+			tsp_debug(flag, 0, "While the current solution is a multitour solution");
+			tsp_debug(flag, 0, "Probably you need to increase the time limit for this instance");
+			tsp_debug(flag, 0, "The current cost of the solution is: %.2f", z);
+			return 0;
+		}
+	case CPXMIP_OPTIMAL_TOL:
+		tsp_debug(flag, 1, " Updating solution for the problem with an optimal one");
+		CPXgetobjval(env, lp, &z);
+		path = (int*)calloc(n, sizeof(int));
+		cpx_convert_succ_in_path(sol, path, n);
+		update_best(inst, z, get_timer(), path);
+		break;
+	case CPXMIP_TIME_LIM_INFEAS:
+		tsp_debug(flag, 1, "Try to updating solution, but no feasible solution has been found.");
+		tsp_debug(flag, 0, "Probably you need to increase the time limit for this instance");
+		return 0;
+	default:
+		printf("\n\nWARNING it has been returned result: %d, which is not handled. Please add the case %d in handleCPXResult and cpx_update_best \n\n",result, result);
+		return 0;
+	}
+	return 1;
+}
+
 double dist(int i, int j, instance* inst) {
 	float* dist_matr = inst->dist_matrix;
 	if (!inst->integer_costs) return (double)(get_dist_matrix((const float*)(dist_matr), i, j));
@@ -21,6 +112,7 @@ int xpos(int i, int j,const instance* inst)
 	int pos = i * inst->nnodes + j - ((i + 1) * (i + 2)) / 2;
 	return pos;
 }
+
 /*
  * Builds the mathematical model for solving basic TSP problem (no subtour constraints).
  *
@@ -37,17 +129,14 @@ void build_model(const instance* inst, CPXENVptr env, CPXLPptr lp)
 	char** cname = (char**)calloc(1, sizeof(char*));		// (char **) required by cplex...
 	cname[0] = (char*)calloc(100, sizeof(char));
 	// add binary var.s x(i,j) for i < j 
-	tsp_debug((inst->verbose == 101),0, "LIST OF SUCCESSFUL ITERATIONS");
 	for (int i = 0; i < n; i++)
 	{
-		tsp_debug((inst->verbose == 101), 0, "	i=%d", i);
 		for (int j = i + 1; j < n; j++)
 		{
 			sprintf(cname[0], "x(%d,%d)", i + 1, j + 1);  // x(1,2), x(1,3) ....
 			double obj = dist(i, j, inst); // cost == distance   
 			double lb = 0.0;
 			double ub = 1.0;
-			tsp_debug((inst->verbose == 101), 0, "		j=%d");
 			if (CPXnewcols(env, lp, 1, &obj, &lb, &ub, &binary, cname)) { printf(main_error_text(-9, "Wrong CPXnewcols on x var.s")); }
 			//observe that the number of added cols - 1 is equal to the actual index in the model of x_ij
 			if (CPXgetnumcols(env, lp) - 1 != xpos(i, j, inst)) { printf(main_error_text(-9, "Wrong position for x var.s")); }
@@ -79,11 +168,10 @@ void build_model(const instance* inst, CPXENVptr env, CPXLPptr lp)
 	free(value);
 	free(index);
 
-	if (VERBOSE >= -100) CPXwriteprob(env, lp, "model.lp", NULL);
+	if (inst->verbose >= -100) CPXwriteprob(env, lp, "model.lp", NULL);
 	tsp_debug(inst->verbose >= 100, 1, "CPXwriteprob SUCCESSFUL");
 	free(cname[0]);
 	free(cname);
-	tsp_debug(inst->verbose >= 100, 1, "free cname SUCCESSFUL");
 }
 
 void set_init_param(CPXENVptr env, const instance* inst, char* log_name, size_t size_log_name){
@@ -99,7 +187,6 @@ void set_init_param(CPXENVptr env, const instance* inst, char* log_name, size_t 
 	MKDIR("logs");
 	generate_name(log_name, size_log_name, "logs/ben_%d_%d.txt", inst->nnodes, inst->randomseed);
 	CPXsetlogfilename(env, (const char*) log_name, "w");
-
 	//CPXsetintparam(env, CPX_PARAM_NODELIM, 0); 		// abort Cplex after the root node
 	//CPXsetintparam(env, CPX_PARAM_INTSOLLIM, 1);	// abort Cplex after the first incumbent update
 	//CPXsetdblparam(env, CPX_PARAM_EPGAP, 1e-4);  	// abort Cplex when gap below 10%
@@ -155,7 +242,7 @@ void build_sol(const double* xstar, const instance* inst, int* succ, int* comp, 
 	}
 	}
 	free(degree);
-	tsp_debug(inst->verbose >= 100, 1, "checking degree constraints SUCCESSFUL");
+	tsp_debug(inst->verbose >= 200, 1, "checking degree constraints SUCCESSFUL");
 	*ncomp = 0;
 	for (int i = 0; i < n; i++)
 	{
@@ -187,7 +274,7 @@ void build_sol(const double* xstar, const instance* inst, int* succ, int* comp, 
 			}
 		}
 		succ[i] = start;  // last arc to close the cycle
-		tsp_debug(inst->verbose >= 100, 1, "build_sol for component:%d SUCCESSFUL",comp[start]);
+		tsp_debug(inst->verbose >= 200, 1, "build_sol for component:%d SUCCESSFUL",comp[start]);
 		// go to the next component...
 	}
 }

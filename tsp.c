@@ -44,6 +44,10 @@ void tsp_debug_inline(char flag, char* format, ...)
 * Function that prints the best_solution of $inst if the given $flag is true.
 */
 void print_best_sol(char flag, instance* inst) {
+	if (!(inst->is_best_sol_avail)) {
+		tsp_debug_inline(flag, "\n Warning. You try to print best solution, but it is not available\n");
+		return;
+	}
 	tsp_debug_inline(flag, "\n -------------- Best solution: --------------\n");
 	tsp_debug_inline(flag, "Best Distance (zbest): %.2lf\n",inst->zbest);
 	tsp_debug_inline(flag, "Best Solution found at time: %12.6f\n",inst->tbest);
@@ -399,7 +403,10 @@ void free_instance(instance *inst){
     //TODO: free memory accroding to how instance is allocated
     // free(inst->demand);
     free(inst->nodes);
-	free(inst->best_sol);
+	if (inst->is_best_sol_avail) {
+		free(inst->best_sol);
+		inst->is_best_sol_avail = 0;
+	}
 	free(inst->dist_matrix);
 }
 
@@ -692,7 +699,6 @@ void greedy_tsp(instance *inst){
 
 /**
  * Updates the best solution information in the instance.
- *
  * OP inst Pointer to the instance structure to modify.
  * IP z New best objective value.
  * IP t New best execution time.
@@ -701,6 +707,7 @@ void greedy_tsp(instance *inst){
 void update_best(instance* inst, double z, double t, int* sol){
 	inst->zbest = z;
 	inst->tbest = t;
+	inst->is_best_sol_avail = 1;
 	inst->best_sol = sol;
 }
 /*
@@ -835,10 +842,13 @@ void tsp_solve(instance* inst){
 		generate_name(figure_name, sizeof(figure_name), "figures/vns_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
+		break;
 	case EX:
 		TSPopt(inst);
+		break;
 	case BEN:
 		ben_solve(inst);
+		break;
 		
 	default:
 		exit(main_error(-7));
