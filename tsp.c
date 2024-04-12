@@ -198,7 +198,9 @@ void generate_instance(instance *inst){
 	
 	inst->nodes = (point*)malloc(inst->nnodes * sizeof(point));
 	generate_nodes(inst->nnodes, inst->nodes, MAX_X, MAX_Y);
-	
+	inst->best_ub = DBL_MAX;
+	inst->best_lb = DBL_MIN;
+	inst->is_best_sol_avail = 0;
 	compute_dist_matrix(inst);
 	
 	//print_triangular_matrix((inst->verbose>0),"The cost matrix is: \n", (const float**)inst->dist_matrix, inst->nnodes);
@@ -711,6 +713,16 @@ void update_best(instance* inst, double z, double t, int* sol){
 	inst->is_best_sol_avail = 1;
 	inst->best_sol = sol;
 }
+void update_lb(instance* inst, double lb) {
+	if (lb > inst->best_lb) {
+		inst->best_lb = lb;
+	}
+}
+void update_ub(instance* inst, double ub) {
+	if (ub < inst->best_ub) {
+		inst->best_ub = ub;
+	}
+}
 /*
  * Initializes an array $path with values from 0 to n-1.
  * OP path Pointer to the array to be initialized.
@@ -848,9 +860,11 @@ void tsp_solve(instance* inst){
 		TSPopt(inst);
 		break;
 	case BEN:
-		ben_solve(inst);
+		ben_solve(0, inst);
 		break;
-		
+	case GLU:
+		ben_solve(1, inst);
+		break;
 	default:
 		exit(main_error(-7));
 	}
@@ -866,7 +880,8 @@ void update_solver(instance* inst){
 	printf("2: Nearest Neighbor and TABU search\n");
 	printf("3: Nearest Neighbor and VNS\n");
 	printf("4: Exact Method with CPLEX, no subtour constraints\n");
-	printf("5: Exact Method with CPLEX, with subtour constraints, Benders' method\n");
+	printf("5: Exact Method with CPLEX, with SECs, Benders' method\n");
+	printf("6: Exact Method with CPLEX, with SECs, Benders' method with patching\n");
 	printf("---------------------------------------------\n");
 	fgets(buf, 2, stdin);
     selection = atoi(buf);
@@ -897,6 +912,12 @@ void update_solver(instance* inst){
 		case 5:
 		{
 			inst->solver = BEN;
+			printf("successful update. \n");
+			break;
+		}
+		case 6:
+		{
+			inst->solver = GLU;
 			printf("successful update. \n");
 			break;
 		}

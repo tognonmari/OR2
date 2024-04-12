@@ -21,7 +21,8 @@ typedef enum {
 	TABU,
 	VNS,
 	EX,
-	BEN
+	BEN,
+	GLU
 
 } solver_id;
 
@@ -53,6 +54,7 @@ typedef struct {
 	int* best_sol;							// best sol. available
 	char is_best_sol_avail;					// flag that tells if best sol. is available in the heap
 	double	best_lb;						// best lower bound available  
+	double best_ub;
 	double* load_min;						// minimum load when leaving a node
 	double* load_max;						// maximum load when leaving a node
 
@@ -150,5 +152,9 @@ void tsp_solve(instance* inst);
 void update_solver(instance* inst);
 
 void update_best(instance* inst, double z, double t, int* sol);
+
+void update_lb(instance* inst, double lb);
+
+void update_ub(instance* inst, double ub);
 
 #endif

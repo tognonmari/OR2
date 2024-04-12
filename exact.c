@@ -68,7 +68,7 @@ int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const
 		else {
 			CPXgetobjval(env, lp, &z);
 			tsp_debug(flag, 1, "Try to updating solution, but tsp require single tour solution");
-			tsp_debug(flag, 0, "While the current solution is a multitour solution");
+			tsp_debug(flag, 0, "While the current solution has a multitour solution");
 			tsp_debug(flag, 0, "Probably you need to increase the time limit for this instance");
 			tsp_debug(flag, 0, "The current cost of the solution is: %.2f", z);
 			return 0;
