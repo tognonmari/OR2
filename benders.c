@@ -100,6 +100,7 @@ void update_best_delta(float* best_delta, int* best_i, int* best_j, int* comp_to
 void ben_patching(const multitour_sol* curr_sol, multitour_sol* patched_sol, const instance* inst) {
 	copy_mlt_sol(patched_sol, curr_sol);
 	int* start = (int*)calloc((patched_sol->ncomp) + 1, sizeof(int));
+	int comp_to_kill = -1;
 	printf("ADDRESS START INIZIALE = %p", start);
 	for (int i = 0; i < inst->nnodes; i++) {
 		start[patched_sol->comp[i]] = i;
@@ -110,7 +111,6 @@ void ben_patching(const multitour_sol* curr_sol, multitour_sol* patched_sol, con
 		float best_delta = FLT_MAX;
 		int best_i = -1;
 		int best_j = -1;
-		int comp_to_kill = -1;
 		for (int k1 = 1; k1 < patched_sol->ncomp - 1; k1++) {
 			for (int k2 = k1 + 1; k2 < patched_sol->ncomp; k2++) {
 				int i = start[k1];
