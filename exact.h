@@ -25,7 +25,7 @@ void init_multitour_sol(multitour_sol* sol, int n);
 void free_multitour_sol(multitour_sol* sol);
 void build_sol(const double* xstar, instance* inst, int* succ, int* comp, int* ncomp);
 void print_selected_arcs(char flag, const double* xstar, const instance* inst);
-void plot_multitour(char figure_flag, char debug_flag, const char figure_name[], const multitour_sol* sol, const point* points);
+//void plot_multitour(char figure_flag, char debug_flag, const char figure_name[], const multitour_sol* sol, const point* points);
 int TSPopt(instance* inst);
 
 #endif

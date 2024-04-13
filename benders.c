@@ -99,29 +99,31 @@ void update_best_delta(float* best_delta, int* best_i, int* best_j, int* comp_to
 }
 void ben_patching(const multitour_sol* curr_sol, multitour_sol* patched_sol, const instance* inst) {
 	copy_mlt_sol(patched_sol, curr_sol);
+	char figure_name[64];
+	generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_%d_prepatch.png", inst->nnodes, inst->randomseed);
+	plot_multitour((const multitour_sol*)patched_sol, inst->nnodes, inst->nodes, figure_name);
+	
 	int* start = (int*)calloc((patched_sol->ncomp) + 1, sizeof(int));
 	int comp_to_kill = -1;
-	printf("ADDRESS START INIZIALE = %p", start);
 	for (int i = 0; i < inst->nnodes; i++) {
 		start[patched_sol->comp[i]] = i;
 	}
 	while (patched_sol->ncomp > 1) {
-		int debug= 0;
 		int* succ = patched_sol->succ;
 		float best_delta = FLT_MAX;
 		int best_i = -1;
 		int best_j = -1;
-		for (int k1 = 1; k1 < patched_sol->ncomp - 1; k1++) {
-			for (int k2 = k1 + 1; k2 < patched_sol->ncomp; k2++) {
+		for (int k1 = 1; k1 <= patched_sol->ncomp - 1; k1++) {
+			for (int k2 = k1 + 1; k2 <= patched_sol->ncomp; k2++) {
 				int i = start[k1];
 				int j = start[k2];
 				float delta_ij = compute_delta(i, j, succ[i], succ[j], inst->dist_matrix);
 				if (delta_ij < best_delta) {
 					update_best_delta(&best_delta, &best_i, &best_j,&comp_to_kill, delta_ij, i, j,k2);
 				}
-				i = succ[i];
-				j = succ[j];
+				i = succ[start[k1]];
 				while (i != start[k1]) {
+					j = succ[start[k2]];
 					while (j != start[k2]) {
 						delta_ij = compute_delta(i, j, succ[i], succ[j], inst->dist_matrix);
 						if (delta_ij < best_delta) {
@@ -141,17 +143,14 @@ void ben_patching(const multitour_sol* curr_sol, multitour_sol* patched_sol, con
 		start[comp_to_kill] = start[patched_sol->ncomp];
 		(patched_sol->ncomp)--;
 	}
-	printf("ADDRESS START FINALE = %p", start);
 	for (int i = 0; i < inst->nnodes; i++) {
-		printf("\n%d", i);
 		patched_sol->comp[i] = 1;
 	}
 	//
 	free(start);
-	char figure_name[64];
-	generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_glu.png", inst->nnodes, inst->randomseed);
-	plot_multitour(inst->verbose >= 1, inst->verbose >= 200, figure_name, (const multitour_sol*)patched_sol, inst->nodes);
-	printf("END");
+	generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_%d_postpatch.png", inst->nnodes, inst->randomseed);
+	plot_multitour((const multitour_sol*)patched_sol, inst->nnodes, inst->nodes, figure_name);
+
 }
 void ben_solve(char patching, instance* inst) {
 	// open CPLEX model
@@ -184,7 +183,7 @@ void ben_solve(char patching, instance* inst) {
 	tsp_debug(inst->verbose >= 100, 1, "build_sol SUCCESSFUL: there are %d connected components", curr_sol.ncomp);
 	char figure_name[64];
 	generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_multitour.png", inst->nnodes, inst->randomseed);
-	plot_multitour(inst->verbose >= 1, inst->verbose >= 200, figure_name, (const multitour_sol*)&curr_sol, inst->nodes);
+	plot_multitour((const multitour_sol*)&curr_sol, inst->nnodes, inst->nodes, figure_name);
 	ben_reduce_comp(patching, env,lp, inst, &curr_sol);
 	handleCPXResult(inst->verbose > 1, CPXgetstat(env, lp), "Final CPXResult:");
 	if (cpx_update_best(inst->verbose >= 1, inst, env, lp, &curr_sol)) {

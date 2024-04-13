@@ -294,6 +294,7 @@ void print_selected_arcs(char flag, const double* xstar,const instance* inst) {
 		}
 	}
 }
+/*
 void plot_multitour(char figure_flag,char debug_flag, const char figure_name[], const multitour_sol* sol, const point* points){
 	FILE* gnuplotPipe = _popen("gnuplot -persist", "w");
 
@@ -341,6 +342,7 @@ void plot_multitour(char figure_flag,char debug_flag, const char figure_name[], 
 	fclose(gnuplotPipe);
 	tsp_debug(debug_flag, 1, "Plot of multitour_sol SUCCESSFUL");
 }
+*/ // TO ERASE
 int TSPopt(instance* inst)
 {
 
