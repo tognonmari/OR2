@@ -7,7 +7,8 @@ int main_error_text(int error, char* format, ...) {
 	va_start(args, format);
 	void* first_par;
 	void* second_par;
-	fprintf(stderr, "\n");
+	fprintf(stderr, "\n\n");
+	fprintf(stderr,"----------------Exit Message:----------------\n");
 	switch (error) {
 	case 0:
 		fprintf(stderr, "Successful solved.\n");
@@ -43,11 +44,15 @@ int main_error_text(int error, char* format, ...) {
 	case -9:
 		fprintf(stderr, "Error in cplex enviroment\n");
 		break;
+	case -10:
+		fprintf(stderr, "Incompatible type error.\n");
+		break;
 	default:
 		fprintf(stderr, "Unknown error.\n");
 	}
 	vprintf(format, args);
 	va_end(args);
+	fprintf(stderr, "\n---------------------------------------------\n");
 	return error;
 }
 int main_error(int error) {
@@ -154,25 +159,6 @@ void* alloc_triangular_matrix_as_array(int nrow, size_t size_type){
 
 int cmp_int_increasing(const void* a, const void* b) {
 	return (*(int*)a - *(int*)b);
-}
-
-// Funzione per generare una stringa colore RGB in base al valore in input
-char* generate_color(int value) {
-	// Calcola i componenti RGB
-	int r = (100 - value) * 255 / 100;
-	int g = value * 255 / 100;
-	int b = 0; // Nessun blu per questa transizione
-
-	// Alloca spazio per la stringa colore (7 caratteri: #RRGGBB + terminatore)
-	char* colorString = (char*)malloc(10 * sizeof(char));
-	if (colorString == NULL) {
-		exit(0);
-	}
-
-	// Formatta la stringa colore
-	snprintf(colorString, 10, "'#%02X%02X%02X'", r, g, b);
-
-	return colorString;
 }
 
 // Funzione per concatenare due stringhe

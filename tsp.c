@@ -45,6 +45,10 @@ void tsp_debug_inline(char flag, char* format, ...)
 * Function that prints the best_solution of $inst if the given $flag is true.
 */
 void print_best_sol(char flag, instance* inst) {
+	if (!(inst->is_best_sol_avail)) {
+		tsp_debug_inline(flag, "\n Warning. You try to print best solution, but it is not available\n");
+		return;
+	}
 	tsp_debug_inline(flag, "\n -------------- Best solution: --------------\n");
 	tsp_debug_inline(flag, "Best Distance (zbest): %.2lf\n",inst->zbest);
 	tsp_debug_inline(flag, "Best Solution found at time: %12.6f\n",inst->tbest);
@@ -194,7 +198,9 @@ void generate_instance(instance *inst){
 	
 	inst->nodes = (point*)malloc(inst->nnodes * sizeof(point));
 	generate_nodes(inst->nnodes, inst->nodes, MAX_X, MAX_Y);
-	
+	inst->best_ub = DBL_MAX;
+	inst->best_lb = DBL_MIN;
+	inst->is_best_sol_avail = 0;
 	compute_dist_matrix(inst);
 	
 	//print_triangular_matrix((inst->verbose>0),"The cost matrix is: \n", (const float**)inst->dist_matrix, inst->nnodes);
@@ -400,7 +406,10 @@ void free_instance(instance *inst){
     //TODO: free memory accroding to how instance is allocated
     // free(inst->demand);
     free(inst->nodes);
-	free(inst->best_sol);
+	if (inst->is_best_sol_avail) {
+		free(inst->best_sol);
+		inst->is_best_sol_avail = 0;
+	}
 	free(inst->dist_matrix);
 }
 
@@ -693,7 +702,6 @@ void greedy_tsp(instance *inst){
 
 /**
  * Updates the best solution information in the instance.
- *
  * OP inst Pointer to the instance structure to modify.
  * IP z New best objective value.
  * IP t New best execution time.
@@ -702,7 +710,18 @@ void greedy_tsp(instance *inst){
 void update_best(instance* inst, double z, double t, int* sol){
 	inst->zbest = z;
 	inst->tbest = t;
+	inst->is_best_sol_avail = 1;
 	inst->best_sol = sol;
+}
+void update_lb(instance* inst, double lb) {
+	if (lb > inst->best_lb) {
+		inst->best_lb = lb;
+	}
+}
+void update_ub(instance* inst, double ub) {
+	if (ub < inst->best_ub) {
+		inst->best_ub = ub;
+	}
 }
 /*
  * Initializes an array $path with values from 0 to n-1.
@@ -836,11 +855,16 @@ void tsp_solve(instance* inst){
 		generate_name(figure_name, sizeof(figure_name), "figures/vns_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
+		break;
 	case EX:
 		TSPopt(inst);
+		break;
 	case BEN:
-		ben_solve(inst);
-		
+		ben_solve(0, inst);
+		break;
+	case GLU:
+		ben_solve(1, inst);
+		break;
 	default:
 		exit(main_error(-7));
 	}
@@ -856,7 +880,8 @@ void update_solver(instance* inst){
 	printf("2: Nearest Neighbor and TABU search\n");
 	printf("3: Nearest Neighbor and VNS\n");
 	printf("4: Exact Method with CPLEX, no subtour constraints\n");
-	printf("5: Exact Method with CPLEX, with subtour constraints, Benders' method\n");
+	printf("5: Exact Method with CPLEX, with SECs, Benders' method\n");
+	printf("6: Exact Method with CPLEX, with SECs, Benders' method with patching\n");
 	printf("---------------------------------------------\n");
 	fgets(buf, 2, stdin);
     selection = atoi(buf);
@@ -887,6 +912,12 @@ void update_solver(instance* inst){
 		case 5:
 		{
 			inst->solver = BEN;
+			printf("successful update. \n");
+			break;
+		}
+		case 6:
+		{
+			inst->solver = GLU;
 			printf("successful update. \n");
 			break;
 		}
