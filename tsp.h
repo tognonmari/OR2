@@ -39,6 +39,8 @@ typedef struct {
 
 	// parameters 
 	solver_id solver;
+	char* solver_short_name;
+	char* legend;
 	int randomseed;
 	double timelimit;						// overall time limit, in sec.s
 	char input_file[1000];		  			// input file
@@ -156,5 +158,9 @@ void update_best(instance* inst, double z, double t, int* sol);
 void update_lb(instance* inst, double lb);
 
 void update_ub(instance* inst, double ub);
+
+void generate_test_bed(int size_test_bed, int argc, char** argv, instance* test_bed);
+
+void generate_csv_file(int size_test_bed, instance* test_bed);
 
 #endif

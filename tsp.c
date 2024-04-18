@@ -191,7 +191,7 @@ void generate_name(char buffer[], size_t bufferSize, const char *format, ...) {
 */
 void generate_instance(instance *inst){
 	
-	srand(inst->randomseed);
+	
 	depolarize_pseudornd_seq();
 
 	//only generate random instance if file name is not provided, so only if no tsplib inst is specified
@@ -889,44 +889,87 @@ void update_solver(instance* inst){
 	switch(selection){
 		case 0:
 			{inst->solver = NN;
+			inst->solver_short_name = "gre";
 			printf("successful update.\n");
 			break;}
 		case 1:
 			{inst->solver = OPT_2;
+			inst->solver_short_name = "g2o";
 			printf("successful update.\n");
 			break;}
 		case 2:
 			{inst->solver = TABU;
+			inst->solver_short_name = "tab";
 			printf("successful update.\n");
 			break;}
 		case 3:
 			{inst->solver = VNS;
+			inst->solver_short_name = "vns";
 			printf("successful update. \n");
 			break;}
 		case 4:
 		{
 			inst->solver = EX;
+			inst->solver_short_name = "exa";
 			printf("successful update. \n");
 			break;
 		}
 		case 5:
 		{
 			inst->solver = BEN;
+			inst->solver_short_name = "ben";
 			printf("successful update. \n");
 			break;
 		}
 		case 6:
 		{
 			inst->solver = GLU;
+			inst->solver_short_name = "glu";
 			printf("successful update. \n");
 			break;
 		}
 		default:
 			{inst->solver = NN;
+			inst->solver_short_name = "gre";
 			printf("successful update.\n");
 			break;}
 	}
 
 
 }
+void generate_test_bed(int size_test_bed, int argc, char** argv, instance* test_bed) {
+	
+	for (int i = 0; i < size_test_bed; i++) {
+		//initialize instance
+		parse_command_line(argc, argv, &test_bed[i]);
+	}
 
+	srand(test_bed[0].randomseed);
+
+	for (int i = 0; i < size_test_bed; i++) {
+		generate_instance(&test_bed[i]);
+	}
+}
+
+void generate_csv_file(int size_test_bed, instance* test_bed) {
+
+	int n = test_bed[0].nnodes;
+	int seed = test_bed[0].randomseed;
+
+	MKDIR("runs");
+	char run_name_cost[64];
+	generate_name(run_name_cost, sizeof(run_name_cost), "runs/%s_%d_%d_cost.csv", test_bed[0].solver_short_name, n, seed);
+	
+	//Print a single-column .csv file
+	FILE* file_handler = fopen(run_name_cost, "w");
+	//Print the first row
+	fprintf(file_handler, "1, %s\n", test_bed[0].solver_short_name);
+
+	//Print the remaining rows
+	for (int i = 0; i < size_test_bed; i++) {
+		fprintf(file_handler, "%d_%d_[%d], %lf\n", n, seed, i, test_bed[i].zbest);
+	}
+	//
+	fclose(file_handler);
+
+}
