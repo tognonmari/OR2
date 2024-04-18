@@ -1,0 +1,26 @@
+Branch and cut
+
+Bender's loop richiede di risolvere ogni volta con MipOpt dei problemi diversi. E se invece aggiungessimo i tagli (sec) al volo prima che finisca mipopt?
+Immaginiamo di considerare l'albero decisionale di cplex che viene generato q	uando chiamiamo mipopt: ad ogni nodo cplex applica tagli generici tipo gomory.
+Sempre all'interno di un nodo cplex può usare degli euristici per trovare soluzioni "provvisorie" ed aggiornare l'incumbent.
+Ovviamente cplex non può generare i sec da sè perché non ha idea del significato che diamo a quei tagli. Internamente cplex fa altri magheggi per ridurre lo scarto fra ub e lb.
+Quando non riesce pù ad andare avanti brancha e fissa una variabile a 1 o 0. 
+Noi possiamo usare una callback per interrompere cplex in uno qualsiasi di questi momenti. Cple x nei punti chiave del suo codice fa delle chiamate a genericcallback
+in questa funzione il corpo è di default vuoto, ma quando ci scriviamo delle righe di codice possiamo stabilire un comportamento da avere in determinate situazioni.
+La callback va installata, ovvero prima di chiamare mipopt bisogna fare un if() come da file del rpof nella sua cartella (quello inviato nel gruppo).
+Ora cosa dobbiamo fare noi?
+Immaginiamo cplex abbia una soluzione euristica e la voglia mettere come incumbent. Prima che questa venga veramente messa come incumbent possiamo dire a cplex:
+"Fermati, e fammi vedere la soluzione prima". Possiamo quindi recuperare questa soluzione ("candidate sol") e con i metodi che già abbiamo capire se ha più di una componente.
+Nel caso non fosse un tour unico, possiamo generare dei tagli aggiungendoli al cut pool. Useremo in meccanismo delle callback anche in altri modi, ma per questa sett basta questo.
+
+NOTE SUL CODICE DEL PROF:
+Se vogliamo che la callback prenda info esterne, gli va passato un puntatore ad una struttura dati. A noi basterà verosimilmente un puntatore a inst, ma se v olessimo passare qualcosa di più bisognerebbe creare una struct apposta.
+CPXCallBackSetFcn(env,lp,id,my_callback, inst)
+id è un codice che ci dice in quale momento del mipopt interrompiamo cplex per fare la nostra callabck. Sono codici di default di cplex, quello per noi è nel file.
+Per invece definire la callback vera e propria vedere file del prof e copiare la dichiarazione così com'è.
+All'interno della callback è importante predisporre tutto correttamente coi cast e xstar etc... //vedere le prime righe del metodo dal file.
+Per ottenere la sol che cplex stava per mettere ad incumbent, si usa cplexgetcandidatesol o simile (vedi file) che  un metodo che si può chiamare solo da callback
+Il metodo che rifiuta il candidato e aggiunge il taglio è rejectcandidate (vedifile per nome esatto), dove fra gli argomenti, col solito formato indichiamo il taglio da aggiungere
+per aggiungere tutti i tagli va fatto un ciclo sulle varie componenti e aggiungere un cut per volta.
+
+sotto ci sono delle cose che servono più avanti, quind per ora lasciamo stare. 
