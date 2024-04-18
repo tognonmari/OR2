@@ -6,7 +6,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <stdio.h>
-
+#include "plot.h"
 /* 
 * Conditional debugging function that prints
 * a formatted message to the console if the given $flag is true,
@@ -274,60 +274,6 @@ void make_datafile(instance *inst, FILE* data_file) {
 		current_point++;
 	}
 }
-/*
-* Plot the input datafile using GNUPLOT
-* IP graph_data Path of the data file to be plotted
-* IP graph Path of the figure
-* @note ALWAYS CHECK THAT THE DATA PASSED BY PARAMETER IS CLOSED,
-* 	passing a file open for the writing can be problematic and make the plot a blank plot.
-*/
-void plot_graph(const char graph_data[], const char graph[]) {
-	FILE* gnuplotPipe =_popen("gnuplot -persist", "w");
-
-	if (gnuplotPipe == NULL) {
-		fclose(gnuplotPipe);
-		exit(main_error_text(-1,"Failed to open the pipeline to gnuplot"));
-	}
-
-	//Send GNUPLOT commands through the pipe
-	fprintf(gnuplotPipe, "set output '%s'\n", graph); //set output name
-	fprintf(gnuplotPipe, "set terminal png\n"); //set extension
-	fprintf(gnuplotPipe, "set title 'Graph'\n"); 
-	fprintf(gnuplotPipe, "set key off\n"); //if key on the name of the file is printed on the plot
-	fprintf(gnuplotPipe, "set xrange [0:%d]\n",MAX_X);
-	fprintf(gnuplotPipe, "set yrange [0:%d]\n",MAX_Y);
-	fprintf(gnuplotPipe, "set pointsize 0.5\n");
-	fprintf(gnuplotPipe, "plot '%s'\n", graph_data);
-
-	fclose(gnuplotPipe);
-}
-void plot_path(char flag, const char figure_name[], const int* indices, const point* points, int num_points) {
-    FILE* gnuplotPipe =_popen("gnuplot -persist", "w");
-
-    if (gnuplotPipe == NULL) {
-        fclose(gnuplotPipe);
-		exit(main_error_text(-1,"Failed to open the pipeline to gnuplot"));
-    }
-
-    fprintf(gnuplotPipe, "set output '%s'\n", figure_name); //set output name
-	fprintf(gnuplotPipe, "set terminal png\n"); //set extension
-	fprintf(gnuplotPipe, "set title 'Greedy Path'\n"); 
-	fprintf(gnuplotPipe, "set key off\n"); //if key on the name of the file is printed on the plot
-	fprintf(gnuplotPipe, "set xrange [0:%d]\n",MAX_X);
-	fprintf(gnuplotPipe, "set yrange [0:%d]\n",MAX_Y);
-	fprintf(gnuplotPipe, "set pointsize 0.5\n");
-	fprintf(gnuplotPipe, "set grid \n");
-	fprintf(gnuplotPipe, "plot '-' with linespoints pt 1 lc rgb '#800080'\n");
-
-    for (int i = 0; i < num_points; ++i) {
-        fprintf(gnuplotPipe, "%lf %lf\n", points[indices[i]].x, points[indices[i]].y);
-    }
-	fprintf(gnuplotPipe, "%lf %lf\n", points[indices[0]].x, points[indices[0]].y);
-    fprintf(gnuplotPipe, "e\n"); //This line serves to terminate the input of data for the plot command in gnuplot.
-
-    fclose(gnuplotPipe);
-}
-
 
 void parse_command_line(int argc, char** argv, instance *inst){
 
@@ -820,7 +766,7 @@ void tsp_solve(instance* inst){
 		greedy_tsp(inst);
 		print_best_sol((inst->verbose>-1), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		//plot_generator(inst);
 		break;
@@ -828,11 +774,11 @@ void tsp_solve(instance* inst){
 		greedy_tsp(inst);
 		print_best_sol((inst->verbose>=5), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//optimize 
 		opt2_optimize_best_sol(inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d_opt2.png", inst->nnodes, inst->randomseed);
-		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		print_best_sol((inst->verbose>=5), inst);
 		break;
@@ -840,7 +786,7 @@ void tsp_solve(instance* inst){
 		tabu_search(inst);
 		print_best_sol((inst->verbose>=1), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/tabu_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		break;
 	case VNS:
@@ -848,12 +794,12 @@ void tsp_solve(instance* inst){
     	greedy_tsp(inst);
 		print_best_sol((inst->verbose>=5), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		vns(inst);
 		print_best_sol((inst->verbose>=5), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/vns_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		break;
 	case EX:

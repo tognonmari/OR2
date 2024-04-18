@@ -1,8 +1,14 @@
 #include "benders.h"
 #include "vns.h"
 
-void copy_mlt_sol(multitour_sol* dest_sol, const multitour_sol* source_sol) {
-	memcpy(dest_sol, source_sol, sizeof(multitour_sol));
+void copy_mlt_sol(multitour_sol* dest_sol, const multitour_sol* source_sol, int n) {
+	dest_sol->ncomp = source_sol->ncomp;
+	dest_sol->z = source_sol->z;
+	for (int i = 0; i < n; i++) {
+		(dest_sol->succ)[i] = (source_sol->succ)[i];
+		(dest_sol->comp)[i] = (source_sol->comp)[i];
+	}
+
 }
 
 void ben_add_sec(CPXENVptr env, CPXLPptr lp, multitour_sol* mlt_sol, const instance* inst) {
@@ -48,11 +54,12 @@ void ben_reduce_comp(char patching, CPXENVptr env, CPXLPptr lp, instance* inst, 
 	int n_call_ben_add_sec = 0;
 	int tot_add_sec = 0;
 	multitour_sol patched_sol;
+	init_multitour_sol(&patched_sol, inst->nnodes);
 	if (mlt_sol->ncomp == 1) { return; }
 	while (mlt_sol->ncomp > 1) {
 		if (is_time_limit_exceeded(inst->timelimit)) {
 			tsp_debug(inst->verbose >= 1, 1, "Ending ben_reduce_comp for exceeding time limit");
-			copy_mlt_sol(mlt_sol, (const multitour_sol*) &patched_sol);
+			copy_mlt_sol(mlt_sol, (const multitour_sol*) &patched_sol, inst->nnodes);
 			break;
 		}
 		char text[256];
@@ -99,10 +106,10 @@ void update_best_delta(float* best_delta, int* best_i, int* best_j, int* comp_to
 }
 //TODO: add check for feasibility for debugging
 void ben_patching(const multitour_sol* curr_sol, multitour_sol* patched_sol, const instance* inst) {
-	copy_mlt_sol(patched_sol, curr_sol);
+	copy_mlt_sol(patched_sol, curr_sol, inst->nnodes);
 	char figure_name[64];
 	generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_%d_prepatch.png", inst->nnodes, inst->randomseed);
-	plot_multitour((const multitour_sol*)patched_sol, inst->nnodes, inst->nodes, figure_name);
+	plot_multitour(inst->verbose >= 1,(const multitour_sol*)patched_sol, inst->nnodes, inst->nodes, figure_name);
 	
 	int* start = (int*)calloc((patched_sol->ncomp) + 1, sizeof(int));
 	int comp_to_kill = -1;
@@ -143,31 +150,13 @@ void ben_patching(const multitour_sol* curr_sol, multitour_sol* patched_sol, con
 		//k2 is dead
 		start[comp_to_kill] = start[patched_sol->ncomp];
 		(patched_sol->ncomp)--;
+		(patched_sol->z) += best_delta;
 	}
 	for (int i = 0; i < inst->nnodes; i++) {
 		patched_sol->comp[i] = 1;
 	}
 	//
 	free(start);
-	generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_%d_postpatch_pre2opt.png", inst->nnodes, inst->randomseed);
-	plot_multitour((const multitour_sol*)patched_sol, inst->nnodes, inst->nodes, figure_name);
-	//opt 2 optimization for patched solution 
-	int* path = (int*)calloc(inst->nnodes, sizeof(int));
-
-	printf("My patched solution now has %d components\n", patched_sol->ncomp);
-	cpx_convert_succ_in_path(patched_sol, path, inst->nnodes);
-	//Now in path there is a valid cycle: opt2 moves until no improvement is available
-	char improvement = 1;
-	while (improvement) {
-		improvement = opt2_move(inst, path, &(patched_sol->z));
-	}
-	//From path to succ: from path, update succ of patched sol
-
-	cpx_convert_path_in_succ(path, patched_sol, inst->nnodes);
-	free(path);
-	generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_%d_postpatch.png", inst->nnodes, inst->randomseed);
-	plot_multitour((const multitour_sol*)patched_sol, inst->nnodes, inst->nodes, figure_name);
-
 }
 void ben_solve(char patching, instance* inst) {
 	// open CPLEX model
@@ -200,12 +189,12 @@ void ben_solve(char patching, instance* inst) {
 	tsp_debug(inst->verbose >= 100, 1, "build_sol SUCCESSFUL: there are %d connected components", curr_sol.ncomp);
 	char figure_name[64];
 	generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_multitour.png", inst->nnodes, inst->randomseed);
-	plot_multitour((const multitour_sol*)&curr_sol, inst->nnodes, inst->nodes, figure_name);
+	plot_multitour(inst->verbose >= 1, (const multitour_sol*)&curr_sol, inst->nnodes, inst->nodes, figure_name);
 	ben_reduce_comp(patching, env,lp, inst, &curr_sol);
 	handleCPXResult(inst->verbose > 1, CPXgetstat(env, lp), "Final CPXResult:");
 	if (cpx_update_best(inst->verbose >= 1, inst, env, lp, &curr_sol)) {
 		generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_path.png", inst->nnodes, inst->randomseed);
-		plot_path(inst->verbose >= 1, figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//plot_multitour(inst->verbose >= 1, inst->verbose >= 200, figure_name, (const multitour_sol*)&curr_sol, inst->nodes);
 	}
 	free_multitour_sol(&curr_sol);

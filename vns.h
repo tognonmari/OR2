@@ -1,3 +1,5 @@
+#ifndef VNS_H
+#define VNS_H
 #include "tsp.h"
 #include "utils.h"
 
@@ -18,4 +20,5 @@ void kick(instance* inst, int* sol_to_kick);
 void vns_close_plot_pipe(char flag, FILE* gnuplotPipe);
 
 void vns_init_plot_iter_cost(char flag, FILE* gnuplotPipe, instance* inst);
+#endif
 

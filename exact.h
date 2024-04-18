@@ -6,12 +6,13 @@
 #include "tsp.h"
 #include <stdio.h>
 #include <math.h>
+#include "vns.h"
 
 typedef struct {
 	int* succ; // It contains the sequence of indices of the nodes involved in $xstar, observe that succ always starts with index 0. (succ
 	int ncomp; // Number of connected components.
 	int* comp; //comp[i] indicate the index of the connected component of node with index i;
-	int* z;
+	double z;
 } multitour_sol;
 #define EPS 1e-7
 void handleCPXResult(int flag, int result, char* format);

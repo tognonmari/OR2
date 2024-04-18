@@ -18,11 +18,12 @@ void plot_tour(FILE* gnuplot_pipe, const int* succ, int start, const point* node
     fflush(gnuplot_pipe);
 }
 
-void plot_multitour(const multitour_sol* mlt, int n, const point* nodes, const char figure_name[]) {
+void plot_multitour(char flag, const multitour_sol* mlt, int n, const point* nodes, const char figure_name[]) {
+    if (!flag) { return; }
     FILE* gnuplot_pipe = _popen("gnuplot -persist", "w");
     fprintf(gnuplot_pipe, "set output '%s'\n", figure_name); //set output name
     fprintf(gnuplot_pipe, "set terminal png\n"); //set extension
-    fprintf(gnuplot_pipe, "set title 'Multitour'\n");
+    fprintf(gnuplot_pipe, "set title 'Multitour (Cost  = %.1lf'\n", mlt->z);
     fprintf(gnuplot_pipe, "set key off\n"); //if key on the name of the file is printed on the plot
     fprintf(gnuplot_pipe, "set grid \n");
     fprintf(gnuplot_pipe, "plot '-' with lines lc rgb '#800080'\n");
@@ -35,6 +36,24 @@ void plot_multitour(const multitour_sol* mlt, int n, const point* nodes, const c
         plot_tour(gnuplot_pipe, mlt->succ, start[k], nodes);
     }
     free(start);
+    fprintf(gnuplot_pipe, "e\n"); //This line serves to terminate the input of data for the plot command in gnuplot.
+    fflush(gnuplot_pipe);
+    fclose(gnuplot_pipe);
+}
+
+void plot_path(char flag, const int* path, int n, double cost, const point* nodes, const char figure_name[]) {
+    if (!flag) { return; }
+    FILE* gnuplot_pipe = _popen("gnuplot -persist", "w");
+    fprintf(gnuplot_pipe, "set output '%s'\n", figure_name); //set output name
+    fprintf(gnuplot_pipe, "set terminal png\n"); //set extension
+    fprintf(gnuplot_pipe, "set title 'Path (Cost  = %.1lf'\n", cost);
+    fprintf(gnuplot_pipe, "set key off\n"); //if key on the name of the file is printed on the plot
+    fprintf(gnuplot_pipe, "set grid \n");
+    fprintf(gnuplot_pipe, "plot '-' with lines lc rgb '#800080'\n");
+    for (int i = 0; i < n - 1 ; i++) {
+        plot_edge(gnuplot_pipe, &nodes[path[i]], &nodes[path[i + 1]]);
+    }
+    plot_edge(gnuplot_pipe, &nodes[path[n-1]], &nodes[path[0]]);
     fprintf(gnuplot_pipe, "e\n"); //This line serves to terminate the input of data for the plot command in gnuplot.
     fflush(gnuplot_pipe);
     fclose(gnuplot_pipe);
