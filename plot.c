@@ -58,19 +58,63 @@ void plot_path(char flag, const int* path, int n, double cost, const point* node
     fflush(gnuplot_pipe);
     fclose(gnuplot_pipe);
 }
+// Funzione per centrare una stringa all'interno di un campo di larghezza specificata
+void fprintf_center(FILE* file, const char text[], int field_width) {
+    int text_length = strlen(text);
+    int padding = (field_width - text_length) / 2;
 
-/*
-* void plot_figures(solver_id solv_id, const instance* inst, const multitour_sol* mlt) {
-    FILE* gnuplotPipe = _popen("gnuplot -persist", "w");
-    char figure_name[64];
-    switch (solv_id) {
-    case BEN:
-        generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_multitour.png", inst->nnodes, inst->randomseed);
-
-
+    // Stampa spazi a sinistra per centrare il testo
+    for (int i = 0; i < padding; ++i) {
+        fprintf(file, " ");
     }
-    fprintf(gnuplotPipe, "set output '%s'\n", figure_name); //set output name
-    fprintf(gnuplotPipe, "set terminal png\n"); //set extension
+
+    // Stampa il testo
+    fprintf(file, "%s", text);
+
+    // Stampa spazi a destra (se necessario)
+    for (int i = 0; i < padding; ++i) {
+        fprintf(file, " ");
+    }
+
+    // Se la lunghezza del testo è dispari, aggiungi uno spazio finale
+    if (text_length % 2 != 0) {
+        fprintf(file, " ");
+    }
 }
 
-*/
+
+void make_first_row(char flag, FILE* file, int num_cols, const char* text) {
+    fprintf(file, "\n+");
+    for (int i = 0; i < num_cols - 1; i++) {
+        fprintf(file, "%s", "---------------------");
+    }
+    fprintf(file, "--------------------+\n");
+    fprintf(file, "|");
+    fprintf_center(file, text, 21 * num_cols - 2);
+    if (num_cols % 2 != 0) {
+        fprintf(file, " ");
+    }
+    fprintf(file, " ");
+    fprintf(file, "|\n");
+}
+void make_last_row(char flag, FILE* file, int num_cols) {
+    if (!flag) { return; }
+    for (int i = 0; i < num_cols; i++) {
+        fprintf(file, "+%s", "--------------------");
+    }
+    fprintf(file, "+\n");
+}
+void make_table_row(char flag, FILE* file, int num_cols, char* text[]) {
+    if (!flag) { return; }
+    fprintf(file, "|%s", "--------------------");
+    for (int i = 1; i < num_cols; i++) {
+        fprintf(file, "+%s", "--------------------");
+    }
+    fprintf(file, "|\n");
+    for (int i = 0; i < num_cols; i++) {
+        fprintf(file, "|");
+        fprintf_center(file, text[i], 20);
+    }
+    fprintf(file, "|\n");
+}
+

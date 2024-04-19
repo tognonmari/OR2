@@ -122,6 +122,10 @@ void swap(int* a, int* b);
 
 void swap_2_opt(int* path, int i, int j);
 
+char opt2_move(instance* inst, int* incumbent_sol, double* incumbent_cost, int* nr_swap);
+
+void opt2(instance* inst, int* incumbent_sol, double* incumbent_cost);
+
 void copy_array(void* a1, const void* a2);
 
 void copy_din_array(void *a1, const void *a2, size_t elem_size, size_t num_elems);

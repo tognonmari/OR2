@@ -6,7 +6,6 @@
 #include "tsp.h"
 #include <stdio.h>
 #include <math.h>
-#include "vns.h"
 
 typedef struct {
 	int* succ; // It contains the sequence of indices of the nodes involved in $xstar, observe that succ always starts with index 0. (succ

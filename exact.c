@@ -76,7 +76,7 @@ int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const
 				generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_%d_pre2opt.png", inst->nnodes, inst->randomseed);
 				plot_path(inst->verbose >= 1, (const int*)path, inst->nnodes, z, inst->nodes, figure_name);
 				//opt 2 optimization for patched solution 
-				while (opt2_move(inst, path, &z));
+				opt2(inst, path, &z);
 				//From path to succ: from path, update succ of patched sol
 				generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_%d_postpatch.png", inst->nnodes, inst->randomseed);
 				plot_path(inst->verbose >= 1, (const int*)path, inst->nnodes, z, inst->nodes, figure_name);
