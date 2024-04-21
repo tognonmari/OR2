@@ -6,10 +6,7 @@
 #include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
-#define MAX_ITER 1000
-#define Y_RANGE_MIN 125000
-#define Y_RANGE_MAX 140000
-#define TENURE 30
+#define MAX_ITER 100000
 
 typedef struct{
     int vertex_to_swap_1;
@@ -26,6 +23,7 @@ typedef struct{
     double zcurr;
     int iter;
     int tenure;
+    char tenure_is_variable;
     int* tabu_list;
     int iter_stop;
     char figure_cost_flag;
@@ -34,13 +32,15 @@ typedef struct{
     move best_admissible_move;
 }tabu;
 
+int tabu_get_tenure(int num_iterations, int nnodes);
+
 int* init_tabu_list(size_t n);
 
 int* compute_tabu_init_sol(instance* inst, tabu* tabu);
 
 void tabu_update_best(tabu* tabu, int n);
 
-void tabu_init(tabu* tabu, instance* inst);
+void tabu_init(char tenure_is_variable, tabu* tabu, instance* inst);
 
 char isTabu(tabu* tabu, int vertex);
 
@@ -48,16 +48,18 @@ void update_move(move* mov, int i1, int i2, double delta);
 
 char tabu_find_best_admissible_move(tabu* tabu, instance* inst);
 
-void tabu_update_current(tabu* tabu);
+void tabu_update_current(tabu* tabu, int verbose);
 
-void tabu_update_list(tabu* tabu);
+void tabu_update_list(tabu* tabu, int verbose);
 
-void tabu_update(tabu* tabu, int n);
+void tabu_update_tenure(tabu* tabu, int n, int verbose);
+
+void tabu_update(tabu* tabu, int n, int verbose);
 
 void tabu_close(char flag, FILE* gnuplotPipe, FILE* data_file);
 
 void tabu_free(tabu* tabu);
 
-void tabu_search(instance* inst);
+void tabu_search(char tenure_is_variable, instance* inst);
 
 #endif

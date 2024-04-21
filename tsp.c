@@ -854,7 +854,7 @@ void tsp_solve(instance* inst){
 		print_best_sol((inst->verbose>=5), inst);
 		break;
 	case TABU:
-		tabu_search(inst);
+		tabu_search(1,inst);
 		print_best_sol((inst->verbose>=1), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/tabu_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
