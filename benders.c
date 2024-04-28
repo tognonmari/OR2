@@ -170,17 +170,22 @@ void ben_patching(const multitour_sol* curr_sol, multitour_sol* patched_sol, con
 
 }
 void ben_solve(char patching, instance* inst) {
+
+
 	// open CPLEX model
 	int error;
 	char log_name[64];
 	CPXENVptr env = CPXopenCPLEX(&error);
 	CPXLPptr lp = CPXcreateprob(env, &error, "TSP_Problem");
 	multitour_sol curr_sol;
+
+
 	// Cplex's parameter setting
 	set_init_param(env, (const instance*)inst, log_name, sizeof(log_name));
 	tsp_debug(inst->verbose >= 200, 1, "set_init_param SUCCESSFUL");
 	build_model(inst, env, lp);
 	tsp_debug(inst->verbose >= 100, 1, "build_model SUCCESSFUL");
+
 	if (CPXmipopt(env, lp)) { exit(main_error_text(-9, "CPXmipopt() error")); }
 	handleCPXResult(inst->verbose > 1, CPXgetstat(env, lp), "CPXResult for initial CPXmipopt (no SEC):");
 	// use the optimal solution found by CPLEX

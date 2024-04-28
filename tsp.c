@@ -957,11 +957,25 @@ void generate_csv_file(int size_test_bed, instance* test_bed) {
 	int seed = test_bed[0].randomseed;
 
 	MKDIR("runs");
-	char run_name_cost[64];
-	generate_name(run_name_cost, sizeof(run_name_cost), "runs/%s_%d_%d_cost.csv", test_bed[0].solver_short_name, n, seed);
+	char run_name[64];
+	generate_name(run_name, sizeof(run_name), "runs/%s_%d_%d_cost.csv", test_bed[0].solver_short_name, n, seed);
 	
 	//Print a single-column .csv file
-	FILE* file_handler = fopen(run_name_cost, "w");
+	FILE* file_handler = fopen(run_name, "w");
+	//Print the first row
+	fprintf(file_handler, "1, %s\n", test_bed[0].solver_short_name);
+
+	//Print the remaining rows
+	for (int i = 0; i < size_test_bed; i++) {
+		fprintf(file_handler, "%d_%d_[%d], %lf\n", n, seed, i, test_bed[i].zbest);
+	}
+	//
+	fclose(file_handler);
+
+	generate_name(run_name, sizeof(run_name), "runs/%s_%d_%d_cost.csv", test_bed[0].solver_short_name, n, seed);
+
+	//Print a single-column .csv file
+	file_handler = fopen(run_name, "w");
 	//Print the first row
 	fprintf(file_handler, "1, %s\n", test_bed[0].solver_short_name);
 
