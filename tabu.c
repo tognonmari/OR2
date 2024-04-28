@@ -6,8 +6,9 @@ int tabu_get_tenure(int num_iterations, int nnodes) {
     double amplitude = 0.1 * nnodes;
     double frequency = 0.1;
     double phase_shift = 0.0;
+    double average = 2.0;
 
-    int tenure =(int) amplitude *(2 + sin(frequency * num_iterations + phase_shift));
+    int tenure =(int) amplitude *(average + sin(frequency * num_iterations + phase_shift));
     return tenure;
 }
 void tabu_init_data_iter_and_cost(char flag, FILE* data_file, int y_range_min, int y_range_max, instance* inst){
