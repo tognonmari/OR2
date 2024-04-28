@@ -22,7 +22,8 @@ typedef enum {
 	VNS,
 	EX,
 	BEN,
-	GLU
+	GLU,
+	BC
 
 } solver_id;
 
@@ -58,7 +59,9 @@ typedef struct {
 	double* load_min;						// minimum load when leaving a node
 	double* load_max;						// maximum load when leaving a node
 
-	// model;     
+	// model;
+	int ncols;
+	/*
 	int xstart;
 	int qstart;
 	int bigqstart;
@@ -67,6 +70,7 @@ typedef struct {
 	int ystart;
 	int fstart;
 	int zstart;
+	*/
 } instance;
 
 

@@ -1,7 +1,7 @@
 #ifndef BEND_H
 #define BEND_H
 #include <cplex.h>
-#include "exact.h"
+#include "cpx.h"
 #include "tsp.h"
 #include "plot.h"
 

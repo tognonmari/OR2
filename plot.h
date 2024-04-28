@@ -2,7 +2,7 @@
 #define PLOT_H
 
 #include "tsp.h"
-#include "exact.h"
+#include "cpx.h"
 #include "utils.h"
 #include "malloc.h"
 #include "string.h"

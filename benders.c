@@ -109,7 +109,7 @@ void ben_patching(const multitour_sol* curr_sol, multitour_sol* patched_sol, con
 	copy_mlt_sol(patched_sol, curr_sol, inst->nnodes);
 	char figure_name[64];
 	generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_%d_prepatch.png", inst->nnodes, inst->randomseed);
-	plot_multitour(inst->verbose >= 1,(const multitour_sol*)patched_sol, inst->nnodes, inst->nodes, figure_name);
+	plot_multitour(inst->verbose >= 200,(const multitour_sol*)patched_sol, inst->nnodes, inst->nodes, figure_name); //plot di debug
 	
 	int* start = (int*)calloc((patched_sol->ncomp) + 1, sizeof(int));
 	int comp_to_kill = -1;

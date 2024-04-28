@@ -882,6 +882,9 @@ void tsp_solve(instance* inst){
 	case GLU:
 		ben_solve(1, inst);
 		break;
+	case BC:
+		cpx_branch_and_cut(inst);
+		break;
 	default:
 		exit(main_error(-7));
 	}
@@ -899,6 +902,7 @@ void update_solver(instance* inst){
 	printf("4: Exact Method with CPLEX, no subtour constraints\n");
 	printf("5: Exact Method with CPLEX, with SECs, Benders' method\n");
 	printf("6: Exact Method with CPLEX, with SECs, Benders' method with patching\n");
+	printf("7: Exact Method with CPLEX, Branch and Cut Method\n");
 	printf("---------------------------------------------\n");
 	fgets(buf, 2, stdin);
     selection = atoi(buf);
@@ -935,6 +939,12 @@ void update_solver(instance* inst){
 		case 6:
 		{
 			inst->solver = GLU;
+			printf("successful update. \n");
+			break;
+		}
+		case 7:
+		{
+			inst->solver = BC;
 			printf("successful update. \n");
 			break;
 		}
