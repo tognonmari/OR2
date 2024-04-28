@@ -6,7 +6,7 @@
 #include <malloc.h>
 #include <string.h>
 #include <stdio.h>
-
+#include "plot.h"
 /* 
 * Conditional debugging function that prints
 * a formatted message to the console if the given $flag is true,
@@ -274,60 +274,6 @@ void make_datafile(instance *inst, FILE* data_file) {
 		current_point++;
 	}
 }
-/*
-* Plot the input datafile using GNUPLOT
-* IP graph_data Path of the data file to be plotted
-* IP graph Path of the figure
-* @note ALWAYS CHECK THAT THE DATA PASSED BY PARAMETER IS CLOSED,
-* 	passing a file open for the writing can be problematic and make the plot a blank plot.
-*/
-void plot_graph(const char graph_data[], const char graph[]) {
-	FILE* gnuplotPipe =_popen("gnuplot -persist", "w");
-
-	if (gnuplotPipe == NULL) {
-		fclose(gnuplotPipe);
-		exit(main_error_text(-1,"Failed to open the pipeline to gnuplot"));
-	}
-
-	//Send GNUPLOT commands through the pipe
-	fprintf(gnuplotPipe, "set output '%s'\n", graph); //set output name
-	fprintf(gnuplotPipe, "set terminal png\n"); //set extension
-	fprintf(gnuplotPipe, "set title 'Graph'\n"); 
-	fprintf(gnuplotPipe, "set key off\n"); //if key on the name of the file is printed on the plot
-	fprintf(gnuplotPipe, "set xrange [0:%d]\n",MAX_X);
-	fprintf(gnuplotPipe, "set yrange [0:%d]\n",MAX_Y);
-	fprintf(gnuplotPipe, "set pointsize 0.5\n");
-	fprintf(gnuplotPipe, "plot '%s'\n", graph_data);
-
-	fclose(gnuplotPipe);
-}
-void plot_path(char flag, const char figure_name[], const int* indices, const point* points, int num_points) {
-    FILE* gnuplotPipe =_popen("gnuplot -persist", "w");
-
-    if (gnuplotPipe == NULL) {
-        fclose(gnuplotPipe);
-		exit(main_error_text(-1,"Failed to open the pipeline to gnuplot"));
-    }
-
-    fprintf(gnuplotPipe, "set output '%s'\n", figure_name); //set output name
-	fprintf(gnuplotPipe, "set terminal png\n"); //set extension
-	fprintf(gnuplotPipe, "set title 'Greedy Path'\n"); 
-	fprintf(gnuplotPipe, "set key off\n"); //if key on the name of the file is printed on the plot
-	fprintf(gnuplotPipe, "set xrange [0:%d]\n",MAX_X);
-	fprintf(gnuplotPipe, "set yrange [0:%d]\n",MAX_Y);
-	fprintf(gnuplotPipe, "set pointsize 0.5\n");
-	fprintf(gnuplotPipe, "set grid \n");
-	fprintf(gnuplotPipe, "plot '-' with linespoints pt 1 lc rgb '#800080'\n");
-
-    for (int i = 0; i < num_points; ++i) {
-        fprintf(gnuplotPipe, "%lf %lf\n", points[indices[i]].x, points[indices[i]].y);
-    }
-	fprintf(gnuplotPipe, "%lf %lf\n", points[indices[0]].x, points[indices[0]].y);
-    fprintf(gnuplotPipe, "e\n"); //This line serves to terminate the input of data for the plot command in gnuplot.
-
-    fclose(gnuplotPipe);
-}
-
 
 void parse_command_line(int argc, char** argv, instance *inst){
 
@@ -480,6 +426,77 @@ void swap(int* a, int* b) {
     *b = temp;    
 }
 
+void opt2(instance* inst, int* incumbent_sol, double* incumbent_cost) {
+	char* table_fields[] = { "Nr swap", "node1", "node2", "Delta", "New cost" };
+	char table_flag = inst->verbose >= 2;
+	int num_cols_table = sizeof(table_fields) / sizeof(table_fields[0]);
+	make_first_row(table_flag, stdout, num_cols_table, "2OPT_SWAPS_TABLE");
+	make_table_row(table_flag, stdout, num_cols_table, table_fields);
+	int nr_swap = 0;
+	while (opt2_move(inst, incumbent_sol, incumbent_cost, &nr_swap)) {
+	}
+	make_last_row(table_flag, stdout, num_cols_table);
+}
+
+/**
+ * Returns 0 if the path cannot be optimized any further with 2 opt moves
+*/
+char opt2_move(instance* inst, int* incumbent_sol, double* incumbent_cost, int* nr_swap) {
+	char table_flag = inst->verbose >= 2;
+	int num_cols_table = 5;
+	int n = inst->nnodes;
+	point* nodes_list = inst->nodes;
+	double best_delta = 0;
+	char improvement = 0;
+	int best_i = -1;
+	int best_j = -1;
+	float* dist_matrix = inst->dist_matrix;
+	for (int i = 0; i <= n - 3; i++) //cambiato da n-2!
+	{
+		for (int j = i + 2; j <= n - 1; j++)
+		{
+			//double current_dist= (double)(get_dist_matrix((const float*) (dist_matrix),incumbent_sol[i], incumbent_sol[(i+1)]) +get_dist_matrix((const float*) (dist_matrix),incumbent_sol[j], incumbent_sol[(j+1)%n]));
+			//double changed_dist = (double)(get_dist_matrix((const float*) (dist_matrix),incumbent_sol[i], incumbent_sol[(j)])+ get_dist_matrix((const float*) (dist_matrix),incumbent_sol[i+1], incumbent_sol[(j+1)]%n));
+
+			double current_dist = get_distance(&nodes_list[incumbent_sol[i % n]], &nodes_list[incumbent_sol[(i + 1) % n]]) + get_distance(&nodes_list[incumbent_sol[j % n]], &nodes_list[incumbent_sol[(j + 1) % n]]);
+			double changed_dist = get_distance(&nodes_list[incumbent_sol[i % n]], &nodes_list[incumbent_sol[j % n]]) + get_distance(&nodes_list[incumbent_sol[(i + 1) % n]], &nodes_list[incumbent_sol[(j + 1) % n]]);
+
+			double delta = changed_dist - current_dist;
+
+			if (delta < best_delta)
+			{
+				improvement = 1;
+				//printf("found a new best delta\n");
+				best_i = i % n;
+				best_j = j % n;
+				best_delta = delta;
+				//printf("Best delta : %lf\n",best_delta);
+			}
+		}
+	}
+	if (improvement) {
+		//tsp_debug((inst->verbose > 49), 0, "I am swapping nodes %d and %d", best_i+1,best_j);
+		swap_2_opt(incumbent_sol, (best_i + 1) % n, (best_j) % n);
+		(*incumbent_cost) += best_delta;
+		char table_0[32];
+		char table_1[32];
+		char table_2[32];
+		char table_3[32];
+		char table_4[32];
+		sprintf(table_0, "%d", ++(*nr_swap));
+		sprintf(table_1, "%d", best_i + 1);
+		sprintf(table_2, "%d", best_j);
+		sprintf(table_3, "%.1f", best_delta);
+		sprintf(table_4, "%.1f", *incumbent_cost);
+		char* table_fields[] = { table_0, table_1, table_2, table_3, table_4 };
+		make_table_row(table_flag, stdout, num_cols_table, table_fields);
+		return 1;
+	}
+	else {
+		//printf("no further imprevement with 2opt.\n");
+		return 0;
+	}
+}
 /**
  * 	Given an instance inst, it performs opt-2 refinement.
  * IP: instance inst passed by reference
@@ -820,7 +837,7 @@ void tsp_solve(instance* inst){
 		greedy_tsp(inst);
 		print_best_sol((inst->verbose>-1), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		//plot_generator(inst);
 		break;
@@ -828,19 +845,19 @@ void tsp_solve(instance* inst){
 		greedy_tsp(inst);
 		print_best_sol((inst->verbose>=5), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//optimize 
 		opt2_optimize_best_sol(inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d_opt2.png", inst->nnodes, inst->randomseed);
-		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		print_best_sol((inst->verbose>=5), inst);
 		break;
 	case TABU:
-		tabu_search(inst);
+		tabu_search(1,inst);
 		print_best_sol((inst->verbose>=1), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/tabu_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		break;
 	case VNS:
@@ -848,12 +865,12 @@ void tsp_solve(instance* inst){
     	greedy_tsp(inst);
 		print_best_sol((inst->verbose>=5), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		vns(inst);
 		print_best_sol((inst->verbose>=5), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/vns_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path((inst->verbose>-1),figure_name, inst->best_sol, inst->nodes, inst->nnodes);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		break;
 	case EX:

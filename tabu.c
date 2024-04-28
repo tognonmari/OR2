@@ -1,5 +1,15 @@
 
 #include "tabu.h"
+
+int tabu_get_tenure(int num_iterations, int nnodes) {
+    //Parameters
+    double amplitude = 0.1 * nnodes;
+    double frequency = 0.1;
+    double phase_shift = 0.0;
+
+    int tenure =(int) amplitude *(2 + sin(frequency * num_iterations + phase_shift));
+    return tenure;
+}
 void tabu_init_data_iter_and_cost(char flag, FILE* data_file, int y_range_min, int y_range_max, instance* inst){
     char figure_name[64];
     if(flag){
@@ -62,10 +72,11 @@ int* compute_tabu_init_sol(instance* inst, tabu* tabu){
 /*
 Updates best solution with current solution.
 */
-void tabu_update_best(tabu* tabu, int n){
+void tabu_update_best(tabu* tabu, int n, int verbose){
     copy_din_array(tabu->best_sol, tabu->curr_sol, sizeof(int), n);
     tabu->zbest = tabu->zcurr;
     tabu->tbest = get_timer();
+    tsp_debug(verbose >= 100, 0, "  tabu_update_best SUCCESSFULL");
 }
 
 /*
@@ -73,10 +84,11 @@ Initialize the tabu structure:
 Step 1) initialize tabu parameters (iter_stop, iter, tenure)
 Step 2) Initialize best_sol and curr_sol with a greedy path
 */
-void tabu_init(tabu* tabu, instance* inst){
+void tabu_init(char tenure_is_variable, tabu* tabu, instance* inst){
     tabu->iter_stop = MAX_ITER; 
     tabu->iter = 0; 
-    tabu->tenure = TENURE;
+    tabu->tenure_is_variable = tenure_is_variable;
+    tabu->tenure = tabu_get_tenure(0, inst->nnodes);
     tabu->figure_cost_flag = (inst->verbose) >= 1;
     tabu->tabu_list = init_tabu_list(inst->nnodes);
     tabu->curr_sol = compute_tabu_init_sol(inst, tabu);
@@ -87,7 +99,8 @@ void tabu_init(tabu* tabu, instance* inst){
     //init_data_file(tabu -> figure_cost_flag, tabu->data_iter_and_cost, inst);
     //tabu_init_plot_iter_and_cost( tabu->figure_cost_flag, tabu->pipe,  215000, 220000, inst);
 
-    tabu_update_best(tabu, inst->nnodes);
+    tabu_update_best(tabu, inst->nnodes, inst->verbose);
+    tsp_debug(inst->verbose >= 100, 1, "tabu_init SUCCESSFULL");
 }
 char isTabu(tabu* tabu, int vertex){
     return tabu->iter < tabu->tabu_list[tabu->curr_sol[vertex]] + tabu->tenure;
@@ -140,10 +153,11 @@ char tabu_find_best_admissible_move(tabu* tabu, instance* inst){
     if(exist_admissible_move){
         update_move(&(tabu->best_admissible_move), best_i + 1, best_j, best_delta);
     }
+    tsp_debug(inst->verbose >= 100, 1, "tabu_find_best_move at iter %d SUCCESSFULL", tabu->iter);
     return exist_admissible_move;
 }
 
-void tabu_update_current(tabu* tabu){
+void tabu_update_current(tabu* tabu, int verbose){
     int v1 = (tabu->best_admissible_move).vertex_to_swap_1;
     int v2 = (tabu->best_admissible_move).vertex_to_swap_2;
     swap_2_opt(tabu->curr_sol, v1, v2);
@@ -151,19 +165,29 @@ void tabu_update_current(tabu* tabu){
     if(tabu->figure_cost_flag){
         fprintf(tabu->pipe, "%d %lf\n", tabu->iter, tabu->zcurr);
     }
+    tsp_debug(verbose >= 100, 0, "  tabu_update_current SUCCESSFULL");
 }
 
-void tabu_update_list(tabu* tabu){
+void tabu_update_list(tabu* tabu, int verbose){
     int j = (tabu->best_admissible_move).vertex_to_swap_2;
     (tabu->tabu_list)[tabu->curr_sol[j]] = tabu->iter;
+    tsp_debug(verbose >= 100, 0, "  tabu_update_list SUCCESSFULL");
 }
 
-void tabu_update(tabu* tabu, int n){
-    tabu_update_list(tabu); 
-    tabu_update_current(tabu);
+void tabu_update_tenure(tabu* tabu, int n, int verbose) {
+    tabu->tenure = tabu_get_tenure(tabu->iter, n);
+    tsp_debug(verbose >= 100, 0, "  tabu_update_tenure SUCCESSFULL");
+}
+void tabu_update(tabu* tabu, int n, int verbose){
+    tabu_update_list(tabu, verbose); 
+    tabu_update_current(tabu, verbose);
     if(tabu->zcurr < tabu-> zbest){
-        tabu_update_best(tabu, n);
+        tabu_update_best(tabu, n, verbose);
     }
+    if (tabu->tenure_is_variable) {
+        tabu_update_tenure(tabu, n, verbose);
+    }
+    tsp_debug(verbose >= 100, 1, "tabu_update SUCCESSFULL");
 }
 
 void tabu_debug(char flag, tabu* tabu, instance* inst){
@@ -191,19 +215,21 @@ void tabu_free(tabu* tabu){
     free(tabu->tabu_list);
 }
 
-void tabu_search(instance* inst){
+void tabu_search(char tabu_is_variable, instance* inst){
     tabu tab;
-    tabu_init(&tab, inst);
+    tabu_init(tabu_is_variable, &tab, inst);
     while(!(is_time_limit_exceeded(inst->timelimit)) ){
+        tsp_debug(inst->verbose >= 100, 1, "---------------- Iter #%d ---------------- ", tab.iter);
         if(tabu_find_best_admissible_move(&tab, inst)){
-            tabu_update(&tab, inst->nnodes);
+            tabu_update(&tab, inst->nnodes, inst->verbose);
         }
         else {
             tsp_debug((inst->verbose>0),0,"There aren't admissible moves at iter %d", tab.iter);
         }
-        tabu_debug((inst->verbose)>99, &tab, inst);
+        tabu_debug((inst->verbose)>=200, &tab, inst);
         (tab.iter)++;
     }
+    tsp_debug(inst->verbose >= 100, 1, "time limit has been exceeded");
     tabu_close( tab.figure_cost_flag , tab.pipe, tab.data_iter_and_cost);
     update_best(inst, tab.zbest, tab.tbest, tab.best_sol);
     tabu_free(&tab);

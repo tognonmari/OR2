@@ -1,5 +1,5 @@
 #include "exact.h"
-
+#include "plot.h"
 //Function that handles CPX function results
 void handleCPXResult(int flag, int result, char* format) {
 	tsp_debug(flag,1, "%s", format);
@@ -35,7 +35,6 @@ void handleCPXResult(int flag, int result, char* format) {
 	}
 }
 void cpx_convert_succ_in_path(const multitour_sol* mlt, int* path, int n) {
-	printf("My patched solution now has %d components\n", mlt->ncomp);
 	if (mlt->ncomp > 1) { 
 		exit(main_error_text(-10, "Cannot convert multitour in a full connected path\nYou must provide a single tour!")); }
 	int curr = 0;
@@ -57,6 +56,7 @@ int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const
 	double z;
 	int result = CPXgetstat(env, lp);
 	int* path;
+	char figure_name[128];
 	int n = inst->nnodes;
 	switch (result) {
 	case CPXMIP_OPTIMAL:
@@ -69,10 +69,19 @@ int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const
 	case CPXMIP_TIME_LIM_FEAS:
 		if (sol->ncomp == 1) {
 			tsp_debug(flag, 1, "Updating solution for the problem with a feasible one");
-			CPXgetobjval(env, lp, &z);
+			z = sol->z;
 			path = (int*)calloc(n, sizeof(int));
 			cpx_convert_succ_in_path(sol, path, n);
-			update_best(inst, z, get_timer(), path);
+			if (inst->solver == GLU) {
+				generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_%d_pre2opt.png", inst->nnodes, inst->randomseed);
+				plot_path(inst->verbose >= 1, (const int*)path, inst->nnodes, z, inst->nodes, figure_name);
+				//opt 2 optimization for patched solution 
+				opt2(inst, path, &z);
+				//From path to succ: from path, update succ of patched sol
+				generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_%d_postpatch.png", inst->nnodes, inst->randomseed);
+				plot_path(inst->verbose >= 1, (const int*)path, inst->nnodes, z, inst->nodes, figure_name);
+			}
+			update_best(inst, sol->z, get_timer(), path);
 			break;
 		}
 		else {
@@ -205,6 +214,7 @@ void init_multitour_sol(multitour_sol* sol, int n) {
 	sol->succ = (int*)calloc(n, sizeof(int));
 	sol->ncomp = 0;
 	sol->comp = (int*)calloc(n, sizeof(int));
+	sol->z = -1;
 }
 void free_multitour_sol(multitour_sol* sol) {
 	free(sol->comp);

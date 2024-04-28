@@ -71,9 +71,6 @@ typedef struct {
 	int zstart;
 } instance;
 
-void plot_graph(const char graph_data[], const char graph[]);
-
-void plot_path(char flag, const char figure_name[], const int* indices, const point* points, int num_points);
 
 void make_datafile(instance *inst, FILE* data_file);
 
@@ -126,6 +123,10 @@ void swap_space(void* a, void* b, size_t size);
 void swap(int* a, int* b);
 
 void swap_2_opt(int* path, int i, int j);
+
+char opt2_move(instance* inst, int* incumbent_sol, double* incumbent_cost, int* nr_swap);
+
+void opt2(instance* inst, int* incumbent_sol, double* incumbent_cost);
 
 void copy_array(void* a1, const void* a2);
 
