@@ -883,7 +883,10 @@ void tsp_solve(instance* inst){
 		ben_solve(1, inst);
 		break;
 	case BC:
-		cpx_branch_and_cut(inst);
+		cpx_branch_and_cut(0,inst);
+		break;
+	case SBC:
+		cpx_branch_and_cut(1, inst);
 		break;
 	default:
 		exit(main_error(-7));
@@ -903,6 +906,7 @@ void update_solver(instance* inst){
 	printf("5: Exact Method with CPLEX, with SECs, Benders' method\n");
 	printf("6: Exact Method with CPLEX, with SECs, Benders' method with patching\n");
 	printf("7: Exact Method with CPLEX, Branch and Cut Method\n");
+	printf("8: Exact Method with CPLEX, Branch and Cut Method, MIPSTART enabled\n");
 	printf("---------------------------------------------\n");
 	fgets(buf, 2, stdin);
     selection = atoi(buf);
@@ -952,6 +956,12 @@ void update_solver(instance* inst){
 		case 7:
 		{
 			inst->solver = BC;
+			printf("successful update. \n");
+			break;
+		}
+		case 8:
+		{
+			inst->solver = SBC;
 			printf("successful update. \n");
 			break;
 		}

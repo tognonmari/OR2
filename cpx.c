@@ -56,6 +56,11 @@ static int CPXPUBLIC my_callback(CPXCALLBACKCONTEXTptr context, CPXLONG contexti
 
 static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLONG contextid, void* userhandle) {
 	
+	int mynode = -1; CPXcallbackgetinfoint(context, CPXCALLBACKINFO_NODECOUNT, &mynode);
+
+	if (mynode != 0) {
+		return 0;
+	}
 	//Step 0: initializations and allocations
 	instance* inst = (instance*)userhandle;
 	double* xstar = calloc(inst->ncols, sizeof(double));
@@ -64,11 +69,8 @@ static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLO
 	int* compscount = NULL;
 	int* comps = NULL;
 	double relaxation_cost;
-	printf("inst->ncols is %d.\n", inst->ncols);
+	
 	//Step 1: get the solution to the relaxation from the context
-	int mynode = -1; CPXcallbackgetinfoint(context, CPXCALLBACKINFO_NODECOUNT, &mynode);
-
-	tsp_debug(inst->verbose >= 1, 1, "Calling Relaxation callback at node %d.\n", mynode);
 
 	if (CPXcallbackgetrelaxationpoint(context, xstar, 0, inst->ncols-1, &relaxation_cost)) {
 	
@@ -108,7 +110,7 @@ static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLO
 			exit(main_error_text(-11, "Error in CCcut_violated_cuts().\n"));
 
 		}
-		tsp_debug(inst->verbose >= 1, 1, "Added cuts with concorde callback.\n");
+		//tsp_debug(inst->verbose >= 1, 1, "Added cuts with concorde callback.\n");
 
 	}
 	else {
@@ -133,7 +135,7 @@ static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLO
 		for (int i = 0; i < ncomp; i++) {
 
 
-			tsp_debug(inst->verbose >= 1, 1, "Adding constraint on component %d at node %d.\n", i+1, mynode);
+			//tsp_debug(inst->verbose >= 1, 1, "Adding constraint on component %d at node %d.\n", i+1, mynode);
 			cpx_add_violated_SECs_fractional(context, inst, my_comp, i+1);
 
 		}
@@ -272,7 +274,7 @@ static int CPXPUBLIC my_callback_candidate(CPXCALLBACKCONTEXTptr context, instan
 }
 
 
-void cpx_branch_and_cut(instance* inst) {
+void cpx_branch_and_cut(char mipstart, instance* inst) {
 	// open CPLEX model
 	int error;
 	char log_name[64];
@@ -289,6 +291,24 @@ void cpx_branch_and_cut(instance* inst) {
 	int ncols = CPXgetnumcols(env, lp);
 	inst->ncols = ncols;
 	if (CPXcallbacksetfunc(env, lp, contextid, my_callback, inst)) { exit(main_error_text(-9, "CPXcallbacksetfunc() error") ); }
+	if (mipstart) {
+		//Generate a greedy solution and initialize the incumbent with it
+		greedy_tsp(inst);
+		double* cplex_format_xheu = (double*)calloc(inst->ncols, sizeof(double));
+		int* ind = (int*)malloc(inst->ncols * sizeof(int));
+		cpx_convert_path_to_cplex(inst->best_sol, cplex_format_xheu, inst);
+		for (int j = 0; j < inst->ncols; j++) ind[j] = j;
+		int effortlevel = CPX_MIPSTART_NOCHECK;
+		int beg = 0;
+		if (CPXaddmipstarts(env, lp, 1, inst->ncols, &beg, ind, cplex_format_xheu, &effortlevel, NULL)) {
+			exit(main_error_text(-9, "Could not add MipStart.\n"));
+		}
+
+		tsp_debug(1, 1, "Updated warm start successfully.\n");
+		free(ind);
+		free(cplex_format_xheu);
+
+	}
 	//(env, CPX_PARAM_THREADS, 1); 	// just for debugging
 	int status = CPXmipopt(env, lp);
 	if (status) { 
@@ -339,6 +359,23 @@ void cpx_convert_path_in_succ(const int* path, multitour_sol* mlt, int n) {
 		mlt->succ[path[t]]=path[t+1];
 	}
 	mlt->succ[path[n - 1]] = path[0];
+}
+void cpx_convert_path_to_cplex(const int* xheu_path, double* cplex_like_format, instance* inst) {
+
+	int n = inst->nnodes;
+	int* succ = (int*)calloc(n, sizeof(int));
+	//Step 0: Convert path in succ
+	for (int t = 0; t < n - 1; t++) {
+		succ[xheu_path[t]] = xheu_path[t + 1];
+	}
+	succ[xheu_path[n - 1]] = xheu_path[0];
+
+	//Step 1: convert succ in cplex 
+	for (int i = 0; i < n; i++) {
+		cplex_like_format[xpos(i, succ[i], inst)] = 1.0;
+	}
+	free(succ);
+
 }
 int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const multitour_sol* sol) {
 	double z;

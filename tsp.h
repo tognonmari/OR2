@@ -23,7 +23,8 @@ typedef enum {
 	EX,
 	BEN,
 	GLU,
-	BC
+	BC,
+	SBC //mipStart before Branch and Cut
 
 } solver_id;
 

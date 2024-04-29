@@ -23,7 +23,7 @@ typedef struct {
 
 #define EPS 1e-7
 
-void cpx_branch_and_cut(instance* inst);
+void cpx_branch_and_cut(char mipstart,instance* inst);
 static int CPXPUBLIC my_callback(CPXCALLBACKCONTEXTptr context, CPXLONG contextid, void* userhandle);
 static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLONG contextid, void* userhandle);
 static int cpx_add_cut_single_comp(double cutval, int num_nodes_in_cut, int* nodes_in_cut, void* userhandle);
@@ -32,6 +32,7 @@ static int cpx_add_violated_SECs_fractional(CPXCALLBACKCONTEXTptr context, insta
 void handleCPXResult(int flag, int result, char* format);
 void cpx_convert_succ_in_path(const multitour_sol* mlt, int* path, int n);
 void cpx_convert_path_in_succ(const int* path, multitour_sol* mlt, int n);
+void cpx_convert_path_to_cplex(const int* xheu_path, double* cplex_like_format, instance* inst);
 int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const multitour_sol* sol);
 double dist(int i, int j, instance* inst);
 void build_model(instance* inst, CPXENVptr env, CPXLPptr lp);
