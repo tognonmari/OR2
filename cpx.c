@@ -1,5 +1,6 @@
 #include "cpx.h"
 #include "plot.h"
+#include "mincut.h"
 //Function that handles CPX function results
 void handleCPXResult(int flag, int result, char* format) {
 	tsp_debug(flag,1, "%s", format);
@@ -35,15 +36,202 @@ void handleCPXResult(int flag, int result, char* format) {
 		printf("\n\nWARNING it has been returned result: %d, which is not handled. Please add the case %d in exact.c -> handleCPXResult \n\n",result, result);
 	}
 }
+
+
 static int CPXPUBLIC my_callback(CPXCALLBACKCONTEXTptr context, CPXLONG contextid, void* userhandle){
 	instance* inst = (instance*)userhandle;
+	// select what to do according to the context
+	if (contextid == CPX_CALLBACKCONTEXT_CANDIDATE) {
+		return my_callback_candidate(context, inst);
+	}
+
+	if (contextid == CPX_CALLBACKCONTEXT_RELAXATION) {
+		return my_callback_relaxation(context,contextid, inst);
+	}
+
+	exit(main_error_text(-9, "Called the callback with the wrong contextid.\n"));
+	
+}
+
+
+static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLONG contextid, void* userhandle) {
+	
+	//Step 0: initializations and allocations
+	instance* inst = (instance*)userhandle;
+	double* xstar = calloc(inst->ncols, sizeof(double));
+	int* elist = calloc(2 * inst->ncols, sizeof(int));
+	int ncomp=0;
+	int* compscount = NULL;
+	int* comps = NULL;
+	double relaxation_cost;
+	printf("inst->ncols is %d.\n", inst->ncols);
+	//Step 1: get the solution to the relaxation from the context
+	int mynode = -1; CPXcallbackgetinfoint(context, CPXCALLBACKINFO_NODECOUNT, &mynode);
+
+	tsp_debug(inst->verbose >= 1, 1, "Calling Relaxation callback at node %d.\n", mynode);
+
+	if (CPXcallbackgetrelaxationpoint(context, xstar, 0, inst->ncols-1, &relaxation_cost)) {
+	
+		exit(main_error_text(-9, "Failed at retrieving the relaxation.\n"));
+
+	}
+	//Step 2: turn it into a concorde-like solution
+	int num_edges = 0;
+	int t = 0; //cursor to scroll down elist
+	for (int i = 0; i < inst->nnodes; i++) {
+
+		for (int j = i + 1; j < inst->nnodes; j++) {
+			elist[t++] = i;
+			elist[t++] = j;
+			num_edges++;
+		}
+
+	}
+	//printf("Computation of edges gave %d as a result\n",(int)(num_edges == inst->ncols));
+	//Step 3: get the number of connected components
+
+	if (CCcut_connect_components(inst->nnodes, num_edges, elist, xstar, &ncomp, &compscount, &comps)) {
+
+		exit(main_error_text(-11, "Error in CCcut_connect_components.\n"));
+
+	}
+
+	tsp_debug(inst->verbose >= 1, 1, "There are %d components at node %d.\n",ncomp, mynode);
+	//Step 4: add the cuts according to the number of components
+
+	if (ncomp == 1) {
+
+		violated_cuts_params params = { .inst = inst, .context = context };
+		//concorde method to find the cuts, given that the graph is connected: the method will itself use a callback -> a new structure of parameters must be used
+		if (CCcut_violated_cuts(inst->nnodes, inst->ncols, elist, xstar, 2.0-EPSILON,cpx_add_cut_single_comp, &params )) {
+
+			exit(main_error_text(-11, "Error in CCcut_violated_cuts().\n"));
+
+		}
+		tsp_debug(inst->verbose >= 1, 1, "Added cuts with concorde callback.\n");
+
+	}
+	else {
+		//manually add the cuts from compscount e comps
+
+		int* my_comp = (int*) calloc(inst->nnodes, sizeof(int));
+		int start_component = 0; //cursor to scroll down the array
+
+		//for each component of the solution, update nodes'component in my_comp
+
+		for (int i = 0; i < ncomp; i++) {
+			
+			for (int j = start_component; j < start_component + compscount[i]; j++) {
+				
+				my_comp[comps[j]] = i + 1;
+			}
+			
+			start_component += compscount[i];
+		}
+		//for each connected components we add the violated SEC
+
+		for (int i = 0; i < ncomp; i++) {
+
+
+			tsp_debug(inst->verbose >= 1, 1, "Adding constraint on component %d at node %d.\n", i+1, mynode);
+			cpx_add_violated_SECs_fractional(context, inst, my_comp, i+1);
+
+		}
+
+		free(my_comp);
+	}
+	
+	free(xstar);
+	free(elist);
+	return 0;
+}
+
+static int cpx_add_cut_single_comp(double cutval, int num_nodes_in_cut, int* nodes_in_cut, void* userhandle) {
+
+	// Step 0: cast the userhandle
+	violated_cuts_params* params = (violated_cuts_params*)userhandle;
+	instance* inst = params->inst;
+	CPXCALLBACKCONTEXTptr context = params->context;
+
+	int edges_in_cut =(num_nodes_in_cut * (num_nodes_in_cut - 1)/2);
+	int* index = (int*)malloc(edges_in_cut * sizeof(int));
+	double* value = (double*)malloc(edges_in_cut * sizeof(double));
+	int matbeg = 0;
+	int purgeable = CPX_USECUT_FILTER;
+	int local = 0;
+	int nnz = 0;
+	char sense = 'L';
+	double rhs = num_nodes_in_cut-1;
+
+	//scorro nodes_in_cut e metto in index[nnz] and 
+
+	for (int i = 0; i < num_nodes_in_cut; i++) {
+		
+		for (int j = 0; j < num_nodes_in_cut; j++) {
+			
+			if (nodes_in_cut[i] >= nodes_in_cut[j])
+				continue;
+			
+			index[nnz] = xpos(nodes_in_cut[i], nodes_in_cut[j], inst);
+			value[nnz] = 1.0;
+			nnz++;
+		}
+	}
+
+	if (CPXcallbackaddusercuts(context, 1, edges_in_cut, &rhs, &sense, &matbeg, index, value, &purgeable, &local)) {
+		exit(main_error_text(-11, "Could not add fractional cut for 1 connected component. Error within the callback of concorde.\n"));
+	}
+
+	free(index);
+	free(value);
+
+	return 0;
+}
+
+static int cpx_add_violated_SECs_fractional(CPXCALLBACKCONTEXTptr context, instance* inst, int* my_comp, int connected_component_id ) {
+
+	int* index = (int*)malloc(inst->ncols * sizeof(int));
+	double* value = (double*)malloc(inst->ncols * sizeof(double));
+	int matbeg = 0;
+	int purgeable = CPX_USECUT_FILTER;
+	int local = 0;
+	int nnz = 0;
+	char sense = 'L';
+	double rhs;
+	int num_nodes_in_cut = 0;
+	for (int i = 0; i < inst->nnodes; i++) {
+		if (my_comp[i] != connected_component_id) {
+			continue;
+		}
+		num_nodes_in_cut++;
+		for (int j = i + 1; j < inst->nnodes; j++) {
+			if (my_comp[j] != connected_component_id) {
+				continue;
+			}
+			index[nnz] = xpos(i, j, inst);
+			value[nnz] = 1.0;
+			nnz++;
+		}
+	}
+	rhs = (double)(num_nodes_in_cut - 1);
+	if (CPXcallbackaddusercuts(context, 1, nnz, &rhs, &sense, &matbeg, index, value, &purgeable, &local)) {
+		exit(main_error_text(-11, "Could not add fractional cut for more than 1 connected component.\n"));
+	}
+
+	free(index);
+	free(value);
+
+}
+
+static int CPXPUBLIC my_callback_candidate(CPXCALLBACKCONTEXTptr context, instance* inst) {
+	//Add cuts from an integer multitour solution
 	multitour_sol mlt;
 	double* xstar = (double*)malloc(inst->ncols * sizeof(double));
 	double objval = CPX_INFBOUND;
 	// table setting
-	
+
 	//
-	if (CPXcallbackgetcandidatepoint(context, xstar, 0, inst->ncols - 1, &objval)) { exit(main_error_text(-9,"CPXcallbackgetcandidatepoint error") ); }
+	if (CPXcallbackgetcandidatepoint(context, xstar, 0, inst->ncols - 1, &objval)) { exit(main_error_text(-9, "CPXcallbackgetcandidatepoint error")); }
 
 	// get some random information at the node (as an example for the students)
 	int mythread = -1; CPXcallbackgetinfoint(context, CPXCALLBACKINFO_THREADID, &mythread);
@@ -74,7 +262,7 @@ static int CPXPUBLIC my_callback(CPXCALLBACKCONTEXTptr context, CPXLONG contexti
 					nnz++;
 				}
 			}
-			if (CPXcallbackrejectcandidate(context, 1, nnz, &rhs, &sense, &izero, index, value)) { exit(main_error_text(-9, "CPXcallbackrejectcandidate() error") ); }// reject the solution and adds one cut 
+			if (CPXcallbackrejectcandidate(context, 1, nnz, &rhs, &sense, &izero, index, value)) { exit(main_error_text(-9, "CPXcallbackrejectcandidate() error")); }// reject the solution and adds one cut 
 		}
 		free(index);
 		free(value);
@@ -82,6 +270,8 @@ static int CPXPUBLIC my_callback(CPXCALLBACKCONTEXTptr context, CPXLONG contexti
 	free(xstar);
 	return 0;
 }
+
+
 void cpx_branch_and_cut(instance* inst) {
 	// open CPLEX model
 	int error;
@@ -95,12 +285,15 @@ void cpx_branch_and_cut(instance* inst) {
 	set_init_param(env, (const instance*)inst, log_name, sizeof(log_name));
 	tsp_debug(inst->verbose >= 100, 1, "set_init_param SUCCESSFUL");
 	// install a "lazyconstraint" callback to cut infeasible integer sol.s (found e.g. by heuristics) 
-	CPXLONG contextid = CPX_CALLBACKCONTEXT_CANDIDATE; // ... means lazyconstraints
+	CPXLONG contextid = CPX_CALLBACKCONTEXT_CANDIDATE | CPX_CALLBACKCONTEXT_RELAXATION; //both the situations to call my_callback
 	int ncols = CPXgetnumcols(env, lp);
 	inst->ncols = ncols;
 	if (CPXcallbacksetfunc(env, lp, contextid, my_callback, inst)) { exit(main_error_text(-9, "CPXcallbacksetfunc() error") ); }
-	//CPXsetintparam(env, CPX_PARAM_THREADS, 1); 	// just for debugging
-	if (CPXmipopt(env, lp)) { exit(main_error_text(-9, "CPXmipopt() error")); }
+	//(env, CPX_PARAM_THREADS, 1); 	// just for debugging
+	int status = CPXmipopt(env, lp);
+	if (status) { 
+		tsp_debug(1, 1, "The status is %d.\n",status);
+		exit(main_error_text(-9, "CPXmipopt() error ")); }
 	tsp_debug(inst->verbose >= 100, 1, "CPXmipopt SUCCESSFUL");
 	double* xstar = (double*)calloc(ncols, sizeof(double));
 	{

@@ -26,7 +26,7 @@ OR Esito(
 int main(int argc, char** argv) {
 
     //Step 0: hardcoded instance test_bed_size, default should be 1
-    int test_bed_size = 10;
+    int test_bed_size = 1;
     
     //Step 1: Allocate the array of instances
     instance* inst_array = (instance*) calloc(test_bed_size, sizeof(instance));
