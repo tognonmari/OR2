@@ -105,7 +105,7 @@ static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLO
 
 		violated_cuts_params params = { .inst = inst, .context = context };
 		//concorde method to find the cuts, given that the graph is connected: the method will itself use a callback -> a new structure of parameters must be used
-		if (CCcut_violated_cuts(inst->nnodes, inst->ncols, elist, xstar, 2.0-EPSILON,cpx_add_cut_single_comp, &params )) {
+		if (CCcut_violated_cuts(inst->nnodes, inst->ncols, elist, xstar, 1.9,cpx_add_cut_single_comp, &params )) {
 
 			exit(main_error_text(-11, "Error in CCcut_violated_cuts().\n"));
 
@@ -195,7 +195,7 @@ static int cpx_add_violated_SECs_fractional(CPXCALLBACKCONTEXTptr context, insta
 	int* index = (int*)malloc(inst->ncols * sizeof(int));
 	double* value = (double*)malloc(inst->ncols * sizeof(double));
 	int matbeg = 0;
-	int purgeable = CPX_USECUT_FILTER;
+	int purgeable = CPX_USECUT_FILTER; //cosa cambia tra filter e purge? non mi ricordo
 	int local = 0;
 	int nnz = 0;
 	char sense = 'L';
@@ -292,8 +292,8 @@ void cpx_branch_and_cut(char mipstart, instance* inst) {
 	inst->ncols = ncols;
 	if (CPXcallbacksetfunc(env, lp, contextid, my_callback, inst)) { exit(main_error_text(-9, "CPXcallbacksetfunc() error") ); }
 	if (mipstart) {
-		//Generate a greedy solution and initialize the incumbent with it
-		greedy_tsp(inst);
+		//Generate a greedy solution and initialize the incumbent with it TODO: METODO a paRTE
+		greedy_tsp(inst); //2 optare 
 		double* cplex_format_xheu = (double*)calloc(inst->ncols, sizeof(double));
 		int* ind = (int*)malloc(inst->ncols * sizeof(int));
 		cpx_convert_path_to_cplex(inst->best_sol, cplex_format_xheu, inst);
