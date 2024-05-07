@@ -827,7 +827,7 @@ solver_id parse_solver(char* solver_input){
 
 
 void tsp_solve(instance* inst){
-	get_timer();
+	inst->timelimit += get_timer();
 	MKDIR("figures");
 	MKDIR("data");
 	char figure_name[64];
