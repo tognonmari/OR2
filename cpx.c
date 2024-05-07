@@ -56,7 +56,9 @@ static int CPXPUBLIC my_callback(CPXCALLBACKCONTEXTptr context, CPXLONG contexti
 
 static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLONG contextid, void* userhandle) {
 	
-	int mynode = -1; CPXcallbackgetinfoint(context, CPXCALLBACKINFO_NODECOUNT, &mynode);
+	int mynode = -1; 
+	
+	CPXcallbackgetinfoint(context, CPXCALLBACKINFO_NODECOUNT, &mynode);
 
 	if (mynode != 0) {
 		return 0;
@@ -79,7 +81,7 @@ static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLO
 	}
 	//Step 2: turn it into a concorde-like solution
 	int num_edges = 0;
-	int t = 0; //cursor to scroll down elist
+	int t = 0; 
 	for (int i = 0; i < inst->nnodes; i++) {
 
 		for (int j = i + 1; j < inst->nnodes; j++) {
@@ -89,7 +91,6 @@ static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLO
 		}
 
 	}
-	//printf("Computation of edges gave %d as a result\n",(int)(num_edges == inst->ncols));
 	//Step 3: get the number of connected components
 
 	if (CCcut_connect_components(inst->nnodes, num_edges, elist, xstar, &ncomp, &compscount, &comps)) {
@@ -105,19 +106,19 @@ static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLO
 
 		violated_cuts_params params = { .inst = inst, .context = context };
 		//concorde method to find the cuts, given that the graph is connected: the method will itself use a callback -> a new structure of parameters must be used
-		if (CCcut_violated_cuts(inst->nnodes, inst->ncols, elist, xstar, 2.0-EPSILON,cpx_add_cut_single_comp, &params )) {
+		if (CCcut_violated_cuts(inst->nnodes, inst->ncols, elist, xstar, 1.9,cpx_add_cut_single_comp, &params )) {
 
 			exit(main_error_text(-11, "Error in CCcut_violated_cuts().\n"));
 
 		}
-		//tsp_debug(inst->verbose >= 1, 1, "Added cuts with concorde callback.\n");
+		
 
 	}
 	else {
 		//manually add the cuts from compscount e comps
 
 		int* my_comp = (int*) calloc(inst->nnodes, sizeof(int));
-		int start_component = 0; //cursor to scroll down the array
+		int start_component = 0; 
 
 		//for each component of the solution, update nodes'component in my_comp
 
@@ -135,7 +136,6 @@ static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLO
 		for (int i = 0; i < ncomp; i++) {
 
 
-			//tsp_debug(inst->verbose >= 1, 1, "Adding constraint on component %d at node %d.\n", i+1, mynode);
 			cpx_add_violated_SECs_fractional(context, inst, my_comp, i+1);
 
 		}
@@ -230,9 +230,7 @@ static int CPXPUBLIC my_callback_candidate(CPXCALLBACKCONTEXTptr context, instan
 	multitour_sol mlt;
 	double* xstar = (double*)malloc(inst->ncols * sizeof(double));
 	double objval = CPX_INFBOUND;
-	// table setting
-
-	//
+	
 	if (CPXcallbackgetcandidatepoint(context, xstar, 0, inst->ncols - 1, &objval)) { exit(main_error_text(-9, "CPXcallbackgetcandidatepoint error")); }
 
 	// get some random information at the node (as an example for the students)
@@ -288,7 +286,9 @@ void cpx_branch_and_cut(char mipstart, instance* inst) {
 	tsp_debug(inst->verbose >= 100, 1, "set_init_param SUCCESSFUL");
 	// install a "lazyconstraint" callback to cut infeasible integer sol.s (found e.g. by heuristics) 
 	CPXLONG contextid = CPX_CALLBACKCONTEXT_CANDIDATE | CPX_CALLBACKCONTEXT_RELAXATION; //both the situations to call my_callback
+
 	int ncols = CPXgetnumcols(env, lp);
+
 	inst->ncols = ncols;
 	if (CPXcallbacksetfunc(env, lp, contextid, my_callback, inst)) { exit(main_error_text(-9, "CPXcallbacksetfunc() error") ); }
 	if (mipstart) {
@@ -329,15 +329,22 @@ void cpx_branch_and_cut(char mipstart, instance* inst) {
 	if (CPXgetobjval(env, lp, &(curr_sol.z) ) ) { exit(main_error_text(-9, "CPXgetobjval() error")); }
 	tsp_debug(inst->verbose >= 100, 1, "build_sol SUCCESSFUL: there are %d connected components", curr_sol.ncomp);
 	handleCPXResult(inst->verbose > 1, CPXgetstat(env, lp), "Final CPXResult:");
+
 	if (cpx_update_best(inst->verbose >= 1, inst, env, lp, &curr_sol)) {
 		char figure_name[64];
 		generate_name(figure_name, sizeof(figure_name), "figures/branch_%d_%d_path.png", inst->nnodes, inst->randomseed);
 		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 	}
+
+
 	free(xstar);
 	free_multitour_sol(&curr_sol);
-	// free and close cplex model   
+
+
+	// free and close cplex model 
+	  
 	CPXfreeprob(env, &lp);
+
 	CPXcloseCPLEX(&env);
 	tsp_debug(inst->verbose >= 100, 1, "cpx_branch_and_cut SUCCESSFUL");
 	return 0; // or an appropriate nonzero error code
@@ -626,6 +633,7 @@ void build_sol(const double* xstar, const instance* inst, int* succ, int* comp, 
 * OV if $flag print the selected edges in the solution, otherwise print nothing
 */
 void print_selected_arcs(char flag, const double* xstar,const instance* inst) {
+
 	int n = inst->nnodes;
 	for (int i = 0; i < n; i++)
 	{
