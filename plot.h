@@ -15,7 +15,7 @@ void fprintf_center(FILE* file, const char text[], int field_width);
 void make_first_row(char flag, FILE* file, int num_cols, const char* text);
 void make_last_row(char flag, FILE* file, int num_cols);
 void make_table_row(char flag, FILE* file, int num_cols, char* text[]);
-
+void plot_path_on_screen(FILE* gnuplot_pipe, char flag, const int* path, int n, double cost, const point* nodes);
 
 
 #endif

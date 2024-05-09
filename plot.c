@@ -58,6 +58,23 @@ void plot_path(char flag, const int* path, int n, double cost, const point* node
     fflush(gnuplot_pipe);
     fclose(gnuplot_pipe);
 }
+void plot_path_on_screen(FILE* gnuplot_pipe, char flag, const int* path, int n, double cost, const point* nodes) {
+    if (!flag) { return; }
+    if (!gnuplot_pipe) {
+        exit(main_error(-1));
+    }
+    fprintf(gnuplot_pipe, "set title 'Path (Cost = %.1lf)'\n", cost);
+    fprintf(gnuplot_pipe, "set key off\n");
+    fprintf(gnuplot_pipe, "set grid \n");
+    fprintf(gnuplot_pipe, "plot '-' with lines lc rgb '#800080'\n");
+    for (int i = 0; i < n - 1; i++) {
+        plot_edge(gnuplot_pipe, &nodes[path[i]], &nodes[path[i + 1]]);
+    }
+    plot_edge(gnuplot_pipe, &nodes[path[n - 1]], &nodes[path[0]]);
+    fprintf(gnuplot_pipe, "e\n");
+    fflush(gnuplot_pipe);
+    // Non chiudere il pipe qui per mantenere la finestra di gnuplot aperta.
+}
 // Funzione per centrare una stringa all'interno di un campo di larghezza specificata
 void fprintf_center(FILE* file, const char text[], int field_width) {
     int text_length = strlen(text);

@@ -20,6 +20,7 @@ OR Esito(
     -8: parametri inseriti da linea di comando errati.
     -9: error in CPLEX enviroment
    -10: Incompatible type error
+   -99: Logical Error
 */
 //TODO Creare una funzione per ogni tipo di errore che lanci un messaggio su stderror adeguato e restituisca l'int associato all'errore.
 

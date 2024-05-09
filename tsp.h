@@ -24,7 +24,10 @@ typedef enum {
 	BEN,
 	GLU,
 	BC,
-	SBC //mipStart before Branch and Cut
+	BCM,
+	BCF,
+	BCFM
+
 
 } solver_id;
 
@@ -129,9 +132,11 @@ void swap(int* a, int* b);
 
 void swap_2_opt(int* path, int i, int j);
 
-char opt2_move(instance* inst, int* incumbent_sol, double* incumbent_cost, int* nr_swap);
+char opt2_move(char table_flag, instance* inst, int* incumbent_sol, double* incumbent_cost, int* nr_swap);
 
-void opt2(instance* inst, int* incumbent_sol, double* incumbent_cost);
+void opt2_init_table(char table_flag);
+
+void opt2(instance* inst, int* incumbent_sol, double* incumbent_cost, char table_flag);
 
 void copy_array(void* a1, const void* a2);
 
@@ -150,6 +155,8 @@ void init_path(int* path, size_t n);
 void init_data_file(char flag, FILE* data_file, instance* inst);
 
 double compute_path_length(int* path, int nodes_number, point* nodes);
+
+void check_sol_is_feasible(char check_feasibility, instance* inst, int* sol, double zsol);
 
 char is_feasible_solution(instance* inst, int* sol_path, double sol_cost);
 

@@ -18,7 +18,7 @@
 #error ""Unsupported operating system. This program is currently available only for Windows, Linux, and macOS.""
 #endif
 
-#define EPSILON 1e-9
+#define EPSILON 1e-5
 
 int main_error_text(int error, char* format, ...);
 

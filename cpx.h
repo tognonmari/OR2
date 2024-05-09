@@ -23,7 +23,7 @@ typedef struct {
 
 #define EPS 1e-7
 
-void cpx_branch_and_cut(char mipstart,instance* inst);
+void cpx_branch_and_cut(char relaxation, char mipstart,instance* inst);
 static int CPXPUBLIC my_callback(CPXCALLBACKCONTEXTptr context, CPXLONG contextid, void* userhandle);
 static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLONG contextid, void* userhandle);
 static int cpx_add_cut_single_comp(double cutval, int num_nodes_in_cut, int* nodes_in_cut, void* userhandle);

@@ -14,10 +14,10 @@ int main_error_text(int error, char* format, ...) {
 		fprintf(stderr, "Successful solved.\n");
 		break;
 	case -1:
-		fprintf(stderr, "Failed to open a pipe.\n");
+		fprintf(stderr, "Failed to open a pipe or has been tried to use a not open pipe.\n");
 		break;
 	case -2:
-		fprintf(stderr, "Failed to open a file.\n");
+		fprintf(stderr, "Failed to open a file or has been tried to use a not open file.\n");
 		break;
 	case -3:
 		fprintf(stderr, "Incorrect number of command line parameters.\n");
@@ -46,6 +46,9 @@ int main_error_text(int error, char* format, ...) {
 		break;
 	case -10:
 		fprintf(stderr, "Incompatible type error.\n");
+		break;
+	case -99:
+		fprintf(stderr, "Logical error. \n");
 		break;
 	default:
 		fprintf(stderr, "Unknown error.\n");
@@ -93,6 +96,7 @@ char is_time_limit_exceeded(double time_limit){
 /* Returns 1 if two double differ by less than a parameter EPSILON, 0 otherwise
 */
 char is_equal_double(double d1, double d2, double epsilon){
+	//printf(" d1 = %.5f d2 = %.5f", d1, d2);
 	return (fabs(d1-d2)<epsilon);
 }
 /*
