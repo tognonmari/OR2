@@ -95,7 +95,7 @@ void gre_init_table(char table_flag) {
 }
 void gre_init(instance* inst, greedy* gre) {
 	gre->check_feasibility = 1;
-	gre->plots_on_screen = 0; //it slower a lot the program
+	gre->plots_on_screen = 1; //it slower a lot the program
 	gre->table_flag = (inst->verbose) >= 2;
 	gre->pipe = _popen("gnuplot -persist", "w");
 	gre->gre_dist_matrix = inst->dist_matrix;
@@ -117,8 +117,9 @@ void gre_solve(instance* inst, char apply_opt2) {
 	gre_init(inst, &gre);
 	for (int i = 1; i < inst->nnodes; i++) {
 		if (is_time_limit_exceeded(inst->timelimit)) {
-			tsp_debug(inst->verbose, 0, "Could not finish greedy NN due to time constraints: visited up until node %d, best start with %d", i, gre.best_start);
-			break;
+			gre_close(&gre);
+			tsp_debug(inst->verbose, 1, "Could not finish greedy NN due to time constraints: visited up until node %d, best start with %d", i, gre.best_start);
+			return;
 		}
 		gre.curr_sol = gre_compute_path(i,inst,&gre);
 		check_sol_is_feasible(gre.check_feasibility, inst, gre.curr_sol, gre.zcurr);
