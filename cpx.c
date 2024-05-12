@@ -63,6 +63,7 @@ static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLO
 	if (mynode != 0) {
 		return 0;
 	}
+
 	//Step 0: initializations and allocations
 	instance* inst = (instance*)userhandle;
 	double* xstar = calloc(inst->ncols, sizeof(double));

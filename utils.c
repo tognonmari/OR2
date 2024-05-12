@@ -47,6 +47,9 @@ int main_error_text(int error, char* format, ...) {
 	case -10:
 		fprintf(stderr, "Incompatible type error.\n");
 		break;
+	case -11:
+		fprintf(stderr, "Concord Error.\n");
+		break;
 	default:
 		fprintf(stderr, "Unknown error.\n");
 	}

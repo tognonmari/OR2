@@ -27,7 +27,9 @@ int main(int argc, char** argv) {
 
     //Step 0: hardcoded instance test_bed_size, default should be 1
     int test_bed_size = 1;
-    
+    // Step 0.1: parse the input to get test bed size
+    read_test_bed_size(&test_bed_size, argc, argv);
+
     //Step 1: Allocate the array of instances
     instance* inst_array = (instance*) calloc(test_bed_size, sizeof(instance));
 
