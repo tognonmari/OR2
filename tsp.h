@@ -41,7 +41,7 @@ typedef struct {
 
 	// parameters 
 	solver_id solver;
-	char* solver_short_name;
+	char* csv_column_name;
 	char* legend;
 	int randomseed;
 	double timelimit;						// overall time limit, in sec.s

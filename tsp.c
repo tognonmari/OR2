@@ -310,6 +310,7 @@ void parse_command_line(int argc, char** argv, instance *inst){
 		if ( strcmp(argv[i],"-memory") == 0 ) { inst->available_memory = atoi(argv[++i]); continue; }	// available memory (in MB)
 		if ( strcmp(argv[i], "-verbose")==0) { inst->verbose = atoi(argv[++i]); continue;}				// verbosity
 		if ( strcmp(argv[i], "-v") ==0 ) {inst->verbose = atoi(argv[++i]);continue;}					// verbosity
+		if (strcmp(argv[i], "-csv_column_name") == 0) { strcpy(inst->csv_column_name, argv[++i]); }
 		//if ( strcmp(argv[i],"-node_file") == 0 ) { strcpy(inst->node_file,argv[++i]); continue; }		// cplex's node file
 		// if ( strcmp(argv[i],"-max_nodes") == 0 ) { inst->max_nodes = atoi(argv[++i]); continue; } 		// max n. of nodes
 		// if ( strcmp(argv[i],"-cutoff") == 0 ) { inst->cutoff = atof(argv[++i]); continue; }				// master cutoff
@@ -822,6 +823,15 @@ solver_id parse_solver(char* solver_input){
 	else if( strcmp(solver_input, "vns")==0){
 		return VNS;
 	}
+	else if (strcmp(solver_input, "exact_cplex_only") == 0) {
+		return EX;
+	}
+	else if (strcmp(solver_input, "benders") == 0) {
+		return BEN;
+	}
+	else if (strcmp(solver_input, "gluing") == 0) {
+		return GLU;
+	}
 	exit(main_error_text(-8, "%s","solver"));
 }
 
@@ -914,42 +924,36 @@ void update_solver(instance* inst){
 	switch(selection){
 		case 0:
 			{inst->solver = NN;
-			inst->solver_short_name = "gre";
+			
 			printf("successful update.\n");
 			break;}
 		case 1:
 			{inst->solver = OPT_2;
-			inst->solver_short_name = "g2o";
 			printf("successful update.\n");
 			break;}
 		case 2:
 			{inst->solver = TABU;
-			inst->solver_short_name = "tab";
 			printf("successful update.\n");
 			break;}
 		case 3:
 			{inst->solver = VNS;
-			inst->solver_short_name = "vns";
 			printf("successful update. \n");
 			break;}
 		case 4:
 		{
 			inst->solver = EX;
-			inst->solver_short_name = "exa";
 			printf("successful update. \n");
 			break;
 		}
 		case 5:
 		{
 			inst->solver = BEN;
-			inst->solver_short_name = "ben";
 			printf("successful update. \n");
 			break;
 		}
 		case 6:
 		{
 			inst->solver = GLU;
-			inst->solver_short_name = "glu";
 			printf("successful update. \n");
 			break;
 		}
@@ -967,7 +971,6 @@ void update_solver(instance* inst){
 		}
 		default:
 			{inst->solver = NN;
-			inst->solver_short_name = "gre";
 			printf("successful update.\n");
 			break;}
 	}
@@ -975,6 +978,10 @@ void update_solver(instance* inst){
 
 }
 void generate_test_bed(int size_test_bed, int argc, char** argv, instance* test_bed) {
+	
+	/// inizializza la prima istanza e parsa il test bed size
+
+	//con i parametri della prima istanza istanzia le altre 
 	
 	for (int i = 0; i < size_test_bed; i++) {
 		//initialize instance
@@ -994,13 +1001,13 @@ void generate_csv_file(int size_test_bed, instance* test_bed) {
 	int seed = test_bed[0].randomseed;
 
 	MKDIR("runs");
-	char run_name[64];
-	generate_name(run_name, sizeof(run_name), "runs/%s_%d_%d_cost.csv", test_bed[0].solver_short_name, n, seed);
+	char csv_name[128];
+	generate_name(csv_name, sizeof(csv_name), "runs/%s_%d_%d_cost.csv", test_bed[0].csv_column_name, n, seed);
 	
 	//Print a single-column .csv file
-	FILE* file_handler = fopen(run_name, "w");
+	FILE* file_handler = fopen(csv_name, "w");
 	//Print the first row
-	fprintf(file_handler, "1, %s\n", test_bed[0].solver_short_name);
+	fprintf(file_handler, "1, %s\n", test_bed[0].csv_column_name);
 
 	//Print the remaining rows
 	for (int i = 0; i < size_test_bed; i++) {
@@ -1009,16 +1016,16 @@ void generate_csv_file(int size_test_bed, instance* test_bed) {
 	//
 	fclose(file_handler);
 
-	generate_name(run_name, sizeof(run_name), "runs/%s_%d_%d_cost.csv", test_bed[0].solver_short_name, n, seed);
+	generate_name(csv_name, sizeof(csv_name), "runs/%s_%d_%d_time.csv", test_bed[0].csv_column_name, n, seed);
 
 	//Print a single-column .csv file
-	file_handler = fopen(run_name, "w");
+	file_handler = fopen(csv_name, "w");
 	//Print the first row
-	fprintf(file_handler, "1, %s\n", test_bed[0].solver_short_name);
+	fprintf(file_handler, "1, %s\n", test_bed[0].csv_column_name);
 
 	//Print the remaining rows
 	for (int i = 0; i < size_test_bed; i++) {
-		fprintf(file_handler, "%d_%d_[%d], %lf\n", n, seed, i, test_bed[i].zbest);
+		fprintf(file_handler, "%d_%d_[%d], %lf\n", n, seed, i, test_bed[i].tbest);
 	}
 	//
 	fclose(file_handler);
