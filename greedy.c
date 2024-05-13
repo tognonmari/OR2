@@ -94,9 +94,9 @@ void gre_init_table(char table_flag) {
 	make_table_row(table_flag, stdout, num_cols_table, table_fields);
 }
 void gre_init(instance* inst, greedy* gre) {
-	gre->check_feasibility = 1;
+	gre->check_feasibility = 0;
 	gre->plots_on_screen = 0; //it slower a lot the program
-	gre->table_flag = (inst->verbose) >= 1;
+	gre->table_flag = (inst->verbose) >= 2;
 	gre->pipe = _popen("gnuplot -persist", "w");
 	gre->gre_dist_matrix = inst->dist_matrix;
 	gre->best_start = 0;
@@ -111,6 +111,46 @@ void gre_close(greedy* gre) {
 	fclose(gre->pipe);
 	make_last_row(gre->table_flag, stdout, 3);
 }
+/*
+* Basically it works as gre_solve, but it compute greedy_path for just $nstart starting nodes
+*/
+void gre_partial_solve(instance* inst, char apply_opt2, int nstart) {
+	greedy gre;
+	gre.apply_opt2 = apply_opt2;
+	gre_init(inst, &gre);
+	for (int i = 1; i < nstart; i++) {
+		if (is_time_limit_exceeded(inst->timelimit) ) {
+			gre_close(&gre);
+			tsp_debug(1, 1, "Could not finish greedy NN due to time constraints: visited up until node %d, best start with %d", i, gre.best_start);
+			return;
+		}
+		gre.curr_sol = gre_compute_path(i, inst, &gre);
+		check_sol_is_feasible(gre.check_feasibility, inst, gre.curr_sol, gre.zcurr);
+		if (gre.zcurr < gre.zbest) {
+			gre_update_sol(inst, &gre, i);
+		}
+		else {
+			free(gre.curr_sol); //sol is not the best path, then i can free it
+		}
+
+	}
+	gre_close(&gre);
+}
+/*
+* This function must update the data of $inst related to the best solution using
+* a greedy approach that provides a good solution for the tsp problem.
+* The idea is to build a path in which the initial node 0 (position 0 in the vector representing the path)
+* is arbitrarily chosen among the nodes of the graph,
+* while node i is chosen by selecting the node at minimum distance from node i-1.
+* INVARIANT FOR THE PATH BUILDED IN GREEDY TSP.
+* Let PATH = [v1, v2, ..., vK] the sequence of visited node we have that
+* for each (1 <= i <= k-1) : d(v_i, v_i+1) <= d(v_i, u) for each u not yet visited.
+* IOP inst Pointer to the instance containing node information. The following field are updated:
+*	tbest Execution time to find the best solution.
+*	zbest Cost of the best solution.
+*	best_sol Sequence of indices representing the best solution.
+* IP apply_opt2 Flag for opt2.
+*/
 void gre_solve(instance* inst, char apply_opt2) {
 	greedy gre;
 	gre.apply_opt2 = apply_opt2;
@@ -118,7 +158,7 @@ void gre_solve(instance* inst, char apply_opt2) {
 	for (int i = 1; i < inst->nnodes; i++) {
 		if (is_time_limit_exceeded(inst->timelimit)) {
 			gre_close(&gre);
-			tsp_debug(inst->verbose, 1, "Could not finish greedy NN due to time constraints: visited up until node %d, best start with %d", i, gre.best_start);
+			tsp_debug(1, 1, "Could not finish greedy NN due to time constraints: visited up until node %d, best start with %d", i, gre.best_start);
 			return;
 		}
 		gre.curr_sol = gre_compute_path(i,inst,&gre);

@@ -2,7 +2,6 @@
 #define GRE_H
 #include "tsp.h"
 #include "utils.h"
-#include "plot.h"
 
 typedef struct {
     int* best_sol;
@@ -26,6 +25,7 @@ void gre_init_table(char table_flag);
 void gre_fill_table(char table_flag, int start, double cost, char is_new_best);
 void gre_init(instance * inst, greedy * gre);
 void gre_close(greedy * gre);
+void gre_partial_solve(instance* inst, char apply_opt2, int nstart);
 void gre_solve(instance * inst, char apply_opt2);
 
 #endif

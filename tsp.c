@@ -937,16 +937,28 @@ void tsp_solve(instance* inst){
 		ben_solve(1, inst);
 		break;
 	case BC:
-		cpx_branch_and_cut(0, 0, inst);
+		cpx_branch_and_cut(0, 0, 0, inst);
 		break;
 	case BCM:
-		cpx_branch_and_cut(0, 1, inst);
+		cpx_branch_and_cut(0, 1, 0, inst);
+		break;
+	case BCP:
+		cpx_branch_and_cut(0, 0, 1, inst);
+		break;
+	case BCMP:
+		cpx_branch_and_cut(0, 1, 1, inst);
 		break;
 	case BCF:
-		cpx_branch_and_cut(1,0,inst);
+		cpx_branch_and_cut(1,0,0,inst);
 		break;
 	case BCFM:
-		cpx_branch_and_cut(1,1, inst);
+		cpx_branch_and_cut(1,1,0, inst);
+		break;
+	case BCFP:
+		cpx_branch_and_cut(1, 0, 1, inst);
+		break;
+	case BCFMP:
+		cpx_branch_and_cut(1, 1, 1, inst);
 		break;
 	default:
 		exit(main_error(-7));
@@ -967,8 +979,12 @@ void update_solver(instance* inst){
 	printf("6: Exact Method with CPLEX, with SECs, Benders' method with patching\n");
 	printf("7: Exact Method with CPLEX, Branch and Cut Method, no frational cut\n");
 	printf("8: Exact Method with CPLEX, Branch and Cut Method, no fractional cut, MIPSTART enabled\n");
-	printf("9: Exact Method with CPLEX, Branch and Cut Method, with fractional cut\n");
-	printf("10: Exact Method with CPLEX, Branch and Cut Method, with fractional cut, MIPSTART enabled\n");
+	printf("9: Exact Method with CPLEX, Branch and Cut Method, no fractional cut with posting\n");
+	printf("10: Exact Method with CPLEX, Branch and Cut Method, no fractional cut with posting, MIPSTART enabled\n");
+	printf("11: Exact Method with CPLEX, Branch and Cut Method, with fractional cut\n");
+	printf("12: Exact Method with CPLEX, Branch and Cut Method, with fractional cut, MIPSTART enabled\n");
+	printf("13: Exact Method with CPLEX, Branch and Cut Method, with fractional cut and posting\n");
+	printf("14: Exact Method with CPLEX, Branch and Cut Method, with fractional cut and posting, MIPSTART enabled\n");
 	printf("---------------------------------------------\n");
 	fgets(buf, 8, stdin);
     selection = atoi(buf);
@@ -1023,13 +1039,37 @@ void update_solver(instance* inst){
 		}
 		case 9:
 		{
-			inst->solver = BCF;
+			inst->solver = BCP;
 			printf("successful update. \n");
 			break;
 		}
 		case 10:
 		{
+			inst->solver = BCMP;
+			printf("successful update. \n");
+			break;
+		}
+		case 11:
+		{
+			inst->solver = BCF;
+			printf("successful update. \n");
+			break;
+		}
+		case 12:
+		{
 			inst->solver = BCFM;
+			printf("successful update. \n");
+			break;
+		}
+		case 13:
+		{
+			inst->solver = BCFP;
+			printf("successful update. \n");
+			break;
+		}
+		case 14:
+		{
+			inst->solver = BCFMP;
 			printf("successful update. \n");
 			break;
 		}

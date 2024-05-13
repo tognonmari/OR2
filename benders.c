@@ -71,6 +71,7 @@ void ben_reduce_comp(char patching, CPXENVptr env, CPXLPptr lp, instance* inst, 
 		if (patching) {
 			ben_patching(mlt_sol, &patched_sol, inst);
 			tsp_debug(inst->verbose >= 100, 1, "#%d Gluing Successful", n_call_ben_add_sec);
+			tsp_debug(inst->verbose >= 100, 1, "Old Sol Cost: %.3f, Patched Sol Cost:%.3f", mlt_sol->z, patched_sol.z);
 		}
 		int curr_add_sec = CPXgetnumrows(env, lp) - init_nr_cons;
 		tot_add_sec += curr_add_sec;
@@ -87,6 +88,7 @@ void ben_reduce_comp(char patching, CPXENVptr env, CPXLPptr lp, instance* inst, 
 		}
 		build_sol((const double*)xstar, (const instance*)inst, mlt_sol->succ, mlt_sol->comp, &(mlt_sol->ncomp));
 		if (CPXgetobjval(env, lp, &(mlt_sol->z))) { exit(main_error_text(-9, "CPXgetobjval() error")); }
+		tsp_debug(inst->verbose >= 100, 1, "CPXgetobj val = %.3f Real mlt Cost = %.3f", mlt_sol->z, compute_mlt_cost(mlt_sol, inst));
 		tsp_debug(inst->verbose >= 100, 1, "Current solution has %d connected components", mlt_sol->ncomp);
 		tsp_debug(inst->verbose >= 100, 1, "---------------- End Try #%d ----------------\n", n_call_ben_add_sec);
 		free(xstar);
@@ -191,6 +193,7 @@ void ben_solve(char patching, instance* inst) {
 	init_multitour_sol(&curr_sol, inst->nnodes);
 	build_sol((const double*)xstar, (const instance*)inst, curr_sol.succ, curr_sol.comp, &curr_sol.ncomp);
 	if (CPXgetobjval(env, lp, &(curr_sol.z))) { exit(main_error_text(-9, "CPXgetobjval() error")); }
+	tsp_debug(inst->verbose >= 100, 1, "CPXgetobj val = %.3f Real mlt Cost = %.3f", curr_sol.z, compute_mlt_cost(&curr_sol,inst) );
 	tsp_debug(inst->verbose >= 100, 1, "build_sol SUCCESSFUL: there are %d connected components", curr_sol.ncomp);
 	char figure_name[64];
 	generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_multitour.png", inst->nnodes, inst->randomseed);

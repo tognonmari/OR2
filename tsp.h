@@ -25,9 +25,12 @@ typedef enum {
 	GLU,
 	BC,
 	BCM,
+	BCP,
+	BCMP,
 	BCF,
-	BCFM
-
+	BCFM,
+	BCFP,
+	BCFMP
 
 } solver_id;
 
@@ -64,7 +67,7 @@ typedef struct {
 	double best_ub;
 	double* load_min;						// minimum load when leaving a node
 	double* load_max;						// maximum load when leaving a node
-
+	char posting;
 	// model;
 	int ncols;
 	/*
