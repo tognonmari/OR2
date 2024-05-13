@@ -1,4 +1,5 @@
 #include "cpx.h"
+#include "benders.h"
 #include "plot.h"
 #include "mincut.h"
 //Function that handles CPX function results
@@ -238,16 +239,20 @@ static int CPXPUBLIC my_callback_candidate(CPXCALLBACKCONTEXTptr context, instan
 	multitour_sol mlt;
 	double* xstar = (double*)malloc(inst->ncols * sizeof(double));
 	double objval = CPX_INFBOUND;
-	
+	// 1: ottieni la soluzione candidata
 	if (CPXcallbackgetcandidatepoint(context, xstar, 0, inst->ncols - 1, &objval)) { exit(main_error_text(-9, "CPXcallbackgetcandidatepoint error")); }
-
-	// get some random information at the node (as an example for the students)
+	// 2: ottieni informazioni sui nodi
 	int mythread = -1; CPXcallbackgetinfoint(context, CPXCALLBACKINFO_THREADID, &mythread);
 	int mynode = -1; CPXcallbackgetinfoint(context, CPXCALLBACKINFO_NODECOUNT, &mynode);
 	double incumbent = CPX_INFBOUND; CPXcallbackgetinfodbl(context, CPXCALLBACKINFO_BEST_SOL, &incumbent);
-	//tsp_debug(inst->verbose >= 100,1,"callback at node %5d thread %2d incumbent %.12g, candidate value %10.2lf\n", mynode, mythread, incumbent, objval);
+	tsp_debug(inst->verbose >= 10,1,"callback at node %5d thread %2d incumbent %.12g, candidate value %10.2lf\n", mynode, mythread, incumbent, objval);
+	//3: inizializzazione soluzione multitour
 	init_multitour_sol(&mlt, inst->nnodes);
+	//4: costruzione della soluzione multitour form input solution $xstar is built a solution for the tsp problem
 	build_sol((const double*)xstar, (const instance*)inst, mlt.succ, mlt.comp, &mlt.ncomp);
+	//4b: acquisizione del costo della soluzione multitour
+	
+	//5: se ci sono più componente connesse creo vincolo di taglio da aggiungere al modello e rifiuto il candidato
 	if (mlt.ncomp > 1) {
 		int izero = 0;
 		int* index = (int*)malloc(inst->ncols * sizeof(int));
@@ -270,17 +275,37 @@ static int CPXPUBLIC my_callback_candidate(CPXCALLBACKCONTEXTptr context, instan
 					nnz++;
 				}
 			}
-			if (CPXcallbackrejectcandidate(context, 1, nnz, &rhs, &sense, &izero, index, value)) { exit(main_error_text(-9, "CPXcallbackrejectcandidate() error")); }// reject the solution and adds one cut 
+			if (CPXcallbackrejectcandidate(context, 1, nnz, &rhs, &sense, &izero, index, value)) { exit(main_error_text(-9, "CPXcallbackrejectcandidate() error")); }// reject the solution and adds one cut
 		}
 		free(index);
 		free(value);
+		//6: esegui gluing soluzione e postala
+		if (inst->posting) {
+			multitour_sol patched_sol;
+			init_multitour_sol(&patched_sol, inst->nnodes);
+			ben_patching(&mlt, &patched_sol, inst);
+			int* path = (int*)calloc(inst->nnodes, sizeof(int));
+			cpx_convert_succ_in_path(&patched_sol, path, inst->nnodes);
+			double zheu = compute_path_length(path, inst->nnodes, inst->nodes);
+			opt2(inst, path, &zheu, 0);
+			double* cplex_format_xheu = (double*)calloc(inst->ncols, sizeof(double));
+			int* ind = (int*)malloc(inst->ncols * sizeof(int));
+			cpx_convert_path_to_cplex(path, cplex_format_xheu, inst);
+			for (int j = 0; j < inst->ncols; j++) ind[j] = j;
+			CPXcallbackpostheursoln(context, inst->ncols, ind, cplex_format_xheu, zheu, CPXCALLBACKSOLUTION_CHECKFEAS);
+			tsp_debug((inst->verbose >= 10), 1, "Posting Heuristic (Gluing) with Cost = %.3f", zheu);
+			free_multitour_sol(&patched_sol);
+			free(path);
+			free(ind);
+			free(cplex_format_xheu);
+		}
 	}
 	free(xstar);
 	return 0;
 }
 
-
-void cpx_branch_and_cut(char relaxation, char mipstart, instance* inst) {
+void cpx_branch_and_cut(char relaxation, char mipstart, char posting, instance* inst) {
+	inst->posting = posting;
 	// open CPLEX model
 	int error;
 	char log_name[64];
@@ -302,9 +327,8 @@ void cpx_branch_and_cut(char relaxation, char mipstart, instance* inst) {
 	inst->ncols = ncols;
 	if (CPXcallbacksetfunc(env, lp, contextid, my_callback, inst)) { exit(main_error_text(-9, "CPXcallbacksetfunc() error") ); }
 	if (mipstart) {
-		//Generate a greedy solution and initialize the incumbent with it TODO: METODO a paRTE
-		greedy_tsp(inst); //2 optare 
-		opt2_optimize_best_sol(inst);
+		//Generate a greedy solution and initialize the incumbent with it
+		gre_partial_solve(inst, 1, inst->nnodes/30);
 		double* cplex_format_xheu = (double*)calloc(inst->ncols, sizeof(double));
 		int* ind = (int*)malloc(inst->ncols * sizeof(int));
 		cpx_convert_path_to_cplex(inst->best_sol, cplex_format_xheu, inst);
@@ -389,11 +413,19 @@ void cpx_convert_path_to_cplex(const int* xheu_path, double* cplex_like_format, 
 	succ[xheu_path[n - 1]] = xheu_path[0];
 
 	//Step 1: convert succ in cplex 
+	cpx_convert_succ_to_cplex(succ, cplex_like_format, inst);
+	free(succ);
+
+}
+
+void cpx_convert_succ_to_cplex(const int* succ, double* cplex_like_format, instance* inst) {
+
+	int n = inst->nnodes;
+	
+	//Step 1: convert succ in cplex 
 	for (int i = 0; i < n; i++) {
 		cplex_like_format[xpos(i, succ[i], inst)] = 1.0;
 	}
-	free(succ);
-
 }
 int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const multitour_sol* sol) {
 	double z;
@@ -538,7 +570,7 @@ void set_init_param(CPXENVptr env, const instance* inst, char* log_name, size_t 
 	CPXsetdblparam(env, CPX_PARAM_EPRHS, 1e-9);
 	CPXsetdblparam(env, CPX_PARAM_TILIM, inst->timelimit - get_timer());
 	CPXsetintparam(env, CPX_PARAM_MIPDISPLAY, 4);
-	if (inst->verbose >= 200) CPXsetintparam(env, CPX_PARAM_SCRIND, CPX_ON); // Cplex output on screen
+	if (inst->verbose >= 101) CPXsetintparam(env, CPX_PARAM_SCRIND, CPX_ON); // Cplex output on screen
 	//CPXsetintparam(env, CPX_PARAM_RANDOMSEED, 123456);
 
 	//CPXsetdblparam(env, CPX_PARAM_TILIM, CPX_INFBOUND + 0.0);
@@ -559,12 +591,47 @@ void free_multitour_sol(multitour_sol* sol) {
 	free(sol->comp);
 	free(sol->succ);
 }
+
+void update_mlt_cost(multitour_sol* mlt, instance* inst) {
+	mlt->z = compute_mlt_cost(mlt, inst);
+}
+double compute_mlt_cost(const multitour_sol* mlt, instance* inst) {
+	int* succ = mlt->succ;
+	int* comp = mlt->comp;
+	int ncomp = mlt->ncomp;
+	int n = inst->nnodes;
+	float** dist_m = inst->dist_matrix;
+	double cost = 0;
+	for (int k = 1; k <= mlt->ncomp; k++) {
+		for (int i = 0; i < n; i++) {
+			//select a node in component k and set it to start
+			if (comp[i] != k) { continue; }
+			int start = i;
+			int curr = start;
+			int next = succ[start];
+			//compute component cost
+			while (next != start) {
+				cost += get_dist_matrix(dist_m, curr, next);
+				curr = next;
+				next = succ[next];
+			}
+			cost += get_dist_matrix(dist_m, curr, next);
+			break;
+		}
+	}
+	return cost;
+}
 /*From input solution $xstar is built a solution for tsp problem, the solution is structured as follows:
 * OP succ It contains the sequence of indices of the nodes involved in $xstar, observe that initially subtour constraints are not in the model,
 *		  hence we can have several tours.
 * OP ncomp Number of connected components.
 * OP comp Array specifyng the connected components of the nodes, thus comp[i] indicate the index of the
 *		  connected component of node with index i;
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+* 
+* WARNING! THIS FUNCTION DOES NOT UPDATE THE COST OF THE MULTITOUR SOLUTION 
+* 
+* !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 * The function does the following:
 * 1)Node Degree Calculation:
 *		The array degree is initialized with zeros and represents the degree of each node.
