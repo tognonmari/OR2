@@ -95,8 +95,8 @@ void gre_init_table(char table_flag) {
 }
 void gre_init(instance* inst, greedy* gre) {
 	gre->check_feasibility = 1;
-	gre->plots_on_screen = 1; //it slower a lot the program
-	gre->table_flag = (inst->verbose) >= 2;
+	gre->plots_on_screen = 0; //it slower a lot the program
+	gre->table_flag = (inst->verbose) >= 1;
 	gre->pipe = _popen("gnuplot -persist", "w");
 	gre->gre_dist_matrix = inst->dist_matrix;
 	gre->best_start = 0;
