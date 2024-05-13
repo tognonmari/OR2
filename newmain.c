@@ -20,6 +20,7 @@ OR Esito(
     -8: parametri inseriti da linea di comando errati.
     -9: error in CPLEX enviroment
    -10: Incompatible type error
+   -99: Logical Error
 */
 //TODO Creare una funzione per ogni tipo di errore che lanci un messaggio su stderror adeguato e restituisca l'int associato all'errore.
 
@@ -29,13 +30,13 @@ int main(int argc, char** argv) {
     int test_bed_size = 1;
     // Step 0.1: parse the input to get test bed size
     read_test_bed_size(&test_bed_size, argc, argv);
-
+    
     //Step 1: Allocate the array of instances
     instance* inst_array = (instance*) calloc(test_bed_size, sizeof(instance));
-
+    
     //Step 2: Initialize all instances of the test bed
     generate_test_bed(test_bed_size, argc, argv, inst_array);
-
+    printf("here");
     //Step 3.5 : print instance information up to now, according to verbosity
 
     print_instance_parameters(&inst_array[0]);
@@ -70,10 +71,6 @@ int main(int argc, char** argv) {
 
     //Step 8 : return
  
-    return main_error(0);
-
-
-
-    
+    return main_error(0);    
 
 }

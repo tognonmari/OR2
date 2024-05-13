@@ -71,7 +71,7 @@ void vns(instance* inst){
         int swaps =0;
         char improvement = 1;
         while(improvement){
-            improvement = opt2_move(inst, incumbent_sol, &incumbent_cost, &swaps);
+            improvement = opt2_move(0, inst, incumbent_sol, &incumbent_cost, &swaps);
            
             t++;
         }

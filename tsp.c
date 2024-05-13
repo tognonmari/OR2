@@ -1,7 +1,9 @@
 #include "tsp.h"
 #include "utils.h"
+#include "cpx.h"
 #include "tabu.h"
 #include "vns.h"
+#include "greedy.h"
 #include <math.h>
 #include <malloc.h>
 #include <string.h>
@@ -51,9 +53,9 @@ void print_best_sol(char flag, instance* inst) {
 	}
 	tsp_debug_inline(flag, "\n -------------- Best solution: --------------\n");
 	tsp_debug_inline(flag, "Best Distance (zbest): %.2lf\n",inst->zbest);
-	tsp_debug_inline(flag, "Best Solution found at time: %12.6f\n",inst->tbest);
-	tsp_debug_inline(flag && ( inst->verbose > 49 ), "The following sequence of nodes is the best solution to the problem:");
-	print_path(flag && ( inst->verbose > 49 ),"", inst->best_sol, inst->nodes, inst->nnodes);
+	tsp_debug_inline(flag, "Best Solution found at time: %12.6f, thus it took %12.6f from the start of the current at %12.6f\n",inst->tbest, inst->tbest - inst->tstart, inst->tstart);
+	tsp_debug_inline(flag && ( inst->verbose >= 200 ), "The following sequence of nodes is the best solution to the problem:");
+	print_path(flag && ( inst->verbose >= 200 ),"", inst->best_sol, inst->nodes, inst->nnodes);
 	tsp_debug_inline(flag, "\n ------------ End best solution: ------------\n");
 }
 /**
@@ -133,6 +135,7 @@ void print_nodes(char flag, const char text_to_print[], const instance *inst, in
 * OV Path $path if $flag
 */
 void print_path(char flag, const char text_to_print[], const int* path, const point* nodes, int n) {
+	if (!flag) { return; }
     if(text_to_print[0]!= '\0'){
         tsp_debug(flag, 1, "%s", text_to_print);
     }
@@ -310,11 +313,12 @@ void parse_command_line(int argc, char** argv, instance *inst){
 		if ( strcmp(argv[i],"-memory") == 0 ) { inst->available_memory = atoi(argv[++i]); continue; }	// available memory (in MB)
 		if ( strcmp(argv[i], "-verbose")==0) { inst->verbose = atoi(argv[++i]); continue;}				// verbosity
 		if ( strcmp(argv[i], "-v") ==0 ) {inst->verbose = atoi(argv[++i]);continue;}					// verbosity
-		if (strcmp(argv[i], "-csv_column_name") == 0) { strcpy(inst->csv_column_name, argv[++i]); }
+		if (strcmp(argv[i], "-csv_column_name") == 0) { strcpy(inst->csv_column_name, argv[++i]); printf("succesful columnname\n"); continue; }
 		//if ( strcmp(argv[i],"-node_file") == 0 ) { strcpy(inst->node_file,argv[++i]); continue; }		// cplex's node file
 		// if ( strcmp(argv[i],"-max_nodes") == 0 ) { inst->max_nodes = atoi(argv[++i]); continue; } 		// max n. of nodes
 		// if ( strcmp(argv[i],"-cutoff") == 0 ) { inst->cutoff = atof(argv[++i]); continue; }				// master cutoff
 		// if ( strcmp(argv[i],"-int") == 0 ) { inst->integer_costs = 1; continue; } 						// inteher costs
+		if (strcmp(argv[i], "-test_bed_size") == 0) { break; }//ignore the parameter }
 		if ( strcmp(argv[i],"-help") == 0 ) { help = 1; continue; } 									// help
 		if ( strcmp(argv[i],"--help") == 0 ) { help = 1; continue; } 									// help
 		help = 1;
@@ -367,12 +371,12 @@ double compute_path_length(int* path, int nodes_number, point* nodes){
 	for (int i = 0; i < nodes_number - 1; i++){
 		a = path[i];
 		b = path[i+1];
-		path_length += get_distance(&nodes[a],&nodes[b]);
+		path_length += (float) get_distance(&nodes[a],&nodes[b]);
 	}
 	//last edge
 	a = path[0];
 
-	return (path_length + get_distance(&nodes[a],&nodes[b]));
+	return (path_length + (float) get_distance(&nodes[a],&nodes[b]));
 }
 
 /**
@@ -426,24 +430,42 @@ void swap(int* a, int* b) {
     *a = *b;        
     *b = temp;    
 }
-
-void opt2(instance* inst, int* incumbent_sol, double* incumbent_cost) {
+void opt2_init_table(char table_flag) {
+	if (!table_flag) { return; }
 	char* table_fields[] = { "Nr swap", "node1", "node2", "Delta", "New cost" };
-	char table_flag = inst->verbose >= 2;
 	int num_cols_table = sizeof(table_fields) / sizeof(table_fields[0]);
 	make_first_row(table_flag, stdout, num_cols_table, "2OPT_SWAPS_TABLE");
 	make_table_row(table_flag, stdout, num_cols_table, table_fields);
+}
+void opt2_fill_table(char table_flag, int* nr_swap, int best_i, int best_j, double best_delta, double incumbent_cost) {
+	if (!table_flag) { return; }
+	char table_0[32];
+	char table_1[32];
+	char table_2[32];
+	char table_3[32];
+	char table_4[32];
+	sprintf(table_0, "%d", ++(*nr_swap));
+	sprintf(table_1, "%d", best_i + 1);
+	sprintf(table_2, "%d", best_j);
+	sprintf(table_3, "%.1f", best_delta);
+	sprintf(table_4, "%.1f", incumbent_cost);
+	char* table_fields[] = { table_0, table_1, table_2, table_3, table_4 };
+	int num_cols_table = sizeof(table_fields) / sizeof(table_fields[0]);
+	make_table_row(table_flag, stdout, num_cols_table, table_fields);
+}
+void opt2(instance* inst, int* incumbent_sol, double* incumbent_cost, char table_flag) {
+	opt2_init_table(table_flag);
 	int nr_swap = 0;
-	while (opt2_move(inst, incumbent_sol, incumbent_cost, &nr_swap)) {
+	while (opt2_move(table_flag, inst, incumbent_sol, incumbent_cost, &nr_swap)) 
+	{
 	}
-	make_last_row(table_flag, stdout, num_cols_table);
+	make_last_row(table_flag, stdout, 5);
 }
 
 /**
  * Returns 0 if the path cannot be optimized any further with 2 opt moves
 */
-char opt2_move(instance* inst, int* incumbent_sol, double* incumbent_cost, int* nr_swap) {
-	char table_flag = inst->verbose >= 2;
+char opt2_move(char table_flag, instance* inst, int* incumbent_sol, double* incumbent_cost, int* nr_swap) {
 	int num_cols_table = 5;
 	int n = inst->nnodes;
 	point* nodes_list = inst->nodes;
@@ -456,11 +478,11 @@ char opt2_move(instance* inst, int* incumbent_sol, double* incumbent_cost, int* 
 	{
 		for (int j = i + 2; j <= n - 1; j++)
 		{
-			//double current_dist= (double)(get_dist_matrix((const float*) (dist_matrix),incumbent_sol[i], incumbent_sol[(i+1)]) +get_dist_matrix((const float*) (dist_matrix),incumbent_sol[j], incumbent_sol[(j+1)%n]));
-			//double changed_dist = (double)(get_dist_matrix((const float*) (dist_matrix),incumbent_sol[i], incumbent_sol[(j)])+ get_dist_matrix((const float*) (dist_matrix),incumbent_sol[i+1], incumbent_sol[(j+1)]%n));
+			double current_dist= (double)get_dist_matrix((const float*) (dist_matrix),incumbent_sol[i], incumbent_sol[(i+1)]) + (double)get_dist_matrix((const float*) (dist_matrix),incumbent_sol[j], incumbent_sol[(j+1)%n]);
+			double changed_dist = (double)get_dist_matrix((const float*) (dist_matrix),incumbent_sol[i], incumbent_sol[(j)])+ (double)get_dist_matrix((const float*) (dist_matrix),incumbent_sol[i+1], incumbent_sol[(j+1)%n]);
 
-			double current_dist = get_distance(&nodes_list[incumbent_sol[i % n]], &nodes_list[incumbent_sol[(i + 1) % n]]) + get_distance(&nodes_list[incumbent_sol[j % n]], &nodes_list[incumbent_sol[(j + 1) % n]]);
-			double changed_dist = get_distance(&nodes_list[incumbent_sol[i % n]], &nodes_list[incumbent_sol[j % n]]) + get_distance(&nodes_list[incumbent_sol[(i + 1) % n]], &nodes_list[incumbent_sol[(j + 1) % n]]);
+			//double current_dist = get_distance(&nodes_list[incumbent_sol[i % n]], &nodes_list[incumbent_sol[(i + 1) % n]]) + get_distance(&nodes_list[incumbent_sol[j % n]], &nodes_list[incumbent_sol[(j + 1) % n]]);
+			//double changed_dist = get_distance(&nodes_list[incumbent_sol[i % n]], &nodes_list[incumbent_sol[j % n]]) + get_distance(&nodes_list[incumbent_sol[(i + 1) % n]], &nodes_list[incumbent_sol[(j + 1) % n]]);
 
 			double delta = changed_dist - current_dist;
 
@@ -476,9 +498,11 @@ char opt2_move(instance* inst, int* incumbent_sol, double* incumbent_cost, int* 
 		}
 	}
 	if (improvement) {
-		//tsp_debug((inst->verbose > 49), 0, "I am swapping nodes %d and %d", best_i+1,best_j);
+		tsp_debug((inst->verbose > 49), 0, "I am swapping nodes %d and %d", best_i+1,best_j);
 		swap_2_opt(incumbent_sol, (best_i + 1) % n, (best_j) % n);
 		(*incumbent_cost) += best_delta;
+		opt2_fill_table(table_flag, nr_swap, best_i + 1, best_j, best_delta, *incumbent_cost);
+		/*
 		char table_0[32];
 		char table_1[32];
 		char table_2[32];
@@ -491,10 +515,11 @@ char opt2_move(instance* inst, int* incumbent_sol, double* incumbent_cost, int* 
 		sprintf(table_4, "%.1f", *incumbent_cost);
 		char* table_fields[] = { table_0, table_1, table_2, table_3, table_4 };
 		make_table_row(table_flag, stdout, num_cols_table, table_fields);
+		*/
 		return 1;
 	}
 	else {
-		//printf("no further imprevement with 2opt.\n");
+		//printf("no further improvement with 2opt.\n");
 		return 0;
 	}
 }
@@ -541,6 +566,7 @@ void opt2_optimize_best_sol(instance* inst) {
 			tsp_debug((inst->verbose > 49), 0, "I am swapping nodes %d and %d", best_i+1,best_j);
             swap_2_opt(inst->best_sol, (best_i + 1)%n, (best_j)%n);
             path_length += best_delta;
+			inst->tbest = get_timer();
         }
     }
 	if(is_time_limit_exceeded(inst->timelimit)){
@@ -763,6 +789,15 @@ void init_data_file(char flag, FILE* data_file, instance* inst){
          }
     }
 }
+/*
+* Checks if the input solution $sol is feasible. If it is not feasible returns error.
+*/
+void check_sol_is_feasible(char check_feasibility, instance* inst, int* sol, double zsol) {
+	if (!check_feasibility) { return; }
+	if (!is_feasible_solution(inst, sol, zsol)) {
+		exit(main_error_text(-99, "Stop! Check the code! Current solution is not feasible."));
+	}
+}
 /**
  * Checks whether sol_path and sol_cost consitute a feasible solution for inst
  * IP: instance i
@@ -784,7 +819,7 @@ char is_feasible_solution(instance* inst, int* sol_path, double sol_cost){
 	for(int i= 0; i<=n-1; i++){
 
 		if(counter[sol_path[i]]!=1){
-
+			tsp_debug((inst->verbose >= 200), 0, "Node %d is visited %d", i, counter[sol_path[i]]);
 			free(counter);
 			return 0;
 
@@ -796,8 +831,9 @@ char is_feasible_solution(instance* inst, int* sol_path, double sol_cost){
 	//check cost coincides with the path length 
 
 	double path_length = compute_path_length(sol_path, n, inst->nodes);
-	//tsp_debug((inst->verbose > 49), 0, "Real Path length : %.2f", path_length);
-	//tsp_debug((inst->verbose > 49), 0, "Sol passed length : %.2f",sol_cost);
+	tsp_debug((inst->verbose >= 200), 0, "Real Path length : %.6f", path_length);
+	tsp_debug((inst->verbose >= 200), 0, "Sol passed length : %.6f",sol_cost);
+	tsp_debug((inst->verbose >= 200), 0, "is_feasible = %d", is_equal_double(path_length, sol_cost, EPSILON));
 	return is_equal_double(path_length, sol_cost, EPSILON);
 }
 
@@ -832,11 +868,25 @@ solver_id parse_solver(char* solver_input){
 	else if (strcmp(solver_input, "gluing") == 0) {
 		return GLU;
 	}
+	else if (strcmp(solver_input, "bcf") == 0) {
+
+		return BCF;
+	}
+	else if (strcmp(solver_input, "bcm") == 0) {
+		return BCM;
+	}
+	else if (strcmp(solver_input, "bcfm") == 0) {
+		return BCFM;
+	}
+	else if (strcmp(solver_input, "bc") == 0) {
+		return BC;
+	}
 	exit(main_error_text(-8, "%s","solver"));
 }
 
 
 void tsp_solve(instance* inst){
+	inst->tstart = get_timer();
 	inst->timelimit += get_timer();
 	MKDIR("figures");
 	MKDIR("data");
@@ -844,24 +894,18 @@ void tsp_solve(instance* inst){
 	int check_truncation = 0;
 	switch (inst->solver) {
 	case NN:
-		greedy_tsp(inst);
-		print_best_sol((inst->verbose>-1), inst);
+		gre_solve(inst, 0);
+		print_best_sol((inst->verbose>=0), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
+		plot_path(inst->verbose >= 1000, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		//plot_generator(inst);
 		break;
 	case OPT_2:
-		greedy_tsp(inst);
-		print_best_sol((inst->verbose>=5), inst);
-		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
-		//optimize 
-		opt2_optimize_best_sol(inst);
-		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d_opt2.png", inst->nnodes, inst->randomseed);
-		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
-		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
-		print_best_sol((inst->verbose>=5), inst);
+		gre_solve(inst, 1);
+		generate_name(figure_name, sizeof(figure_name), "figures/greedy+opt2_%d_%d.png", inst->nnodes, inst->randomseed);
+		plot_path(inst->verbose >= 1000, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
+		print_best_sol((inst->verbose>=1000), inst);
 		break;
 	case TABU:
 		tabu_search(1,inst);
@@ -893,10 +937,16 @@ void tsp_solve(instance* inst){
 		ben_solve(1, inst);
 		break;
 	case BC:
-		cpx_branch_and_cut(0,inst);
+		cpx_branch_and_cut(0, 0, inst);
 		break;
-	case SBC:
-		cpx_branch_and_cut(1, inst);
+	case BCM:
+		cpx_branch_and_cut(0, 1, inst);
+		break;
+	case BCF:
+		cpx_branch_and_cut(1,0,inst);
+		break;
+	case BCFM:
+		cpx_branch_and_cut(1,1, inst);
 		break;
 	default:
 		exit(main_error(-7));
@@ -906,7 +956,7 @@ void tsp_solve(instance* inst){
 void update_solver(instance* inst){
 
 	int selection;
-	char buf[2];
+	char buf[8];
 	printf("----Choose a solver, from these options:----\n");
 	printf("0: Nearest Neighbor\n");
 	printf("1: Nearest Neighbor and OPT2\n");
@@ -915,10 +965,12 @@ void update_solver(instance* inst){
 	printf("4: Exact Method with CPLEX, no subtour constraints\n");
 	printf("5: Exact Method with CPLEX, with SECs, Benders' method\n");
 	printf("6: Exact Method with CPLEX, with SECs, Benders' method with patching\n");
-	printf("7: Exact Method with CPLEX, Branch and Cut Method\n");
-	printf("8: Exact Method with CPLEX, Branch and Cut Method, MIPSTART enabled\n");
+	printf("7: Exact Method with CPLEX, Branch and Cut Method, no frational cut\n");
+	printf("8: Exact Method with CPLEX, Branch and Cut Method, no fractional cut, MIPSTART enabled\n");
+	printf("9: Exact Method with CPLEX, Branch and Cut Method, with fractional cut\n");
+	printf("10: Exact Method with CPLEX, Branch and Cut Method, with fractional cut, MIPSTART enabled\n");
 	printf("---------------------------------------------\n");
-	fgets(buf, 2, stdin);
+	fgets(buf, 8, stdin);
     selection = atoi(buf);
 	
 	switch(selection){
@@ -965,7 +1017,19 @@ void update_solver(instance* inst){
 		}
 		case 8:
 		{
-			inst->solver = SBC;
+			inst->solver = BCM;
+			printf("successful update. \n");
+			break;
+		}
+		case 9:
+		{
+			inst->solver = BCF;
+			printf("successful update. \n");
+			break;
+		}
+		case 10:
+		{
+			inst->solver = BCFM;
 			printf("successful update. \n");
 			break;
 		}
@@ -986,15 +1050,26 @@ void generate_test_bed(int size_test_bed, int argc, char** argv, instance* test_
 	for (int i = 0; i < size_test_bed; i++) {
 		//initialize instance
 		parse_command_line(argc, argv, &test_bed[i]);
+		printf("successful parsing \n");
 	}
-
+	printf("heree\n");
 	srand(test_bed[0].randomseed);
 
 	for (int i = 0; i < size_test_bed; i++) {
 		generate_instance(&test_bed[i]);
 	}
 }
+void read_test_bed_size(int* test_bed_size, int argc, char** argv) {
+	
+	for (int i = 1; i < argc; i++)
+	{
+		if (strcmp(argv[i], "-test_bed_size") == 0) {
+			*(test_bed_size) =abs(atoi(argv[++i]));
+			return;
+		}
+	}
 
+}
 void generate_csv_file(int size_test_bed, instance* test_bed) {
 
 	int n = test_bed[0].nnodes;

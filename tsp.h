@@ -9,7 +9,7 @@
 #define MAX_X 10000  //maximum value for ascisse of generated points
 #define MAX_Y 10000//maximum value for ordinate of generated points
 //default verbose
-#define VERBOSE 100
+#define VERBOSE 1
 
 typedef enum {
 
@@ -24,7 +24,10 @@ typedef enum {
 	BEN,
 	GLU,
 	BC,
-	SBC //mipStart before Branch and Cut
+	BCM,
+	BCF,
+	BCFM
+
 
 } solver_id;
 
@@ -41,7 +44,7 @@ typedef struct {
 
 	// parameters 
 	solver_id solver;
-	char* csv_column_name;
+	char* csv_column_name[128];
 	char* legend;
 	int randomseed;
 	double timelimit;						// overall time limit, in sec.s
@@ -129,9 +132,11 @@ void swap(int* a, int* b);
 
 void swap_2_opt(int* path, int i, int j);
 
-char opt2_move(instance* inst, int* incumbent_sol, double* incumbent_cost, int* nr_swap);
+char opt2_move(char table_flag, instance* inst, int* incumbent_sol, double* incumbent_cost, int* nr_swap);
 
-void opt2(instance* inst, int* incumbent_sol, double* incumbent_cost);
+void opt2_init_table(char table_flag);
+
+void opt2(instance* inst, int* incumbent_sol, double* incumbent_cost, char table_flag);
 
 void copy_array(void* a1, const void* a2);
 
@@ -151,6 +156,8 @@ void init_data_file(char flag, FILE* data_file, instance* inst);
 
 double compute_path_length(int* path, int nodes_number, point* nodes);
 
+void check_sol_is_feasible(char check_feasibility, instance* inst, int* sol, double zsol);
+
 char is_feasible_solution(instance* inst, int* sol_path, double sol_cost);
 
 solver_id parse_solver(char* solver_input);
@@ -168,5 +175,7 @@ void update_ub(instance* inst, double ub);
 void generate_test_bed(int size_test_bed, int argc, char** argv, instance* test_bed);
 
 void generate_csv_file(int size_test_bed, instance* test_bed);
+
+void read_test_bed_size(int* test_bed_size, int argc, char** argv);
 
 #endif

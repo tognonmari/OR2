@@ -59,8 +59,8 @@ static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLO
 	int mynode = -1; 
 	
 	CPXcallbackgetinfoint(context, CPXCALLBACKINFO_NODECOUNT, &mynode);
-
-	if (mynode != 0) {
+	if(mynode!=0){
+	//if (mynode % 10) {
 		return 0;
 	}
 
@@ -82,12 +82,20 @@ static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLO
 	}
 	//Step 2: turn it into a concorde-like solution
 	int num_edges = 0;
-	int t = 0; 
+	//int t = 0;
+	int* pointer_to_elist = elist;
 	for (int i = 0; i < inst->nnodes; i++) {
-
 		for (int j = i + 1; j < inst->nnodes; j++) {
+			
+			(*pointer_to_elist) = i;
+			pointer_to_elist++;
+			(*pointer_to_elist) = j;
+			pointer_to_elist++;
+			
+			/*
 			elist[t++] = i;
 			elist[t++] = j;
+			*/
 			num_edges++;
 		}
 
@@ -196,7 +204,7 @@ static int cpx_add_violated_SECs_fractional(CPXCALLBACKCONTEXTptr context, insta
 	int* index = (int*)malloc(inst->ncols * sizeof(int));
 	double* value = (double*)malloc(inst->ncols * sizeof(double));
 	int matbeg = 0;
-	int purgeable = CPX_USECUT_FILTER;
+	int purgeable = CPX_USECUT_FILTER; //cosa cambia tra filter e purge? non mi ricordo
 	int local = 0;
 	int nnz = 0;
 	char sense = 'L';
@@ -273,7 +281,7 @@ static int CPXPUBLIC my_callback_candidate(CPXCALLBACKCONTEXTptr context, instan
 }
 
 
-void cpx_branch_and_cut(char mipstart, instance* inst) {
+void cpx_branch_and_cut(char relaxation, char mipstart, instance* inst) {
 	// open CPLEX model
 	int error;
 	char log_name[64];
@@ -286,20 +294,23 @@ void cpx_branch_and_cut(char mipstart, instance* inst) {
 	set_init_param(env, (const instance*)inst, log_name, sizeof(log_name));
 	tsp_debug(inst->verbose >= 100, 1, "set_init_param SUCCESSFUL");
 	// install a "lazyconstraint" callback to cut infeasible integer sol.s (found e.g. by heuristics) 
-	CPXLONG contextid = CPX_CALLBACKCONTEXT_CANDIDATE | CPX_CALLBACKCONTEXT_RELAXATION; //both the situations to call my_callback
-
+	CPXLONG contextid = CPX_CALLBACKCONTEXT_CANDIDATE ; 
+	if (relaxation) {
+		contextid |=  CPX_CALLBACKCONTEXT_RELAXATION;
+	}
 	int ncols = CPXgetnumcols(env, lp);
 
 	inst->ncols = ncols;
 	if (CPXcallbacksetfunc(env, lp, contextid, my_callback, inst)) { exit(main_error_text(-9, "CPXcallbacksetfunc() error") ); }
 	if (mipstart) {
-		//Generate a greedy solution and initialize the incumbent with it
-		greedy_tsp(inst);
+		//Generate a greedy solution and initialize the incumbent with it TODO: METODO a paRTE
+		greedy_tsp(inst); //2 optare 
+		opt2_optimize_best_sol(inst);
 		double* cplex_format_xheu = (double*)calloc(inst->ncols, sizeof(double));
 		int* ind = (int*)malloc(inst->ncols * sizeof(int));
 		cpx_convert_path_to_cplex(inst->best_sol, cplex_format_xheu, inst);
 		for (int j = 0; j < inst->ncols; j++) ind[j] = j;
-		int effortlevel = CPX_MIPSTART_NOCHECK;
+		int effortlevel = CPX_MIPSTART_CHECKFEAS;
 		int beg = 0;
 		if (CPXaddmipstarts(env, lp, 1, inst->ncols, &beg, ind, cplex_format_xheu, &effortlevel, NULL)) {
 			exit(main_error_text(-9, "Could not add MipStart.\n"));
@@ -310,7 +321,7 @@ void cpx_branch_and_cut(char mipstart, instance* inst) {
 		free(cplex_format_xheu);
 
 	}
-	//(env, CPX_PARAM_THREADS, 1); 	// just for debugging
+	CPXsetintparam(env, CPX_PARAM_THREADS, 1); 	// just for debugging
 	int status = CPXmipopt(env, lp);
 	if (status) { 
 		tsp_debug(1, 1, "The status is %d.\n",status);
@@ -412,7 +423,7 @@ int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const
 				generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_%d_pre2opt.png", inst->nnodes, inst->randomseed);
 				plot_path(inst->verbose >= 1, (const int*)path, inst->nnodes, z, inst->nodes, figure_name);
 				//opt 2 optimization for patched solution 
-				opt2(inst, path, &z);
+				opt2(inst, path, &z, inst->verbose >=100);
 				//From path to succ: from path, update succ of patched sol
 				generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_%d_postpatch.png", inst->nnodes, inst->randomseed);
 				plot_path(inst->verbose >= 1, (const int*)path, inst->nnodes, z, inst->nodes, figure_name);
