@@ -5,6 +5,7 @@ import pathlib
 import os
 import logging
 import pandas as pd
+import stat
 
 EXECUTABLE_PATH = ".\\x64\\Release\\TSP_Project.exe"
 
@@ -15,17 +16,17 @@ METHODS = {
 
 }
 
-TEST_BED_SIZE = 10
+TEST_BED_SIZE = 20
 
 RANDOM_SEED = 0
 
 NNODES = 300
 
-TIMELIMIT = 400
+TIMELIMIT = 600
 
 PERFPLOT_TYPE = ["cost", "time"]
 
-VERBOSITY = 0
+VERBOSITY = 100
 
 def generate_csv_col_name(type)-> str:
     # ciclo tipo parse cmd line 
@@ -64,7 +65,7 @@ if __name__ == "__main__":
     
     csv_column_names =[]
     
-    csv_instance_id = f"{NNODES}_{RANDOM_SEED}"
+    csv_instance_id = f"{NNODES}_{RANDOM_SEED}_{TEST_BED_SIZE}"
 
     
     for tsp_run in METHODS[type]:
@@ -74,9 +75,18 @@ if __name__ == "__main__":
 
         # run tsp instance 
         try:
-            str_exec = f"{EXECUTABLE_PATH} -nnodes {NNODES} -tl {TIMELIMIT} -verbose {VERBOSITY} {tsp_run} -csv_column_name {csv_column_names[-1]} -test_bed_size {TEST_BED_SIZE}"
+            for pp_type in PERFPLOT_TYPE:                
+                file = open(f".\\runs\\{csv_column_names[-1]}_{csv_instance_id}_{pp_type}.csv", 'w')
+                file.close()
+                
+
+            str_exec = f"{EXECUTABLE_PATH} -nnodes {NNODES} -seed {RANDOM_SEED} -tl {TIMELIMIT} -verbose {VERBOSITY} {tsp_run} -csv_column_name {csv_column_names[-1]} -test_bed_size {TEST_BED_SIZE}"
             print("Running " + tsp_run)
-            os.system(str_exec)
+            output = subprocess.run((str_exec), capture_output=True, text=True).stdout
+
+            
+            
+            #os.system(str_exec)
         except subprocess.CalledProcessError as e:
             logger.error(f"Error executing {tsp_run} : {e}")
             continue
@@ -94,7 +104,7 @@ if __name__ == "__main__":
         
         # Create the df for perfplot 
         for column in csv_column_names:
-            df = pd.read_csv(pathlib.Path(f'.\\runs\\{column}_{csv_instance_id}_{pp_type}.csv'), sep=', ')
+            df = pd.read_csv((f'.\\runs\\{column}_{csv_instance_id}_{pp_type}.csv'), sep=', ')
             print(df)
             pp_df[column] = df[column]
         
