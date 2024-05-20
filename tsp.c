@@ -4,6 +4,7 @@
 #include "tabu.h"
 #include "vns.h"
 #include "greedy.h"
+#include "hardfixing.h"
 #include <math.h>
 #include <malloc.h>
 #include <string.h>
@@ -54,8 +55,8 @@ void print_best_sol(char flag, instance* inst) {
 	tsp_debug_inline(flag, "\n -------------- Best solution: --------------\n");
 	tsp_debug_inline(flag, "Best Distance (zbest): %.2lf\n",inst->zbest);
 	tsp_debug_inline(flag, "Best Solution found at time: %12.6f, thus it took %12.6f from the start of the current at %12.6f\n",inst->tbest, inst->tbest - inst->tstart, inst->tstart);
-	tsp_debug_inline(flag && ( inst->verbose >= 200 ), "The following sequence of nodes is the best solution to the problem:");
-	print_path(flag && ( inst->verbose >= 200 ),"", inst->best_sol, inst->nodes, inst->nnodes);
+	tsp_debug_inline(flag && ( inst->verbose >= 500 ), "The following sequence of nodes is the best solution to the problem:");
+	print_path(flag && ( inst->verbose >= 500 ),"", inst->best_sol, inst->nodes, inst->nnodes);
 	tsp_debug_inline(flag, "\n ------------ End best solution: ------------\n");
 }
 /**
@@ -291,9 +292,11 @@ void parse_command_line(int argc, char** argv, instance *inst){
 	// inst->cutoff = -1; 
 	inst->integer_costs = 0;
     inst->verbose = VERBOSE;
-	inst->available_memory = 12000;   			
+	inst->available_memory = 12000;   
+	inst->zbest = DBL_MAX;
 	// inst->max_nodes = -1; 	
-	inst->nnodes =0;					       
+	inst->nnodes =0;
+	inst->ncols = 0;
 	inst->solver = NOT_DEF;
     int help = 0; if ( argc < 1 ) help = 1;	
 	for ( int i = 1; i < argc; i++ ) 
@@ -496,7 +499,7 @@ char opt2_move(char table_flag, instance* inst, int* incumbent_sol, double* incu
 		}
 	}
 	if (improvement) {
-		tsp_debug((inst->verbose > 49), 0, "I am swapping nodes %d and %d", best_i+1,best_j);
+		tsp_debug(0, 0, "I am swapping nodes %d and %d", best_i+1,best_j);
 		swap_2_opt(incumbent_sol, (best_i + 1) % n, (best_j) % n);
 		(*incumbent_cost) += best_delta;
 		opt2_fill_table(table_flag, nr_swap, best_i + 1, best_j, best_delta, *incumbent_cost);
@@ -750,6 +753,11 @@ void greedy_tsp(instance *inst){
  * IP sol Pointer to the best solution (array of integers).
  */
 void update_best(instance* inst, double z, double t, int* sol){
+	char flag = inst->verbose >= 1;
+	tsp_debug_inline(flag, "\n -------------- Update Best : --------------\n");
+	tsp_debug_inline(flag, "Old Best : %.20g\n", inst->zbest);
+	tsp_debug_inline(flag, "New Best : %.20g\n", z);
+	tsp_debug_inline(flag, "\n --------------- End Update : --------------\n");
 	inst->zbest = z;
 	inst->tbest = t;
 	inst->is_best_sol_avail = 1;
@@ -936,6 +944,11 @@ void tsp_solve(instance* inst){
 	case BCFMP:
 		cpx_branch_and_cut(1, 1, 1, inst);
 		break;
+	case HF:
+		hf_solve(inst);
+		print_best_sol((inst->verbose >= 0), inst);
+		generate_name(figure_name, sizeof(figure_name), "figures/hf_%d_%d.png", inst->nnodes, inst->randomseed);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 	default:
 		exit(main_error(-7));
 	}
@@ -961,6 +974,7 @@ void update_solver(instance* inst){
 	printf("12: Exact Method with CPLEX, Branch and Cut Method, with fractional cut, MIPSTART enabled\n");
 	printf("13: Exact Method with CPLEX, Branch and Cut Method, with fractional cut and posting\n");
 	printf("14: Exact Method with CPLEX, Branch and Cut Method, with fractional cut and posting, MIPSTART enabled\n");
+	printf("15: Matheuristic with CPLEX, Hardfixing Method\n");
 	printf("---------------------------------------------\n");
 	fgets(buf, 8, stdin);
     selection = atoi(buf);
@@ -1052,6 +1066,12 @@ void update_solver(instance* inst){
 		case 14:
 		{
 			inst->solver = BCFMP;
+			printf("successful update. \n");
+			break;
+		}
+		case 15:
+		{
+			inst->solver = HF;
 			printf("successful update. \n");
 			break;
 		}

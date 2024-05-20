@@ -30,7 +30,8 @@ typedef enum {
 	BCF,
 	BCFM,
 	BCFP,
-	BCFMP
+	BCFMP,
+	HF
 
 } solver_id;
 

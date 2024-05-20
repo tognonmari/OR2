@@ -47,6 +47,9 @@ int main_error_text(int error, char* format, ...) {
 	case -10:
 		fprintf(stderr, "Incompatible type error.\n");
 		break;
+	case -11:
+		fprintf(stderr, "Wrong policy definition.\n");
+		break;
 	case -99:
 		fprintf(stderr, "Logical error. \n");
 		break;
@@ -164,7 +167,10 @@ void* alloc_triangular_matrix_as_array(int nrow, size_t size_type){
 int cmp_int_increasing(const void* a, const void* b) {
 	return (*(int*)a - *(int*)b);
 }
-
+//Genera con distribuzione uniforme un numero compreso tra 0 e 1
+double rand_01() {
+	return ( (double)rand() ) / RAND_MAX;
+}
 // Funzione per concatenare due stringhe
 char* concatenate_strings(const char* str1, const char* str2) {
 	// Calcola la lunghezza totale della stringa risultante

@@ -31,7 +31,7 @@ void handleCPXResult(int flag, int result, char* format) {
 		break;
 	case CPXMIP_TIME_LIM_INFEAS:
 		tsp_debug_inline(flag, " CPXmipopt stopped because timelimit has been exceeded.");
-		tsp_debug(flag, 0, "No feasible solution has been found for the problem.");
+		tsp_debug(flag, 0, "No feasible solution has been found for the current problem.");
 		break;
 	default:
 		printf("\n\nWARNING it has been returned result: %d, which is not handled. Please add the case %d in exact.c -> handleCPXResult \n\n",result, result);
@@ -39,7 +39,7 @@ void handleCPXResult(int flag, int result, char* format) {
 }
 
 
-static int CPXPUBLIC my_callback(CPXCALLBACKCONTEXTptr context, CPXLONG contextid, void* userhandle){
+int CPXPUBLIC my_callback(CPXCALLBACKCONTEXTptr context, CPXLONG contextid, void* userhandle){
 	instance* inst = (instance*)userhandle;
 	// select what to do according to the context
 	if (contextid == CPX_CALLBACKCONTEXT_CANDIDATE) {
@@ -51,7 +51,7 @@ static int CPXPUBLIC my_callback(CPXCALLBACKCONTEXTptr context, CPXLONG contexti
 	}
 
 	exit(main_error_text(-9, "Called the callback with the wrong contextid.\n"));
-	
+	return -1;
 }
 
 
@@ -292,7 +292,7 @@ static int CPXPUBLIC my_callback_candidate(CPXCALLBACKCONTEXTptr context, instan
 			int* ind = (int*)malloc(inst->ncols * sizeof(int));
 			cpx_convert_path_to_cplex(path, cplex_format_xheu, inst);
 			for (int j = 0; j < inst->ncols; j++) ind[j] = j;
-			CPXcallbackpostheursoln(context, inst->ncols, ind, cplex_format_xheu, zheu, CPXCALLBACKSOLUTION_CHECKFEAS);
+			if (CPXcallbackpostheursoln(context, inst->ncols, ind, cplex_format_xheu, zheu, CPXCALLBACKSOLUTION_CHECKFEAS)) { exit(main_error_text(-9, "CPXcallbackpostheursoln() error")); }
 			tsp_debug((inst->verbose >= 10), 1, "Posting Heuristic (Gluing) with Cost = %.3f", zheu);
 			free_multitour_sol(&patched_sol);
 			free(path);
@@ -303,7 +303,21 @@ static int CPXPUBLIC my_callback_candidate(CPXCALLBACKCONTEXTptr context, instan
 	free(xstar);
 	return 0;
 }
+void cpx_add_mipstart(int* path, instance* inst, CPXENVptr env, CPXLPptr lp) {
+	double* xheu = (double*)calloc(inst->ncols, sizeof(double));
+	int* ind = (int*)malloc(inst->ncols * sizeof(int));
+	cpx_convert_path_to_cplex(path, xheu, inst);
+	for (int j = 0; j < inst->ncols; j++) ind[j] = j;
+	int effortlevel = CPX_MIPSTART_NOCHECK;
+	int beg = 0;
+	if (CPXaddmipstarts(env, lp, 1, inst->ncols, &beg, ind, xheu, &effortlevel, NULL)) {
+		exit(main_error_text(-9, "Could not add MipStart.\n"));
+	}
 
+	tsp_debug(inst->verbose >=100, 1, "cpx_add_mipstart SUCCESSFUL\n");
+	free(ind);
+	free(xheu);
+}
 void cpx_branch_and_cut(char relaxation, char mipstart, char posting, instance* inst) {
 	inst->posting = posting;
 	// open CPLEX model
@@ -344,7 +358,7 @@ void cpx_branch_and_cut(char relaxation, char mipstart, char posting, instance* 
 		free(cplex_format_xheu);
 
 	}
-	CPXsetintparam(env, CPX_PARAM_THREADS, 1); 	// just for debugging
+	//CPXsetintparam(env, CPX_PARAM_THREADS, 1); 	// just for debugging
 	int status = CPXmipopt(env, lp);
 	if (status) { 
 		tsp_debug(1, 1, "The status is %d.\n",status);
@@ -402,6 +416,7 @@ void cpx_convert_path_in_succ(const int* path, multitour_sol* mlt, int n) {
 	}
 	mlt->succ[path[n - 1]] = path[0];
 }
+/*
 void cpx_convert_path_to_cplex(const int* xheu_path, double* cplex_like_format, instance* inst) {
 
 	int n = inst->nnodes;
@@ -417,6 +432,17 @@ void cpx_convert_path_to_cplex(const int* xheu_path, double* cplex_like_format, 
 	free(succ);
 
 }
+*/
+void cpx_convert_path_to_cplex(const int* xheu_path, double* cplex_like_format, instance* inst) {
+
+	for (int i = 0; i < inst->ncols; i++) {
+		cplex_like_format[i] = 0.0;
+	}
+	for (int i = 0; i < inst->nnodes; i++) {
+		cplex_like_format[xpos(xheu_path[i], xheu_path[i + 1], inst)] = 1.0;
+	}
+
+}
 
 void cpx_convert_succ_to_cplex(const int* succ, double* cplex_like_format, instance* inst) {
 
@@ -427,6 +453,7 @@ void cpx_convert_succ_to_cplex(const int* succ, double* cplex_like_format, insta
 		cplex_like_format[xpos(i, succ[i], inst)] = 1.0;
 	}
 }
+// cpx_update_best returns 1 if best_sol has been updated, 0 otherwise
 int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const multitour_sol* sol) {
 	double z;
 	double lb;
@@ -437,11 +464,14 @@ int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const
 	switch (result) {
 	case CPXMIP_OPTIMAL: case CPXMIP_OPTIMAL_TOL:
 		tsp_debug(flag, 1, " Updating solution for the problem with an optimal one");
-		CPXgetbestobjval(env, lp, &z);
+		//CPXgetbestobjval(env, lp, &z); //(changed in commit where has been added hardfix)
+		z = sol->z;
 		CPXgetobjval(env, lp, &lb);
 		path = (int*)calloc(n, sizeof(int));
 		cpx_convert_succ_in_path(sol, path, n);
-		update_best(inst, z, get_timer(), path);
+		if (z < inst->zbest) {
+			update_best(inst, z, get_timer(), path);
+		}
 		tsp_debug(flag, 1, "LB = %.2lf ZBEST = %.2lf REALCOST = %.2lf", z, lb, compute_path_length(path, n, inst->nodes));
 		break;
 	case CPXMIP_TIME_LIM_FEAS:
@@ -459,7 +489,9 @@ int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const
 				generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_%d_postpatch.png", inst->nnodes, inst->randomseed);
 				plot_path(inst->verbose >= 1, (const int*)path, inst->nnodes, z, inst->nodes, figure_name);
 			}
-			update_best(inst, sol->z, get_timer(), path);
+			if (z < inst->zbest) {
+				update_best(inst, z, get_timer(), path);
+			}
 			break;
 		}
 		else {
@@ -472,7 +504,7 @@ int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const
 		}
 	case CPXMIP_TIME_LIM_INFEAS:
 		tsp_debug(flag, 1, "Try to updating solution, but no feasible solution has been found.");
-		tsp_debug(flag, 0, "Probably you need to increase the time limit for this instance");
+		tsp_debug(flag, 0, "Probably the MIPSolver didn't receive enough time");
 		return 0;
 	default:
 		printf("\n\nWARNING it has been returned result: %d, which is not handled. Please add the case %d in handleCPXResult and cpx_update_best \n\n",result, result);
@@ -570,6 +602,7 @@ void set_init_param(CPXENVptr env, const instance* inst, char* log_name, size_t 
 	CPXsetdblparam(env, CPX_PARAM_EPRHS, 1e-9);
 	CPXsetdblparam(env, CPX_PARAM_TILIM, inst->timelimit - get_timer());
 	CPXsetintparam(env, CPX_PARAM_MIPDISPLAY, 4);
+	CPXsetintparam(env, CPX_PARAM_THREADS, 1);
 	if (inst->verbose >= 101) CPXsetintparam(env, CPX_PARAM_SCRIND, CPX_ON); // Cplex output on screen
 	//CPXsetintparam(env, CPX_PARAM_RANDOMSEED, 123456);
 
@@ -772,7 +805,6 @@ void plot_multitour(char figure_flag,char debug_flag, const char figure_name[], 
 */ // TO ERASE
 int TSPopt(instance* inst)
 {
-
 	// open CPLEX model
 	int error;
 	char log_name[64];
