@@ -9,7 +9,7 @@
 #define MAX_X 10000  //maximum value for ascisse of generated points
 #define MAX_Y 10000//maximum value for ordinate of generated points
 //default verbose
-#define VERBOSE 100
+#define VERBOSE 1
 
 typedef enum {
 
@@ -48,7 +48,7 @@ typedef struct {
 
 	// parameters 
 	solver_id solver;
-	char* solver_short_name;
+	char* csv_column_name[128];
 	char* legend;
 	int randomseed;
 	double timelimit;						// overall time limit, in sec.s
@@ -179,5 +179,7 @@ void update_ub(instance* inst, double ub);
 void generate_test_bed(int size_test_bed, int argc, char** argv, instance* test_bed);
 
 void generate_csv_file(int size_test_bed, instance* test_bed);
+
+void read_test_bed_size(int* test_bed_size, int argc, char** argv);
 
 #endif

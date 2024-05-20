@@ -316,10 +316,12 @@ void parse_command_line(int argc, char** argv, instance *inst){
 		if ( strcmp(argv[i],"-memory") == 0 ) { inst->available_memory = atoi(argv[++i]); continue; }	// available memory (in MB)
 		if ( strcmp(argv[i], "-verbose")==0) { inst->verbose = atoi(argv[++i]); continue;}				// verbosity
 		if ( strcmp(argv[i], "-v") ==0 ) {inst->verbose = atoi(argv[++i]);continue;}					// verbosity
+		if (strcmp(argv[i], "-csv_column_name") == 0) { strcpy(inst->csv_column_name, argv[++i]); printf("succesful columnname\n"); continue; }
 		//if ( strcmp(argv[i],"-node_file") == 0 ) { strcpy(inst->node_file,argv[++i]); continue; }		// cplex's node file
 		// if ( strcmp(argv[i],"-max_nodes") == 0 ) { inst->max_nodes = atoi(argv[++i]); continue; } 		// max n. of nodes
 		// if ( strcmp(argv[i],"-cutoff") == 0 ) { inst->cutoff = atof(argv[++i]); continue; }				// master cutoff
 		// if ( strcmp(argv[i],"-int") == 0 ) { inst->integer_costs = 1; continue; } 						// inteher costs
+		if (strcmp(argv[i], "-test_bed_size") == 0) { break; }//ignore the parameter }
 		if ( strcmp(argv[i],"-help") == 0 ) { help = 1; continue; } 									// help
 		if ( strcmp(argv[i],"--help") == 0 ) { help = 1; continue; } 									// help
 		help = 1;
@@ -865,6 +867,28 @@ solver_id parse_solver(char* solver_input){
 	else if( strcmp(solver_input, "vns")==0){
 		return VNS;
 	}
+	else if (strcmp(solver_input, "exact_cplex_only") == 0) {
+		return EX;
+	}
+	else if (strcmp(solver_input, "benders") == 0) {
+		return BEN;
+	}
+	else if (strcmp(solver_input, "gluing") == 0) {
+		return GLU;
+	}
+	else if (strcmp(solver_input, "bcf") == 0) {
+
+		return BCF;
+	}
+	else if (strcmp(solver_input, "bcm") == 0) {
+		return BCM;
+	}
+	else if (strcmp(solver_input, "bcfm") == 0) {
+		return BCFM;
+	}
+	else if (strcmp(solver_input, "bc") == 0) {
+		return BC;
+	}
 	exit(main_error_text(-8, "%s","solver"));
 }
 
@@ -881,15 +905,15 @@ void tsp_solve(instance* inst){
 		gre_solve(inst, 0);
 		print_best_sol((inst->verbose>=0), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
+		plot_path(inst->verbose >= 1000, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		//plot_generator(inst);
 		break;
 	case OPT_2:
 		gre_solve(inst, 1);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy+opt2_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
-		print_best_sol((inst->verbose>=0), inst);
+		plot_path(inst->verbose >= 1000, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
+		print_best_sol((inst->verbose>=1000), inst);
 		break;
 	case TABU:
 		tabu_search(1,inst);
@@ -982,42 +1006,36 @@ void update_solver(instance* inst){
 	switch(selection){
 		case 0:
 			{inst->solver = NN;
-			inst->solver_short_name = "gre";
+			
 			printf("successful update.\n");
 			break;}
 		case 1:
 			{inst->solver = OPT_2;
-			inst->solver_short_name = "g2o";
 			printf("successful update.\n");
 			break;}
 		case 2:
 			{inst->solver = TABU;
-			inst->solver_short_name = "tab";
 			printf("successful update.\n");
 			break;}
 		case 3:
 			{inst->solver = VNS;
-			inst->solver_short_name = "vns";
 			printf("successful update. \n");
 			break;}
 		case 4:
 		{
 			inst->solver = EX;
-			inst->solver_short_name = "exa";
 			printf("successful update. \n");
 			break;
 		}
 		case 5:
 		{
 			inst->solver = BEN;
-			inst->solver_short_name = "ben";
 			printf("successful update. \n");
 			break;
 		}
 		case 6:
 		{
 			inst->solver = GLU;
-			inst->solver_short_name = "glu";
 			printf("successful update. \n");
 			break;
 		}
@@ -1077,7 +1095,6 @@ void update_solver(instance* inst){
 		}
 		default:
 			{inst->solver = NN;
-			inst->solver_short_name = "gre";
 			printf("successful update.\n");
 			break;}
 	}
@@ -1086,31 +1103,46 @@ void update_solver(instance* inst){
 }
 void generate_test_bed(int size_test_bed, int argc, char** argv, instance* test_bed) {
 	
+	/// inizializza la prima istanza e parsa il test bed size
+
+	//con i parametri della prima istanza istanzia le altre 
+	
 	for (int i = 0; i < size_test_bed; i++) {
 		//initialize instance
 		parse_command_line(argc, argv, &test_bed[i]);
+		printf("successful parsing \n");
 	}
-
+	printf("heree\n");
 	srand(test_bed[0].randomseed);
 
 	for (int i = 0; i < size_test_bed; i++) {
 		generate_instance(&test_bed[i]);
 	}
 }
+void read_test_bed_size(int* test_bed_size, int argc, char** argv) {
+	
+	for (int i = 1; i < argc; i++)
+	{
+		if (strcmp(argv[i], "-test_bed_size") == 0) {
+			*(test_bed_size) =abs(atoi(argv[++i]));
+			return;
+		}
+	}
 
+}
 void generate_csv_file(int size_test_bed, instance* test_bed) {
 
 	int n = test_bed[0].nnodes;
 	int seed = test_bed[0].randomseed;
 
 	MKDIR("runs");
-	char run_name[64];
-	generate_name(run_name, sizeof(run_name), "runs/%s_%d_%d_cost.csv", test_bed[0].solver_short_name, n, seed);
+	char csv_name[128];
+	generate_name(csv_name, sizeof(csv_name), "runs/%s_%d_%d_cost.csv", test_bed[0].csv_column_name, n, seed);
 	
 	//Print a single-column .csv file
-	FILE* file_handler = fopen(run_name, "w");
+	FILE* file_handler = fopen(csv_name, "w");
 	//Print the first row
-	fprintf(file_handler, "1, %s\n", test_bed[0].solver_short_name);
+	fprintf(file_handler, "1, %s\n", test_bed[0].csv_column_name);
 
 	//Print the remaining rows
 	for (int i = 0; i < size_test_bed; i++) {
@@ -1119,16 +1151,16 @@ void generate_csv_file(int size_test_bed, instance* test_bed) {
 	//
 	fclose(file_handler);
 
-	generate_name(run_name, sizeof(run_name), "runs/%s_%d_%d_cost.csv", test_bed[0].solver_short_name, n, seed);
+	generate_name(csv_name, sizeof(csv_name), "runs/%s_%d_%d_time.csv", test_bed[0].csv_column_name, n, seed);
 
 	//Print a single-column .csv file
-	file_handler = fopen(run_name, "w");
+	file_handler = fopen(csv_name, "w");
 	//Print the first row
-	fprintf(file_handler, "1, %s\n", test_bed[0].solver_short_name);
+	fprintf(file_handler, "1, %s\n", test_bed[0].csv_column_name);
 
 	//Print the remaining rows
 	for (int i = 0; i < size_test_bed; i++) {
-		fprintf(file_handler, "%d_%d_[%d], %lf\n", n, seed, i, test_bed[i].zbest);
+		fprintf(file_handler, "%d_%d_[%d], %lf\n", n, seed, i, test_bed[i].tbest);
 	}
 	//
 	fclose(file_handler);
