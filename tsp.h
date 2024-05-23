@@ -81,6 +81,11 @@ typedef struct {
 	int fstart;
 	int zstart;
 	*/
+
+	//hf param
+	char hf_opt2;
+	char hf_pfix_start;
+	char hf_pfix_scaling;
 } instance;
 
 

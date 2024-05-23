@@ -109,7 +109,7 @@ static int CPXPUBLIC my_callback_relaxation(CPXCALLBACKCONTEXTptr context, CPXLO
 
 	}
 
-	tsp_debug(inst->verbose >= 1, 1, "There are %d components at node %d.\n",ncomp, mynode);
+	tsp_debug(inst->verbose >= 10, 1, "There are %d components at node %d.\n",ncomp, mynode);
 	//Step 4: add the cuts according to the number of components
 
 	if (ncomp == 1) {
@@ -436,12 +436,10 @@ void cpx_convert_path_to_cplex(const int* xheu_path, double* cplex_like_format, 
 */
 void cpx_convert_path_to_cplex(const int* xheu_path, double* cplex_like_format, instance* inst) {
 
-	for (int i = 0; i < inst->ncols; i++) {
-		cplex_like_format[i] = 0.0;
-	}
-	for (int i = 0; i < inst->nnodes; i++) {
+	for (int i = 0; i < inst->nnodes - 1; i++) {
 		cplex_like_format[xpos(xheu_path[i], xheu_path[i + 1], inst)] = 1.0;
 	}
+	cplex_like_format[xpos(xheu_path[inst->nnodes - 1], xheu_path[0], inst)] = 1.0;
 
 }
 

@@ -12,9 +12,11 @@ typedef struct {
     char check_feasibility;
     char plots_on_screen;
     char table_flag;
+    char apply_opt2;
     double tl_mipcall;
     int status_mipcall;
     double p_fix;
+    double p_fix_scaling;
     int nr_call;
     FILE* table_out;
     FILE* pipe;

@@ -32,7 +32,16 @@ void hf_init(hardfixing* hf, instance* inst) {
 	hf->pipe = _popen("gnuplot -persist", "w");
 	hf->table_flag = (inst->verbose >= 1);
 	hf->tl_mipcall = inst->timelimit / 5.0;
+
+	// decommenta se devi fare perf plot
+	/*hf->apply_opt2 = inst->hf_opt2;
+	hf->p_fix_start = inst->hf_pfix_start;
+	hf->p_fix_scaling = inst->hf_pfix_scaling;*/
+	// usa queste se non devi fare perf plot
+	hf->apply_opt2 = 1;
 	hf->p_fix = 0.4;
+	hf->p_fix_scaling = 0.03;
+
 	hf->policy = RND;
 	hf->nr_call = 0;
 	char table_file_name[64];
@@ -52,7 +61,7 @@ void hf_close(hardfixing* hf, instance* inst) {
 void hf_fixing_rnd(int* xheu_path, instance* inst, double p_fix, CPXENVptr env, CPXLPptr lp) {
 	char bd = 'L';
 	double lb = 1.0;
-	for (int i = 0; i < inst->nnodes; i++) {
+	for (int i = 0; i < inst->nnodes - 1; i++) {
 		double random_01 = rand_01();
 		tsp_debug(inst->verbose >= 300, 0, "rand = %.2f, p_fix = %.2f", random_01, p_fix);
 		if ( ( random_01 < p_fix) ) {
@@ -143,11 +152,13 @@ void hf_fast_mip_solve(hardfixing* hf, instance* inst, CPXENVptr env, CPXLPptr l
 	build_sol((const double*)xstar, (const instance*)inst, curr_sol.succ, curr_sol.comp, &curr_sol.ncomp);
 	if (CPXgetobjval(env, lp, &(curr_sol.z))) { exit(main_error_text(-9, "CPXgetobjval() error")); }
 	hf->status_mipcall = CPXgetstat(env, lp);
+	double old_zbest = inst->zbest;
 	handleCPXResult(inst->verbose > 1, hf->status_mipcall, "Final CPXResult:");
-	improvement = curr_sol.z < inst->zbest;
 	if (cpx_update_best(inst->verbose >= 1, inst, env, lp, &curr_sol)) {
 		plot_path_on_screen(hf->pipe, hf->plots_on_screen, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes);
+		if (hf->apply_opt2) { opt2(inst, inst->best_sol, &(inst->zbest), 0); }
 	}
+	improvement = inst->zbest < old_zbest;
 	hf_fill_table(hf, hf->nr_call, curr_sol.z, improvement);
 	(hf->nr_call)++;
 	free(xstar);
@@ -185,7 +196,10 @@ void hf_solve(instance* inst) {
 		check_sol_is_feasible(hf.check_feasibility, inst, inst->best_sol, inst->zbest);
 		//2.6: update p_fix
 		int status = hf.status_mipcall;
-		if ((status == CPXMIP_OPTIMAL_TOL) || (status == CPXMIP_OPTIMAL)) { hf.p_fix -= 0.03; }
+		if ((status == CPXMIP_OPTIMAL_TOL) || (status == CPXMIP_OPTIMAL)) {
+			hf.p_fix -= hf.p_fix_scaling;
+			if(hf.p_fix<0) { break ;}
+		}
 		else { hf.tl_mipcall *= 2; }
 	}
 	hf_close(&hf, inst);

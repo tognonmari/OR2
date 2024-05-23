@@ -54,11 +54,13 @@ void print_best_sol(char flag, instance* inst) {
 	}
 	tsp_debug_inline(flag, "\n -------------- Best solution: --------------\n");
 	tsp_debug_inline(flag, "Best Distance (zbest): %.2lf\n",inst->zbest);
-	tsp_debug_inline(flag, "Best Solution found at time: %12.6f, thus it took %12.6f from the start of the current at %12.6f\n",inst->tbest, inst->tbest - inst->tstart, inst->tstart);
+	tsp_debug_inline(flag, "Best Solution found at time: %12.6f",inst->tbest);
 	tsp_debug_inline(flag && ( inst->verbose >= 500 ), "The following sequence of nodes is the best solution to the problem:");
 	print_path(flag && ( inst->verbose >= 500 ),"", inst->best_sol, inst->nodes, inst->nnodes);
 	tsp_debug_inline(flag, "\n ------------ End best solution: ------------\n");
 }
+
+//ACTUALLY NOT USED BECAUSE DIST_MATRIX IS SAVED AS CONTIGUOS ARRAY
 /**
  * Prints the elements of a triangular matrix up to the main diagonal.
  * IP flag Print flag
@@ -151,7 +153,7 @@ void print_path(char flag, const char text_to_print[], const int* path, const po
 * OP array Array to be modified with random values
 * IP max_value Maximum value of the generated values
 */
-//ACTUALLY NOT USED
+//ACTUALLY NOT USED TO ERASE
 void generate_array(int n, double *array, int max_value) {
 	for (int i = 0; i < n; i++) {
 		*array = rand() % (max_value+1);
@@ -251,6 +253,8 @@ float get_dist_matrix(const float* matrix, int row, int col){
 	if(col<=row) {return matrix[(row * (row+1) / 2) + col];}
 	return matrix[(col * (col+1) / 2) + row];
 }
+
+////ACTUALLY NOT USED BECAUSE DIST_MATRIX IS SAVED AS CONTIGUOS ARRAY AND THIS FUNCTION WORKS FOR 2D ARRAYS
 /*
  * Ottiene il valore di un elemento della matrice simmetrica $matrix
  * IP matrix La matrice simmetrica.
@@ -262,6 +266,8 @@ double get_cost_matrix(const float** matrix, int a, int b){
 	if(b<=a) { return matrix[a][b];}
 	return matrix[b][a];
 }
+//TO ERASE
+
 /*
 * The file data_file is modified in the following way:
 * each line of the file contains the coordinates of each point
@@ -300,7 +306,13 @@ void parse_command_line(int argc, char** argv, instance *inst){
 	inst->solver = NOT_DEF;
     int help = 0; if ( argc < 1 ) help = 1;	
 	for ( int i = 1; i < argc; i++ ) 
-	{ 
+	{	
+		//hf_param
+		if (strcmp(argv[i], "-hf2opt") == 0) { inst->hf_opt2 = atoi(argv[++i]); continue; }
+		if (strcmp(argv[i], "-hfpstart") == 0) { inst->hf_pfix_start = atof(argv[++i]); continue; }
+		if (strcmp(argv[i], "-hfpscal") == 0) { inst->hf_pfix_scaling = atof(argv[++i]); continue; }
+		//end hf_param
+
 		if ( strcmp(argv[i], "-nnodes") == 0) { inst->nnodes = atoi(argv[++i]); continue; } 			// input file
 		if ( strcmp(argv[i],"-file") == 0 ) { strcpy(inst->input_file,argv[++i]); continue; } 			// input file
 		if ( strcmp(argv[i],"-input") == 0 ) { strcpy(inst->input_file,argv[++i]); continue; } 			// input file
@@ -526,6 +538,8 @@ char opt2_move(char table_flag, instance* inst, int* incumbent_sol, double* incu
 		return 0;
 	}
 }
+
+//NINO: I think it is unuseful and it can be erased, it is sufficient to use classic opt2 passing as parameter inst->best_sol
 /**
  * 	Given an instance inst, it performs opt-2 refinement.
  * IP: instance inst passed by reference
@@ -584,6 +598,7 @@ void opt2_optimize_best_sol(instance* inst) {
 	inst->zbest = path_length;
 
 }
+//TO ERASE
 /*
  * Generic swap function for swapping data of arbitrary types.
  * This function takes two pointers to data ($a and $b) and the size of each data element.
@@ -607,6 +622,7 @@ void swap_space(void* a, void* b, size_t size) {
  * IP a1 Pointer to the destination array.
  * IP a2 Pointer to the source array.
  */
+//IT IS USED ONLY IN VNS, IM NOT SURE IT IS RESILIENT FROM ERRORS, BUT I THINK IT IS OK
 void copy_array(void* a1, const void* a2) {
 	size_t size_a1 = _msize(a1);
 	/*
@@ -622,6 +638,7 @@ void copy_array(void* a1, const void* a2) {
 		fprintf(stderr, "Size a1 = %d , size a2 = %d\n", (int)size_a1, (int)size_a2);
 	}
 }
+//I THINK IT IS OK
 /*
  * Copies data from one dynamically allocated array to another.
  * This function checks if the sizes of the input arrays in the heap are equal.
@@ -640,6 +657,7 @@ void copy_din_array(void *a1, const void *a2, size_t elem_size, size_t num_elems
     size_t total_size = elem_size * num_elems;
     memcpy(a1, a2, total_size);
 }
+//TO ERASE, WE HAVE IMPLEMENTED THE NEW VERSION IN greedy.c
 /*
 * Searches for the node with the minimum distance to $p from the points allocated in [p+1 ; end] (address space).
 *
@@ -669,6 +687,7 @@ int* search_min(const int* p, const int* end, const float* dist_matrix, double* 
 	(*min) = min_distance; 
 	return closest_node;
 }
+//TO ERASE, WE HAVE IMPLEMENTED THE NEW VERSION IN greedy.c
 /*
 * Computes a greedy path starting from a specified index and calculates its cost.
 * This function constructs a greedy path starting from the node at the given index.
@@ -701,6 +720,7 @@ int* compute_greedy_path(int index_first, instance* inst, double* path_cost) {
 	(*path_cost) = aggregate_cost;
 	return path;
 }
+//TO ERASE, WE HAVE IMPLEMENTED THE NEW VERSION IN greedy.c
 /*
 * This function must update the data of $inst related to the best solution using
 * a greedy approach that provides a good solution for the tsp problem.
@@ -761,7 +781,7 @@ void update_best(instance* inst, double z, double t, int* sol){
 	tsp_debug_inline(flag, "New Best : %.20g\n", z);
 	tsp_debug_inline(flag, "\n --------------- End Update : --------------\n");
 	inst->zbest = z;
-	inst->tbest = t;
+	inst->tbest = t - inst->tstart;
 	inst->is_best_sol_avail = 1;
 	inst->best_sol = sol;
 }
@@ -903,7 +923,7 @@ void tsp_solve(instance* inst){
 	switch (inst->solver) {
 	case NN:
 		gre_solve(inst, 0);
-		print_best_sol((inst->verbose>=0), inst);
+		print_best_sol((inst->verbose>=1), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path(inst->verbose >= 1000, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
@@ -913,7 +933,7 @@ void tsp_solve(instance* inst){
 		gre_solve(inst, 1);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy+opt2_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path(inst->verbose >= 1000, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
-		print_best_sol((inst->verbose>=1000), inst);
+		print_best_sol((inst->verbose>=1), inst);
 		break;
 	case TABU:
 		tabu_search(1,inst);
@@ -924,7 +944,9 @@ void tsp_solve(instance* inst){
 		break;
 	case VNS:
 		printf("Initializing a greedy solution\n");
-    	greedy_tsp(inst);
+		//WARNING greedy_tsp will be erased
+    	greedy_tsp(inst); //to change and use gre_solve instead!!
+		//WARNING
 		print_best_sol((inst->verbose>=5), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
@@ -973,6 +995,7 @@ void tsp_solve(instance* inst){
 		print_best_sol((inst->verbose >= 0), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/hf_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
+		break;
 	default:
 		exit(main_error(-7));
 	}
