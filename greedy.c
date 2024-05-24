@@ -96,7 +96,7 @@ void gre_init_table(char table_flag) {
 void gre_init(instance* inst, greedy* gre) {
 	gre->check_feasibility = 0;
 	gre->plots_on_screen = 0; //it slower a lot the program
-	gre->table_flag = (inst->verbose) >= 2;
+	gre->table_flag = 0;
 	gre->pipe = _popen("gnuplot -persist", "w");
 	gre->gre_dist_matrix = inst->dist_matrix;
 	gre->best_start = 0;
@@ -105,7 +105,6 @@ void gre_init(instance* inst, greedy* gre) {
 	gre->curr_sol = gre_compute_path(0, inst, gre);
 	check_sol_is_feasible(gre->check_feasibility, inst, gre->curr_sol, gre->zcurr);
 	gre_update_sol(inst, gre, 0);
-	update_best(inst, gre->zbest, get_timer(), gre->best_sol);
 }
 void gre_close(greedy* gre) {
 	fclose(gre->pipe);

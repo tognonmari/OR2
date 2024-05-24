@@ -40,6 +40,8 @@ void* alloc_triangular_matrix_as_array(int nrow, size_t size_type);
 
 int cmp_int_increasing(const void* a, const void* b);
 
+double rand_01();
+
 char* concatenate_strings(const char* str1, const char* str2);
 
 

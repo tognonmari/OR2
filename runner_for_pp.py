@@ -10,21 +10,22 @@ import stat
 EXECUTABLE_PATH = ".\\x64\\Release\\TSP_Project.exe"
 
 METHODS = {
-
+    "hardfixing_probability_tuning" : ["-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.03", "-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.02"],
+    "metaheuristics" : ["-solver vns -max_kicks 3", "-solver tabu -tenure xy"],
     "branch_and_cut" : ["-solver bc", "-solver bcf", "-solver bcm", "-solver bcfm"],
     "heuristics" : [ "-solver nn", "-solver 2opt"]
 
 }
 
-TEST_BED_SIZE = 20
+TEST_BED_SIZE = 10
 
 RANDOM_SEED = 0
 
-NNODES = 300
+NNODES = 50
 
-TIMELIMIT = 600
+TIMELIMIT = 2
 
-PERFPLOT_TYPE = ["cost", "time"]
+PERFPLOT_TYPE = ["cost", "time"] #do not touch
 
 VERBOSITY = 100
 
@@ -119,6 +120,7 @@ if __name__ == "__main__":
     #generate perf plot 
     for name in to_be_perfplotted:
         pp_name = name.replace(".csv", ".pdf")
+        
         str_exec = f"python .\\perfprof.py -D , -M 3 {name} {pp_name}"
         os.system(str_exec)
 
