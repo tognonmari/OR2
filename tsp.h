@@ -181,4 +181,6 @@ void generate_csv_file(int size_test_bed, instance* test_bed);
 
 void read_test_bed_size(int* test_bed_size, int argc, char** argv);
 
+void generate_instance_from_tsplib(instance* inst);
+
 #endif

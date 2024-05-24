@@ -9,6 +9,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "plot.h"
+
 /* 
 * Conditional debugging function that prints
 * a formatted message to the console if the given $flag is true,
@@ -194,18 +195,24 @@ void generate_name(char buffer[], size_t bufferSize, const char *format, ...) {
 */
 void generate_instance(instance *inst){
 	
-	
-	depolarize_pseudornd_seq();
+	if (strcmp(inst->input_file, "0") == 0) {
+		//usual generation
 
-	//only generate random instance if file name is not provided, so only if no tsplib inst is specified
-	
-	inst->nodes = (point*)malloc(inst->nnodes * sizeof(point));
-	generate_nodes(inst->nnodes, inst->nodes, MAX_X, MAX_Y);
-	inst->best_ub = DBL_MAX;
-	inst->best_lb = DBL_MIN;
-	inst->is_best_sol_avail = 0;
-	compute_dist_matrix(inst);
-	
+		depolarize_pseudornd_seq();
+
+		//only generate random instance if file name is not provided, so only if no tsplib inst is specified
+
+		inst->nodes = (point*)malloc(inst->nnodes * sizeof(point));
+		generate_nodes(inst->nnodes, inst->nodes, MAX_X, MAX_Y);
+		inst->best_ub = DBL_MAX;
+		inst->best_lb = DBL_MIN;
+		inst->is_best_sol_avail = 0;
+		compute_dist_matrix(inst);
+	}
+	else {
+		generate_instance_from_tsplib(inst);
+		compute_dist_matrix(inst);
+	}
 	//print_triangular_matrix((inst->verbose>0),"The cost matrix is: \n", (const float**)inst->dist_matrix, inst->nnodes);
 }
 /*
@@ -239,6 +246,7 @@ void compute_dist_matrix(instance* inst){
 	}
 	inst->dist_matrix = matrix;
 }
+
 /*
  * Ottiene il valore di un elemento della matrice simmetrica $matrix
  * IP matrix La matrice simmetrica.
@@ -313,7 +321,7 @@ void parse_command_line(int argc, char** argv, instance *inst){
 		if ( strcmp(argv[i],"-memory") == 0 ) { inst->available_memory = atoi(argv[++i]); continue; }	// available memory (in MB)
 		if ( strcmp(argv[i], "-verbose")==0) { inst->verbose = atoi(argv[++i]); continue;}				// verbosity
 		if ( strcmp(argv[i], "-v") ==0 ) {inst->verbose = atoi(argv[++i]);continue;}					// verbosity
-		if (strcmp(argv[i], "-csv_column_name") == 0) { strcpy(inst->csv_column_name, argv[++i]); printf("succesful columnname\n"); continue; }
+		if (strcmp(argv[i], "-csv_column_name") == 0) { strcpy(inst->csv_column_name, argv[++i]); continue; }
 		//if ( strcmp(argv[i],"-node_file") == 0 ) { strcpy(inst->node_file,argv[++i]); continue; }		// cplex's node file
 		// if ( strcmp(argv[i],"-max_nodes") == 0 ) { inst->max_nodes = atoi(argv[++i]); continue; } 		// max n. of nodes
 		// if ( strcmp(argv[i],"-cutoff") == 0 ) { inst->cutoff = atof(argv[++i]); continue; }				// master cutoff
@@ -753,7 +761,7 @@ void greedy_tsp(instance *inst){
  */
 void update_best(instance* inst, double z, double t, int* sol){
 	inst->zbest = z;
-	inst->tbest = t;
+	inst->tbest = t- inst->tstart;
 	inst->is_best_sol_avail = 1;
 	inst->best_sol = sol;
 }
@@ -1092,7 +1100,6 @@ void generate_test_bed(int size_test_bed, int argc, char** argv, instance* test_
 		parse_command_line(argc, argv, &test_bed[i]);
 		printf("successful parsing \n");
 	}
-	printf("heree\n");
 	srand(test_bed[0].randomseed);
 
 	for (int i = 0; i < size_test_bed; i++) {
@@ -1117,32 +1124,91 @@ void generate_csv_file(int size_test_bed, instance* test_bed) {
 
 	MKDIR("runs");
 	char csv_name[128];
-	generate_name(csv_name, sizeof(csv_name), "runs/%s_%d_%d_cost.csv", test_bed[0].csv_column_name, n, seed);
+	generate_name(csv_name, sizeof(csv_name), "runs/%s_%d_%d_%d_cost.csv", test_bed[0].csv_column_name, n, seed, size_test_bed);
 	
 	//Print a single-column .csv file
 	FILE* file_handler = fopen(csv_name, "w");
+	int error;
 	//Print the first row
-	fprintf(file_handler, "1, %s\n", test_bed[0].csv_column_name);
-
+	error = fprintf(file_handler, "1, %s\n", test_bed[0].csv_column_name);
+	fflush(file_handler);
+	
 	//Print the remaining rows
 	for (int i = 0; i < size_test_bed; i++) {
 		fprintf(file_handler, "%d_%d_[%d], %lf\n", n, seed, i, test_bed[i].zbest);
+		fflush(file_handler);
 	}
 	//
-	fclose(file_handler);
 
-	generate_name(csv_name, sizeof(csv_name), "runs/%s_%d_%d_time.csv", test_bed[0].csv_column_name, n, seed);
-
+	error = fclose(file_handler);
+	if (error) {
+		printf("error in closing csv\n");
+	}
+	char csv_time_name[128];
+	generate_name(csv_time_name, sizeof(csv_time_name), "runs/%s_%d_%d_%d_time.csv", test_bed[0].csv_column_name, n, seed, size_test_bed);
+	FILE* time_file_handler = fopen(csv_time_name, "w");
 	//Print a single-column .csv file
-	file_handler = fopen(csv_name, "w");
+	
 	//Print the first row
-	fprintf(file_handler, "1, %s\n", test_bed[0].csv_column_name);
-
+	fprintf(time_file_handler, "1, %s\n", test_bed[0].csv_column_name);
+	fflush(time_file_handler);
 	//Print the remaining rows
 	for (int i = 0; i < size_test_bed; i++) {
-		fprintf(file_handler, "%d_%d_[%d], %lf\n", n, seed, i, test_bed[i].tbest);
+		fprintf(time_file_handler, "%d_%d_[%d], %lf\n", n, seed, i, test_bed[i].tbest);
+		fflush(time_file_handler);
 	}
 	//
-	fclose(file_handler);
+	fclose(time_file_handler);
+
+}
+
+void generate_instance_from_tsplib(instance* inst) {
+
+	if (strcmp(inst->input_file, "0") == 1) {
+		exit(main_error(-1));
+	}
+
+	FILE* input_file = fopen(inst->input_file, "r");
+
+	if (input_file == NULL) {
+		exit(main_error(-1));
+	}
+	char line[100];
+
+	while (fgets(line, sizeof(line), input_file) != NULL) {
+		//Read nnodes
+		char* id = strtok(line, ": ");
+		if (strcmp(id, "DIMENSION") == 0) {
+			inst->nnodes = atoi(strtok(NULL, ": "));
+			break;
+		}
+	}
+
+	inst->nodes = (point*)malloc(inst->nnodes * sizeof(point));
+	//Read coordinates
+	while (fgets(line, sizeof(line), input_file) != NULL) {
+
+		char* id = strtok(line, ": ");
+		if (strcmp(id, "NODES_COORD_SECTION") == 0) {
+			//parse the nodes and add them as points
+			break;
+		}
+	}
+	int i = 0;
+	while (fgets(line, sizeof(line), input_file) != NULL) {
+
+		if (strcmp(line, "EOF") == 0) {
+			break;
+		}
+
+		char* index = strtok(line, " ");// skip it
+		char* x = strtok(NULL, " ");
+		char* y = strtok(NULL, " ");
+		inst->nodes[i].x = atof(x);
+		inst->nodes[i].y = atof(y);
+		i++;
+	}
+
+
 
 }

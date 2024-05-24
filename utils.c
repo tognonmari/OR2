@@ -179,7 +179,8 @@ char* concatenate_strings(const char* str1, const char* str2) {
 	}
 
 	// Copia le stringhe in result
-	strcpy(result, str1);
+	
+	(result, str1);
 	strcat(result, str2);
 
 	return result;

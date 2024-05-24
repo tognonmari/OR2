@@ -345,7 +345,7 @@ void cpx_branch_and_cut(char relaxation, char mipstart, char posting, instance* 
 		free(cplex_format_xheu);
 
 	}
-	CPXsetintparam(env, CPX_PARAM_THREADS, 1); 	// just for debugging
+	//CPXsetintparam(env, CPX_PARAM_THREADS, 1); 	// just for debugging
 	int status = CPXmipopt(env, lp);
 	if (status) { 
 		tsp_debug(1, 1, "The status is %d.\n",status);
