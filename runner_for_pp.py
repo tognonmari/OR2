@@ -12,21 +12,22 @@ EXECUTABLE_PATH = ".\\x64\\Release\\TSP_Project.exe"
 METHODS = {
 
     "branch_and_cut" : ["-solver bc", "-solver bcf", "-solver bcm", "-solver bcfm"],
-    "heuristics" : [ "-solver nn", "-solver 2opt"]
+    "heuristics" : [ "-solver nn", "-solver 2opt" , "-solver tabu"],
+    "metaheuristics" : ["-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.03", "-solver hf -hf2opt 0 -hfpstart 0.4 -hfpscal 0.03"]
 
 }
 
-TEST_BED_SIZE = 20
+TEST_BED_SIZE = 3
 
 RANDOM_SEED = 0
 
-NNODES = 300
+NNODES = 200
 
-TIMELIMIT = 600
+TIMELIMIT = 20
 
 PERFPLOT_TYPE = ["cost", "time"]
 
-VERBOSITY = 100
+VERBOSITY = 10
 
 def generate_csv_col_name(type)-> str:
     # ciclo tipo parse cmd line 
@@ -65,7 +66,7 @@ if __name__ == "__main__":
     
     csv_column_names =[]
     
-    csv_instance_id = f"{NNODES}_{RANDOM_SEED}_{TEST_BED_SIZE}"
+    csv_instance_id = f"{NNODES}_{RANDOM_SEED}"
 
     
     for tsp_run in METHODS[type]:

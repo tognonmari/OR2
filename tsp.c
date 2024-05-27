@@ -909,6 +909,7 @@ solver_id parse_solver(char* solver_input){
 	else if (strcmp(solver_input, "bc") == 0) {
 		return BC;
 	}
+	//TO ADD OTHER SOLVERS
 	exit(main_error_text(-8, "%s","solver"));
 }
 
