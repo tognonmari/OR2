@@ -10,6 +10,7 @@
 #include <string.h>
 #include <stdio.h>
 #include "plot.h"
+
 /* 
 * Conditional debugging function that prints
 * a formatted message to the console if the given $flag is true,
@@ -197,18 +198,24 @@ void generate_name(char buffer[], size_t bufferSize, const char *format, ...) {
 */
 void generate_instance(instance *inst){
 	
-	
-	depolarize_pseudornd_seq();
+	if (strcmp(inst->input_file, "0") == 0) {
+		//usual generation
 
-	//only generate random instance if file name is not provided, so only if no tsplib inst is specified
-	
-	inst->nodes = (point*)malloc(inst->nnodes * sizeof(point));
-	generate_nodes(inst->nnodes, inst->nodes, MAX_X, MAX_Y);
-	inst->best_ub = DBL_MAX;
-	inst->best_lb = DBL_MIN;
-	inst->is_best_sol_avail = 0;
-	compute_dist_matrix(inst);
-	
+		depolarize_pseudornd_seq();
+
+		//only generate random instance if file name is not provided, so only if no tsplib inst is specified
+
+		inst->nodes = (point*)malloc(inst->nnodes * sizeof(point));
+		generate_nodes(inst->nnodes, inst->nodes, MAX_X, MAX_Y);
+		inst->best_ub = DBL_MAX;
+		inst->best_lb = DBL_MIN;
+		inst->is_best_sol_avail = 0;
+		compute_dist_matrix(inst);
+	}
+	else {
+		generate_instance_from_tsplib(inst);
+		compute_dist_matrix(inst);
+	}
 	//print_triangular_matrix((inst->verbose>0),"The cost matrix is: \n", (const float**)inst->dist_matrix, inst->nnodes);
 }
 /*
@@ -242,6 +249,7 @@ void compute_dist_matrix(instance* inst){
 	}
 	inst->dist_matrix = matrix;
 }
+
 /*
  * Ottiene il valore di un elemento della matrice simmetrica $matrix
  * IP matrix La matrice simmetrica.
@@ -312,9 +320,16 @@ void parse_command_line(int argc, char** argv, instance *inst){
 		if (strcmp(argv[i], "-hfpstart") == 0) { inst->hf_pfix_start = atof(argv[++i]); continue; }
 		if (strcmp(argv[i], "-hfpscal") == 0) { inst->hf_pfix_scaling = atof(argv[++i]); continue; }
 		//end hf_param
-
+		//gre_param
+		if (strcmp(argv[i], "-greperc") == 0) { inst->gre_perc_start = atof(argv[++i]); continue; }
+		//end gre_param
+		//tabu param
+		if (strcmp(argv[i], "-tabufreq") == 0) { inst->tabu_freq = atof(argv[++i]); continue; }
+		if (strcmp(argv[i], "-tabuavg") == 0) { inst->tabu_avg = atof(argv[++i]); continue; }
+		if (strcmp(argv[i], "-tabuamp") == 0) { inst->tabu_amp = atof(argv[++i]); continue; }
+		//end tabu param
 		if ( strcmp(argv[i], "-nnodes") == 0) { inst->nnodes = atoi(argv[++i]); continue; } 			// input file
-		if ( strcmp(argv[i],"-file") == 0 ) { strcpy(inst->input_file,argv[++i]); continue; } 			// input file
+		if (strcmp(argv[i], "-file") == 0) { strcpy(inst->input_file, argv[++i]); printf("I have just wriitten into instance this string %s", inst->input_file); continue; } 			// input file
 		if ( strcmp(argv[i],"-input") == 0 ) { strcpy(inst->input_file,argv[++i]); continue; } 			// input file
 		if ( strcmp(argv[i],"-f") == 0 ) { strcpy(inst->input_file,argv[++i]); continue; } 				// input file
 		if ( strcmp(argv[i],"-tl") == 0 ) { inst->timelimit = atof(argv[++i]); continue; }		// total time limit
@@ -328,7 +343,7 @@ void parse_command_line(int argc, char** argv, instance *inst){
 		if ( strcmp(argv[i],"-memory") == 0 ) { inst->available_memory = atoi(argv[++i]); continue; }	// available memory (in MB)
 		if ( strcmp(argv[i], "-verbose")==0) { inst->verbose = atoi(argv[++i]); continue;}				// verbosity
 		if ( strcmp(argv[i], "-v") ==0 ) {inst->verbose = atoi(argv[++i]);continue;}					// verbosity
-		if (strcmp(argv[i], "-csv_column_name") == 0) { strcpy(inst->csv_column_name, argv[++i]); printf("succesful columnname\n"); continue; }
+		if (strcmp(argv[i], "-csv_column_name") == 0) { strcpy(inst->csv_column_name, argv[++i]); continue; }
 		//if ( strcmp(argv[i],"-node_file") == 0 ) { strcpy(inst->node_file,argv[++i]); continue; }		// cplex's node file
 		// if ( strcmp(argv[i],"-max_nodes") == 0 ) { inst->max_nodes = atoi(argv[++i]); continue; } 		// max n. of nodes
 		// if ( strcmp(argv[i],"-cutoff") == 0 ) { inst->cutoff = atof(argv[++i]); continue; }				// master cutoff
@@ -909,7 +924,12 @@ solver_id parse_solver(char* solver_input){
 	else if (strcmp(solver_input, "bc") == 0) {
 		return BC;
 	}
-	//TO ADD OTHER SOLVERS
+	else if (strcmp(solver_input, "hf") == 0) {
+		return HF;
+	}
+	else if (strcmp(solver_input, "sf") == 0) {
+		return SF;
+	}
 	exit(main_error_text(-8, "%s","solver"));
 }
 
@@ -923,15 +943,15 @@ void tsp_solve(instance* inst){
 	int check_truncation = 0;
 	switch (inst->solver) {
 	case NN:
-		gre_solve(inst, 0);
+		gre_partial_solve(inst, 0, (int)(inst->nnodes * inst->gre_perc_start));
 		print_best_sol((inst->verbose>=1), inst);
-		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path(inst->verbose >= 1000, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
+		//generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
+		//plot_path(inst->verbose >= 1000, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		//plot_generator(inst);
 		break;
 	case OPT_2:
-		gre_solve(inst, 1);
+		gre_partial_solve(inst, 1, (int)(inst->nnodes * inst->gre_perc_start));
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy+opt2_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path(inst->verbose >= 1000, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		print_best_sol((inst->verbose>=1), inst);
@@ -997,6 +1017,12 @@ void tsp_solve(instance* inst){
 		generate_name(figure_name, sizeof(figure_name), "figures/hf_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		break;
+	case SF:
+		sf_solve(inst);
+		print_best_sol((inst->verbose >= 0), inst);
+		generate_name(figure_name, sizeof(figure_name), "figures/sf_%d_%d.png", inst->nnodes, inst->randomseed);
+		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
+		break;
 	default:
 		exit(main_error(-7));
 	}
@@ -1023,6 +1049,7 @@ void update_solver(instance* inst){
 	printf("13: Exact Method with CPLEX, Branch and Cut Method, with fractional cut and posting\n");
 	printf("14: Exact Method with CPLEX, Branch and Cut Method, with fractional cut and posting, MIPSTART enabled\n");
 	printf("15: Matheuristic with CPLEX, Hardfixing Method\n");
+	printf("16: Matheuristic with CPLEX, Softfixing Method\n");
 	printf("---------------------------------------------\n");
 	fgets(buf, 8, stdin);
     selection = atoi(buf);
@@ -1117,6 +1144,12 @@ void update_solver(instance* inst){
 			printf("successful update. \n");
 			break;
 		}
+		case 16:
+		{
+			inst->solver = SF;
+			printf("successful update. \n");
+			break;
+		}
 		default:
 			{inst->solver = NN;
 			printf("successful update.\n");
@@ -1136,7 +1169,6 @@ void generate_test_bed(int size_test_bed, int argc, char** argv, instance* test_
 		parse_command_line(argc, argv, &test_bed[i]);
 		printf("successful parsing \n");
 	}
-	printf("heree\n");
 	srand(test_bed[0].randomseed);
 
 	for (int i = 0; i < size_test_bed; i++) {
@@ -1158,35 +1190,100 @@ void generate_csv_file(int size_test_bed, instance* test_bed) {
 
 	int n = test_bed[0].nnodes;
 	int seed = test_bed[0].randomseed;
-
 	MKDIR("runs");
 	char csv_name[128];
-	generate_name(csv_name, sizeof(csv_name), "runs/%s_%d_%d_cost.csv", test_bed[0].csv_column_name, n, seed);
+	generate_name(csv_name, sizeof(csv_name), "runs/%s_%d_%d_%d_cost.csv", test_bed[0].csv_column_name, n, seed, size_test_bed);
 	
 	//Print a single-column .csv file
 	FILE* file_handler = fopen(csv_name, "w");
+	int error;
 	//Print the first row
-	fprintf(file_handler, "1, %s\n", test_bed[0].csv_column_name);
-
+	error = fprintf(file_handler, "1, %s\n", test_bed[0].csv_column_name);
+	fflush(file_handler);
+	
 	//Print the remaining rows
 	for (int i = 0; i < size_test_bed; i++) {
 		fprintf(file_handler, "%d_%d_[%d], %lf\n", n, seed, i, test_bed[i].zbest);
+		fflush(file_handler);
 	}
 	//
-	fclose(file_handler);
 
-	generate_name(csv_name, sizeof(csv_name), "runs/%s_%d_%d_time.csv", test_bed[0].csv_column_name, n, seed);
-
+	error = fclose(file_handler);
+	if (error) {
+		printf("error in closing csv\n");
+	}
+	char csv_time_name[128];
+	generate_name(csv_time_name, sizeof(csv_time_name), "runs/%s_%d_%d_%d_time.csv", test_bed[0].csv_column_name, n, seed, size_test_bed);
+	FILE* time_file_handler = fopen(csv_time_name, "w");
 	//Print a single-column .csv file
-	file_handler = fopen(csv_name, "w");
+	
 	//Print the first row
-	fprintf(file_handler, "1, %s\n", test_bed[0].csv_column_name);
-
+	fprintf(time_file_handler, "1, %s\n", test_bed[0].csv_column_name);
+	fflush(time_file_handler);
 	//Print the remaining rows
 	for (int i = 0; i < size_test_bed; i++) {
-		fprintf(file_handler, "%d_%d_[%d], %lf\n", n, seed, i, test_bed[i].tbest);
+		fprintf(time_file_handler, "%d_%d_[%d], %lf\n", n, seed, i, test_bed[i].tbest);
+		fflush(time_file_handler);
 	}
 	//
-	fclose(file_handler);
+	fclose(time_file_handler);
+
+}
+
+void generate_instance_from_tsplib(instance* inst) {
+
+	if (strcmp(inst->input_file, "0") == 0) {
+
+		printf("invalid input file\n");
+		exit(main_error(-1));
+	}
+
+	FILE* input_file = fopen(inst->input_file, "r");
+
+	if (input_file == NULL) {
+		exit(main_error(-1));
+	}
+	char line[100];
+
+	while (fgets(line, sizeof(line), input_file) != NULL) {
+		//Read nnodes
+		char* id = strtok(line, ": ");
+		if (strcmp(id, "DIMENSION") == 0) {
+			inst->nnodes = atoi(strtok(NULL, ": "));
+			//tsp_debug(1, 1, "nodes numerr: %d\n", inst->nnodes);
+			break;
+		}
+	}
+
+	inst->nodes = (point*)malloc(inst->nnodes * sizeof(point));
+
+	//Read coordinates
+	while (fgets(line, sizeof(line), input_file) != NULL) {
+		char* id;
+		id = strtok(line, "\n");
+		if (strcmp(id, "NODE_COORD_SECTION") == 0) {
+			//printf("Found node coord section");
+			//parse the nodes and add them as points
+			break;
+		}
+	}
+	int i = 0;
+	while (fgets(line, sizeof(line), input_file) != NULL) {
+
+		if (strncmp(line, "EOF", 3) == 0) {
+			//printf("breaking");
+			break;
+		}
+
+		char* index = strtok(line, " ");// skip it
+		char* x = strtok(NULL, " ");
+		char* y = strtok(NULL, " ");
+		inst->nodes[i].x = atof(x);
+		inst->nodes[i].y = atof(y);
+		//printf("I have just added node (%.2lf, %.2lf)", inst->nodes[i].x, inst->nodes[i].y);
+		i++;
+	}
+
+
 
 }

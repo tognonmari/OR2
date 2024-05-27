@@ -101,6 +101,9 @@ void gre_init(instance* inst, greedy* gre) {
 	gre->gre_dist_matrix = inst->dist_matrix;
 	gre->best_start = 0;
 	gre->zbest = DBL_MAX;
+	gre->perc_start = 1;
+	/* se vuoi fare perf prof*/
+	gre->perc_start = inst->gre_perc_start;
 	gre_init_table(gre->table_flag);
 	gre->curr_sol = gre_compute_path(0, inst, gre);
 	check_sol_is_feasible(gre->check_feasibility, inst, gre->curr_sol, gre->zcurr);

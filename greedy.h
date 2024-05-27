@@ -14,6 +14,7 @@ typedef struct {
     char plots_on_screen;
     char table_flag;
     char apply_opt2;
+    double perc_start;
     float* gre_dist_matrix;
     FILE* pipe;
 }greedy;

@@ -37,12 +37,6 @@ int main(int argc, char** argv) {
     
     //Step 2: Initialize all instances of the test bed
     generate_test_bed(test_bed_size, argc, argv, inst_array);
-    printf("here");
-    //Step 3.5 : print instance information up to now, according to verbosity
-
-    print_instance_parameters(&inst_array[0]);
-
-    //TSPopt(&inst);
     //Step 4 : choose a solver, if not done already
 
     if (inst_array[0].solver == NOT_DEF) {
@@ -64,7 +58,8 @@ int main(int argc, char** argv) {
     //Step 6 : generate file for perf prof
     
     generate_csv_file(test_bed_size, inst_array);
-
+    
+    
     //Step 7 : free memory
     for (int j = 0; j < test_bed_size; j++) {
         free_instance(&inst_array[j]);

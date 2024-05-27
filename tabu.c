@@ -1,12 +1,19 @@
 
 #include "tabu.h"
+#include "plot.h"
 
-int tabu_get_tenure(int num_iterations, int nnodes) {
+int tabu_get_tenure(instance* inst, int num_iterations, int nnodes) {
     //Parameters
     double amplitude = 0.1 * nnodes;
     double frequency = 0.1;
-    double phase_shift = 0.0;
+    double phase_shift = 0.0; //do not change
     double average = 2.0;
+
+    //for perf prof
+    //amplitude = inst->tabu_amp * nnodes;
+    //frequency = inst->tabu_freq;
+    average = inst->tabu_avg;
+
 
     int tenure =(int) amplitude *(average + sin(frequency * num_iterations + phase_shift));
     return tenure;
@@ -36,10 +43,12 @@ void tabu_init_plot_iter_and_cost(char flag, FILE* gnuplotPipe, int y_range_min,
         fprintf(gnuplotPipe, "set key off\n"); //if key on the name of the file is printed on the plot
         fprintf(gnuplotPipe, "set xlabel 'iter'\n");
         fprintf(gnuplotPipe, "set ylabel 'cost'\n");
+        //fprintf(gnuplotPipe, "set xrange [%d:%d]\n", 0, 1000);
         //fprintf(gnuplotPipe, "set yrange [%d:%d]\n",y_range_min, y_range_max);
         fprintf(gnuplotPipe, "set pointsize 0.5\n");
         fprintf(gnuplotPipe, "set grid \n");
-        fprintf(gnuplotPipe, "plot '-' with linespoints pt 1 lc rgb '#800080'\n");
+        //fprintf(gnuplotPipe, "plot '-' with lines pt 1 lc rgb '#800080'\n");
+        fprintf(gnuplotPipe, "plot '-' with points lc rgb '#800080'\n");
     }
 }
 /*
@@ -67,17 +76,28 @@ updates the field zcurr.
 */
 
 int* compute_tabu_init_sol(instance* inst, tabu* tabu){
-    int* init_sol = compute_greedy_path(0, inst, &(tabu->zcurr) );
+    /*
+    int* init_sol = compute_greedy_path(0, inst, &(tabu->zcurr));
     return init_sol;
+    */
+    greedy gre;
+    gre_init(inst, &gre);
+    tabu->zcurr = gre.zcurr;
+    tabu->zbest = gre.zcurr;
+    return gre.curr_sol;
 }
 /*
 Updates best solution with current solution.
 */
 void tabu_update_best(tabu* tabu, int n, int verbose){
+    char flag = verbose >= 10;
     copy_din_array(tabu->best_sol, tabu->curr_sol, sizeof(int), n);
+    tsp_debug_inline(flag, "\n -------- Update Tabu Best at iter %d : ---------\n", tabu->iter);
+    tsp_debug_inline(flag, "Old Best : %.20g\n", tabu->zbest);
+    tsp_debug_inline(flag, "New Best : %.20g\n", tabu->zcurr);
+    tsp_debug_inline(flag, " --------------- End Tabu Update : --------------\n");
     tabu->zbest = tabu->zcurr;
     tabu->tbest = get_timer();
-    tsp_debug(verbose >= 100, 0, "  tabu_update_best SUCCESSFULL");
 }
 
 /*
@@ -89,9 +109,10 @@ void tabu_init(char tenure_is_variable, tabu* tabu, instance* inst){
     tabu->iter_stop = MAX_ITER; 
     tabu->iter = 0; 
     tabu->tenure_is_variable = tenure_is_variable;
-    tabu->tenure = tabu_get_tenure(0, inst->nnodes);
+    tabu->tenure = tabu_get_tenure(inst, 0, inst->nnodes);
     tabu->figure_cost_flag = (inst->verbose) >= 1;
     tabu->tabu_list = init_tabu_list(inst->nnodes);
+    tabu->printing_period = 1;
     tabu->curr_sol = compute_tabu_init_sol(inst, tabu);
     tabu->best_sol = (int*) calloc(inst->nnodes, sizeof(int));
     assert(tabu->best_sol!=NULL);
@@ -163,7 +184,7 @@ void tabu_update_current(tabu* tabu, int verbose){
     int v2 = (tabu->best_admissible_move).vertex_to_swap_2;
     swap_2_opt(tabu->curr_sol, v1, v2);
     tabu->zcurr += (tabu->best_admissible_move).delta;
-    if(tabu->figure_cost_flag){
+    if((tabu->figure_cost_flag) && (tabu->iter % tabu->printing_period == 0)){
         fprintf(tabu->pipe, "%d %lf\n", tabu->iter, tabu->zcurr);
     }
     tsp_debug(verbose >= 100, 0, "  tabu_update_current SUCCESSFULL");
@@ -175,20 +196,22 @@ void tabu_update_list(tabu* tabu, int verbose){
     tsp_debug(verbose >= 100, 0, "  tabu_update_list SUCCESSFULL");
 }
 
-void tabu_update_tenure(tabu* tabu, int n, int verbose) {
-    tabu->tenure = tabu_get_tenure(tabu->iter, n);
+void tabu_update_tenure(tabu* tabu, instance* inst) {
+    int n = inst->nnodes;
+    int verbose = inst->verbose;
+    tabu->tenure = tabu_get_tenure(inst, tabu->iter, n);
     tsp_debug(verbose >= 100, 0, "  tabu_update_tenure SUCCESSFULL");
 }
-void tabu_update(tabu* tabu, int n, int verbose){
-    tabu_update_list(tabu, verbose); 
-    tabu_update_current(tabu, verbose);
+void tabu_update(tabu* tabu, instance* inst){
+    tabu_update_list(tabu, inst->verbose); 
+    tabu_update_current(tabu, inst->verbose);
     if(tabu->zcurr < tabu-> zbest){
-        tabu_update_best(tabu, n, verbose);
+        tabu_update_best(tabu, inst->nnodes, inst->verbose);
     }
     if (tabu->tenure_is_variable) {
-        tabu_update_tenure(tabu, n, verbose);
+        tabu_update_tenure(tabu, inst);
     }
-    tsp_debug(verbose >= 100, 1, "tabu_update SUCCESSFULL");
+    tsp_debug(inst->verbose >= 100, 1, "tabu_update SUCCESSFULL");
 }
 
 void tabu_debug(char flag, tabu* tabu, instance* inst){
@@ -222,7 +245,7 @@ void tabu_search(char tabu_is_variable, instance* inst){
     while(!(is_time_limit_exceeded(inst->timelimit)) ){
         tsp_debug(inst->verbose >= 100, 1, "---------------- Iter #%d ---------------- ", tab.iter);
         if(tabu_find_best_admissible_move(&tab, inst)){
-            tabu_update(&tab, inst->nnodes, inst->verbose);
+            tabu_update(&tab, inst);
         }
         else {
             tsp_debug((inst->verbose>0),0,"There aren't admissible moves at iter %d", tab.iter);
@@ -231,7 +254,8 @@ void tabu_search(char tabu_is_variable, instance* inst){
         (tab.iter)++;
     }
     tsp_debug(inst->verbose >= 100, 1, "time limit has been exceeded");
-    tabu_close( tab.figure_cost_flag , tab.pipe, tab.data_iter_and_cost);
     update_best(inst, tab.zbest, tab.tbest, tab.best_sol);
+    opt2(inst, inst->best_sol, &(inst->zbest), 0); // Attenzione la figura iter_and_cost non contiene il costo finale migliorato da opt2!
+    tabu_close( tab.figure_cost_flag , tab.pipe, tab.data_iter_and_cost);
     tabu_free(&tab);
 }

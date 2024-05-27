@@ -1,4 +1,3 @@
-
 import subprocess
 import sys
 import pathlib
@@ -10,24 +9,25 @@ import stat
 EXECUTABLE_PATH = ".\\x64\\Release\\TSP_Project.exe"
 
 METHODS = {
-
+    "hardfixing_probability_tuning" : ["-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.03", "-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.02"],
+    "metaheuristics" : ["-solver vns -max_kicks 3", "-solver tabu -tenure xy"],
     "branch_and_cut" : ["-solver bc", "-solver bcf", "-solver bcm", "-solver bcfm"],
-    "heuristics" : [ "-solver nn", "-solver 2opt" , "-solver tabu"],
-    "metaheuristics" : ["-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.03", "-solver hf -hf2opt 0 -hfpstart 0.4 -hfpscal 0.03"]
+    "heuristics" : [ "-solver 2opt -greperc 0.2", "-solver 2opt -greperc 0.4","-solver 2opt -greperc 0.6", "-solver 2opt -greperc 0.8", "-solver 2opt -greperc 1.0"],
+    "tabuavg" : [ "-solver tabu -tabuavg 1.5" , "-solver tabu -tabuavg 1.75" ,"-solver tabu -tabuavg 2.0" , "-solver tabu -tabuavg 2.25", "-solver tabu -tabuavg 2.5"]
 
 }
 
-TEST_BED_SIZE = 3
+TEST_BED_SIZE = 10
 
 RANDOM_SEED = 0
 
-NNODES = 200
+NNODES = 400
 
-TIMELIMIT = 20
+TIMELIMIT = 15
 
-PERFPLOT_TYPE = ["cost", "time"]
+PERFPLOT_TYPE = ["cost", "time"] #do not touch
 
-VERBOSITY = 10
+VERBOSITY = 100
 
 def generate_csv_col_name(type)-> str:
     # ciclo tipo parse cmd line 
@@ -50,6 +50,9 @@ if __name__ == "__main__":
     
     if not (os.path.exists(".\\perfplot\\")):
         os.makedirs(".\\perfplot\\")
+    
+    if not (os.path.exists(".\\runs\\")):
+        os.makedirs(".\\runs\\")
 
     logger = logging.getLogger('Travelling Salesman Problem')
     logger.setLevel(logging.INFO)
@@ -66,7 +69,7 @@ if __name__ == "__main__":
     
     csv_column_names =[]
     
-    csv_instance_id = f"{NNODES}_{RANDOM_SEED}"
+    csv_instance_id = f"{NNODES}_{RANDOM_SEED}_{TEST_BED_SIZE}"
 
     
     for tsp_run in METHODS[type]:
@@ -80,7 +83,7 @@ if __name__ == "__main__":
                 file = open(f".\\runs\\{csv_column_names[-1]}_{csv_instance_id}_{pp_type}.csv", 'w')
                 file.close()
                 
-
+            print(csv_column_names[-1])
             str_exec = f"{EXECUTABLE_PATH} -nnodes {NNODES} -seed {RANDOM_SEED} -tl {TIMELIMIT} -verbose {VERBOSITY} {tsp_run} -csv_column_name {csv_column_names[-1]} -test_bed_size {TEST_BED_SIZE}"
             print("Running " + tsp_run)
             output = subprocess.run((str_exec), capture_output=True, text=True).stdout
@@ -120,7 +123,6 @@ if __name__ == "__main__":
     #generate perf plot 
     for name in to_be_perfplotted:
         pp_name = name.replace(".csv", ".pdf")
-        str_exec = f"python .\\perfprof.py -D , -M 3 {name} {pp_name}"
+        
+        str_exec = f"python .\\perfprof.py -D , -M 1.2 {name} {pp_name}"
         os.system(str_exec)
-
-

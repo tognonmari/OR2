@@ -2,6 +2,7 @@
 #define TABU_H
 
 #include "tsp.h"
+#include "greedy.h"
 #include "limits.h"
 #include "utils.h"
 #include <stdio.h>
@@ -26,19 +27,20 @@ typedef struct{
     char tenure_is_variable;
     int* tabu_list;
     int iter_stop;
+    int printing_period;
     char figure_cost_flag;
     FILE* pipe;
     FILE* data_iter_and_cost;
     move best_admissible_move;
 }tabu;
 
-int tabu_get_tenure(int num_iterations, int nnodes);
+int tabu_get_tenure(instance* inst,int num_iterations, int nnodes);
 
 int* init_tabu_list(size_t n);
 
 int* compute_tabu_init_sol(instance* inst, tabu* tabu);
 
-void tabu_update_best(tabu* tabu, int n);
+void tabu_update_best(tabu* tabu, int n, int verbose);
 
 void tabu_init(char tenure_is_variable, tabu* tabu, instance* inst);
 
@@ -52,9 +54,9 @@ void tabu_update_current(tabu* tabu, int verbose);
 
 void tabu_update_list(tabu* tabu, int verbose);
 
-void tabu_update_tenure(tabu* tabu, int n, int verbose);
+void tabu_update_tenure(tabu* tabu,instance* inst);
 
-void tabu_update(tabu* tabu, int n, int verbose);
+void tabu_update(tabu* tabu, instance* inst);
 
 void tabu_close(char flag, FILE* gnuplotPipe, FILE* data_file);
 

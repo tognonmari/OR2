@@ -39,7 +39,7 @@ void hf_init(hardfixing* hf, instance* inst) {
 	hf->p_fix_scaling = inst->hf_pfix_scaling;*/
 	// usa queste se non devi fare perf plot
 	hf->apply_opt2 = 1;
-	hf->p_fix = 0.4;
+	hf->p_fix = 0.7;
 	hf->p_fix_scaling = 0.03;
 
 	hf->policy = RND;
@@ -159,7 +159,7 @@ void hf_fast_mip_solve(hardfixing* hf, instance* inst, CPXENVptr env, CPXLPptr l
 		if (hf->apply_opt2) { opt2(inst, inst->best_sol, &(inst->zbest), 0); }
 	}
 	improvement = inst->zbest < old_zbest;
-	hf_fill_table(hf, hf->nr_call, curr_sol.z, improvement);
+	hf_fill_table(hf, hf->nr_call, inst->zbest, improvement);
 	(hf->nr_call)++;
 	free(xstar);
 	free_multitour_sol(&curr_sol);
@@ -185,7 +185,7 @@ void hf_solve(instance* inst) {
 	//2:fixing until time limit is not exceeded
 	while (!is_time_limit_exceeded(inst->timelimit)) {
 		//2.1: add mipstart
-		cpx_add_mipstart(inst->best_sol, inst, env, lp);
+		cpx_add_mipstart(xheu_path, inst, env, lp);
 		//2.2: fix variables to 1 (hardfixing)
 		hf_fixing(xheu_path, &hf, inst, env, lp);
 		//2.3: pass the restricted MIP model to the MIP solver

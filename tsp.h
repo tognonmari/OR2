@@ -31,7 +31,8 @@ typedef enum {
 	BCFM,
 	BCFP,
 	BCFMP,
-	HF
+	HF,
+	SF
 
 } solver_id;
 
@@ -84,8 +85,21 @@ typedef struct {
 
 	//hf param
 	char hf_opt2;
-	char hf_pfix_start;
-	char hf_pfix_scaling;
+	double hf_pfix_start;
+	double hf_pfix_scaling;
+
+	//sf param
+	int sf_k_start;
+	int sf_K_scaling;
+
+	//greedy param
+	double gre_perc_start;
+
+	//tabu param
+	double tabu_amp;
+	double tabu_avg;
+	double tabu_freq;
+
 } instance;
 
 
@@ -186,5 +200,7 @@ void generate_test_bed(int size_test_bed, int argc, char** argv, instance* test_
 void generate_csv_file(int size_test_bed, instance* test_bed);
 
 void read_test_bed_size(int* test_bed_size, int argc, char** argv);
+
+void generate_instance_from_tsplib(instance* inst);
 
 #endif

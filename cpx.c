@@ -343,7 +343,7 @@ void cpx_branch_and_cut(char relaxation, char mipstart, char posting, instance* 
 	if (CPXcallbacksetfunc(env, lp, contextid, my_callback, inst)) { exit(main_error_text(-9, "CPXcallbacksetfunc() error") ); }
 	if (mipstart) {
 		//Generate a greedy solution and initialize the incumbent with it
-		gre_partial_solve(inst, 1, inst->nnodes/30);
+		gre_partial_solve(inst, 1, inst->nnodes/100);
 		double* cplex_format_xheu = (double*)calloc(inst->ncols, sizeof(double));
 		int* ind = (int*)malloc(inst->ncols * sizeof(int));
 		cpx_convert_path_to_cplex(inst->best_sol, cplex_format_xheu, inst);
@@ -357,7 +357,7 @@ void cpx_branch_and_cut(char relaxation, char mipstart, char posting, instance* 
 		tsp_debug(1, 1, "Updated warm start successfully.\n");
 		free(ind);
 		free(cplex_format_xheu);
-
+		CPXsetdblparam(env, CPX_PARAM_TILIM, inst->timelimit - get_timer());
 	}
 	//CPXsetintparam(env, CPX_PARAM_THREADS, 1); 	// just for debugging
 	int status = CPXmipopt(env, lp);
