@@ -21,9 +21,9 @@ TEST_BED_SIZE = 10
 
 RANDOM_SEED = 0
 
-NNODES = 400
+NNODES = 40
 
-TIMELIMIT = 15
+TIMELIMIT = 2
 
 PERFPLOT_TYPE = ["cost", "time"] #do not touch
 
@@ -123,6 +123,8 @@ if __name__ == "__main__":
     #generate perf plot 
     for name in to_be_perfplotted:
         pp_name = name.replace(".csv", ".pdf")
-        
-        str_exec = f"python .\\perfprof.py -D , -M 1.2 {name} {pp_name}"
+        if ("time" in pp_name):
+            str_exec = f"python .\\perfprof.py -D , -M 1.2 -X \"Time Ratio\" {name} {pp_name}"
+        else:
+            str_exec = f"python .\\perfprof.py -D , -M 1.2 -X \"Cost Ratio\" {name} {pp_name}"
         os.system(str_exec)
