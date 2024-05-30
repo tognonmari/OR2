@@ -21,13 +21,13 @@ TEST_BED_SIZE = 10
 
 RANDOM_SEED = 0
 
-NNODES = 400
+NNODES = 500
 
-TIMELIMIT = 15
+TIMELIMIT = 30
 
 PERFPLOT_TYPE = ["cost", "time"] #do not touch
 
-VERBOSITY = 100
+VERBOSITY = 10
 
 def generate_csv_col_name(type)-> str:
     # ciclo tipo parse cmd line 
