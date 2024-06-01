@@ -11,8 +11,8 @@ int tabu_get_tenure(instance* inst, int num_iterations, int nnodes) {
 
     //for perf prof
     //amplitude = inst->tabu_amp * nnodes;
-    //frequency = inst->tabu_freq;
-    average = inst->tabu_avg;
+    frequency = inst->tabu_freq;
+    //average = inst->tabu_avg;
 
 
     int tenure =(int) amplitude *(average + sin(frequency * num_iterations + phase_shift));
@@ -102,11 +102,10 @@ void tabu_update_best(tabu* tabu, int n, int verbose){
 
 /*
 Initialize the tabu structure:
-Step 1) initialize tabu parameters (iter_stop, iter, tenure)
+Step 1) initialize tabu parameters (iter, tenure)
 Step 2) Initialize best_sol and curr_sol with a greedy path
 */
 void tabu_init(char tenure_is_variable, tabu* tabu, instance* inst){
-    tabu->iter_stop = MAX_ITER; 
     tabu->iter = 0; 
     tabu->tenure_is_variable = tenure_is_variable;
     tabu->tenure = tabu_get_tenure(inst, 0, inst->nnodes);
@@ -160,9 +159,9 @@ char tabu_find_best_admissible_move(tabu* tabu, instance* inst){
             // se i = 0 e j+1 = n quindi j+1 %n = 0 allora sto considerando due lati adiacenti, mentre 2 opt deve considerare sempre lati non adaicenti 
             if(jump_to_next_iter) { continue;}
             //length (i,i+1) and (j,j+1)
-            double current_dist = (double)(get_dist_matrix((const float*)(dist_matrix), curr[i], curr[i+1] ) + get_dist_matrix((const float*)(dist_matrix), curr[j], curr[(j+1)%n] ));
+            double current_dist =(double)get_dist_matrix((const float*)(dist_matrix), curr[i], curr[i+1])  + (double)get_dist_matrix((const float*)(dist_matrix), curr[j], curr[(j+1)%n] );
             //length (i,j) and (i+1,j+1)
-            double changed_dist = (double)(get_dist_matrix((const float*)(dist_matrix), curr[i], curr[j] )+ get_dist_matrix((const float*)(dist_matrix), curr[(i+1)], curr[(j+1)%n] ));
+            double changed_dist =(double)get_dist_matrix((const float*)(dist_matrix), curr[i], curr[j]) + (double)get_dist_matrix((const float*)(dist_matrix), curr[(i+1)], curr[(j+1)%n]);
             double delta = changed_dist - current_dist;
             if( delta < best_delta){
                 best_i = i;

@@ -70,6 +70,7 @@ typedef struct {
 	double* load_min;						// minimum load when leaving a node
 	double* load_max;						// maximum load when leaving a node
 	char posting;
+	char check_feasibility;
 	// model;
 	int ncols;
 	/*
@@ -103,19 +104,19 @@ typedef struct {
 } instance;
 
 
-void make_datafile(instance *inst, FILE* data_file);
+void make_datafile(instance* inst, FILE* data_file);
 
-void generate_instance(instance *inst);
+void generate_instance(instance* inst);
 
-void generate_name(char buffer[], size_t bufferSize, const char *format, ...);
+void generate_name(char buffer[], size_t bufferSize, const char* format, ...);
 
 void generate_nodes(int n, point* nodes, int max_x, int max_y);
 
-void generate_array(int n, double *array, int max_value);
+void generate_array(int n, double* array, int max_value);
 
-double get_distance(const point* p1,const point* p2);
+double get_distance(const point* p1, const point* p2);
 
-void print_nodes(char flag, const char text_to_print[], const instance *inst, int n);
+void print_nodes(char flag, const char text_to_print[], const instance* inst, int n);
 
 void print_path(char flag, const char text_to_print[], const int* path, const point* nodes, int n);
 
@@ -123,23 +124,23 @@ void print_best_sol(char flag, instance* inst);
 
 void print_point(char flag, const char text_to_print[], const point* p);
 
-void print_triangular_matrix(char flag,const char text[], const float** matrix, int nrows);
+void print_triangular_matrix(char flag, const char text[], const float** matrix, int nrows);
 
 void print_triangular_matrix_as_array(char flag, const char text_to_print[], const float* matrix, int nrows);
 
-void tsp_debug(char flag,int flag_time, char* format, ...);
+void tsp_debug(char flag, int flag_time, char* format, ...);
 
 void tsp_debug_inline(char flag, char* format, ...);
 
 void free_matrix(void** matrix, int rows);
 
-void free_instance(instance *inst);
+void free_instance(instance* inst);
 
 void print_instance_parameters(instance* inst);
 
-void parse_command_line(int argc, char** argv, instance *inst);
+void parse_command_line(int argc, char** argv, instance* inst);
 
-void opt2_optimize_best_sol(instance *inst);
+void opt2_optimize_best_sol(instance* inst);
 
 void reverse_sequence(int* path, int min, int max);
 
@@ -163,7 +164,7 @@ void opt2(instance* inst, int* incumbent_sol, double* incumbent_cost, char table
 
 void copy_array(void* a1, const void* a2);
 
-void copy_din_array(void *a1, const void *a2, size_t elem_size, size_t num_elems);
+void copy_din_array(void* a1, const void* a2, size_t elem_size, size_t num_elems);
 
 int* search_min(const int* p, const int* end, const float* cost_matrix, double* current_cost);
 

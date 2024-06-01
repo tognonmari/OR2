@@ -12,22 +12,27 @@ METHODS = {
     "hardfixing_probability_tuning" : ["-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.03", "-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.02"],
     "metaheuristics" : ["-solver vns -max_kicks 3", "-solver tabu -tenure xy"],
     "branch_and_cut" : ["-solver bc", "-solver bcf", "-solver bcm", "-solver bcfm"],
-    "heuristics" : [ "-solver 2opt -greperc 0.2", "-solver 2opt -greperc 0.4","-solver 2opt -greperc 0.6", "-solver 2opt -greperc 0.8", "-solver 2opt -greperc 1.0"],
-    "tabuavg" : [ "-solver tabu -tabuavg 1.5" , "-solver tabu -tabuavg 1.75" ,"-solver tabu -tabuavg 2.0" , "-solver tabu -tabuavg 2.25", "-solver tabu -tabuavg 2.5"]
+    "heuristics" : [ "-solver nn -greperc 0.0", "-solver nn -greperc 1.0", "-solver 2opt -greperc 0.0333" , "-solver 2opt -greperc 1.0"],
+    "tabuavg" : [ "-solver tabu -tabuavg 1.5" ,"-solver tabu -tabuavg 2.0" , "-solver tabu -tabuavg 2.5", "-solver tabu -tabuavg 3" , "-solver tabu -tabuavg 4" ],
+    "tabuamp" : [ "-solver tabu -tabuamp 0.05" ,"-solver tabu -tabuamp 0.1" , "-solver tabu -tabuamp 0.2", "-solver tabu -tabuamp 0.3"],
+    "tabufreq" : [ "-solver tabu -tabufreq 0.1" , "-solver tabu -tabufreq 1.0"],
+    #5 , 7 , 8 , 9 , 10 , 11 , 12 , 13 , 14
+    "exact" : ["-solver benders", "-solver bc" , "-solver bcm" , " -solver bcp" , " -solver bcmp" , " -solver bcf" , " -solver bcfm" , " -solver bcfp" , " -solver bcfmp"]
+
 
 }
 
-TEST_BED_SIZE = 10
+TEST_BED_SIZE = 15
 
 RANDOM_SEED = 0
 
-NNODES = 500
+NNODES = 250
 
-TIMELIMIT = 30
+TIMELIMIT = 400
 
 PERFPLOT_TYPE = ["cost", "time"] #do not touch
 
-VERBOSITY = 10
+VERBOSITY = 0
 
 def generate_csv_col_name(type)-> str:
     # ciclo tipo parse cmd line 
@@ -122,7 +127,9 @@ if __name__ == "__main__":
     
     #generate perf plot 
     for name in to_be_perfplotted:
-        pp_name = name.replace(".csv", ".pdf")
-        
-        str_exec = f"python .\\perfprof.py -D , -M 1.2 {name} {pp_name}"
+        pp_name =  .replace(".csv", ".pdf")
+        if ("time" in pp_name):
+            str_exec = f"python .\\perfprof.py -D , -M 8.0 -X \"Time Ratio\" {name} {pp_name}"
+        else:
+            str_exec = f"python .\\perfprof.py -D , -M 1.5 -X \"Cost Ratio\" {name} {pp_name}"
         os.system(str_exec)
