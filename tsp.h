@@ -100,6 +100,10 @@ typedef struct {
 	double tabu_avg;
 	double tabu_freq;
 
+	//vns paaram
+	int vns_min_kicks;
+	int vns_max_kicks;
+
 } instance;
 
 

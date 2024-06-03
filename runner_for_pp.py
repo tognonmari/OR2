@@ -13,21 +13,23 @@ METHODS = {
     "metaheuristics" : ["-solver vns -max_kicks 3", "-solver tabu -tenure xy"],
     "branch_and_cut" : ["-solver bc", "-solver bcf", "-solver bcm", "-solver bcfm"],
     "heuristics" : [ "-solver 2opt -greperc 0.2", "-solver 2opt -greperc 0.4","-solver 2opt -greperc 0.6", "-solver 2opt -greperc 0.8", "-solver 2opt -greperc 1.0"],
-    "tabuavg" : [ "-solver tabu -tabuavg 1.5" , "-solver tabu -tabuavg 1.75" ,"-solver tabu -tabuavg 2.0" , "-solver tabu -tabuavg 2.25", "-solver tabu -tabuavg 2.5"]
-
+    "tabuavg" : [ "-solver tabu -tabuavg 1.5" , "-solver tabu -tabuavg 1.75" ,"-solver tabu -tabuavg 2.0" , "-solver tabu -tabuavg 2.25", "-solver tabu -tabuavg 2.5"],
+    "vns_fixed_tuning_higher_kicks" : ["-solver vns -vns_min_kicks 10 -vns_max_kicks 10", "-solver vns -vns_min_kicks 6 -vns_max_kicks 6", "-solver vns -vns_min_kicks 8 -vns_max_kicks 8"],
+    "vns_random_tuning" : ["-solver vns -vns_min_kicks 1 -vns_max_kicks 10","-solver vns -vns_min_kicks 1 -vns_max_kicks 5","-solver vns -vns_min_kicks 1 -vns_max_kicks 3"],
+    "vns_all" : ["-solver vns -vns_min_kicks 1 -vns_max_kicks 10","-solver vns -vns_min_kicks 1 -vns_max_kicks 5","-solver vns -vns_min_kicks 1 -vns_max_kicks 3", "-solver vns -vns_min_kicks 3 -vns_max_kicks 3","-solver vns -vns_min_kicks 5 -vns_max_kicks 5","-solver vns -vns_min_kicks 1 -vns_max_kicks 1"]
 }
 
-TEST_BED_SIZE = 10
+TEST_BED_SIZE = 15
 
 RANDOM_SEED = 0
 
-NNODES = 40
+NNODES = 1000
 
-TIMELIMIT = 2
+TIMELIMIT = 60
 
 PERFPLOT_TYPE = ["cost", "time"] #do not touch
 
-VERBOSITY = 100
+VERBOSITY = 10
 
 def generate_csv_col_name(type)-> str:
     # ciclo tipo parse cmd line 

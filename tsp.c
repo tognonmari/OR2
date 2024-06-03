@@ -328,6 +328,10 @@ void parse_command_line(int argc, char** argv, instance *inst){
 		if (strcmp(argv[i], "-tabuavg") == 0) { inst->tabu_avg = atof(argv[++i]); continue; }
 		if (strcmp(argv[i], "-tabuamp") == 0) { inst->tabu_amp = atof(argv[++i]); continue; }
 		//end tabu param
+		//vns param
+		if (strcmp(argv[i], "-vns_min_kicks") == 0) { inst->vns_min_kicks = atof(argv[++i]); continue; }
+		if (strcmp(argv[i], "-vns_max_kicks") == 0) { inst->vns_max_kicks = atof(argv[++i]); continue; }
+		//end vns param
 		if ( strcmp(argv[i], "-nnodes") == 0) { inst->nnodes = atoi(argv[++i]); continue; } 			// input file
 		if (strcmp(argv[i], "-file") == 0) { strcpy(inst->input_file, argv[++i]); printf("I have just wriitten into instance this string %s", inst->input_file); continue; } 			// input file
 		if ( strcmp(argv[i],"-input") == 0 ) { strcpy(inst->input_file,argv[++i]); continue; } 			// input file
@@ -964,18 +968,18 @@ void tsp_solve(instance* inst){
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		break;
 	case VNS:
-		printf("Initializing a greedy solution\n");
-		//WARNING greedy_tsp will be erased
-    	greedy_tsp(inst); //to change and use gre_solve instead!!
-		//WARNING
+		
+		
+    	gre_partial_solve(inst,1,1); //to change and use gre_solve instead!!
+		
 		print_best_sol((inst->verbose>=5), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
+		//plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		vns(inst);
 		print_best_sol((inst->verbose>=5), inst);
-		generate_name(figure_name, sizeof(figure_name), "figures/vns_%d_%d.png", inst->nnodes, inst->randomseed);
-		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
+		//generate_name(figure_name, sizeof(figure_name), "figures/vns_%d_%d.png", inst->nnodes, inst->randomseed);
+		//plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		break;
 	case EX:
