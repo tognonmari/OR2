@@ -13,7 +13,7 @@ typedef struct{
 
 void vns(instance* inst);
 
-vns_params parse_and_init_vns_params();
+void init_vns_params(vns_params* pars);
 
 void kick(instance* inst, int* sol_to_kick); 
 

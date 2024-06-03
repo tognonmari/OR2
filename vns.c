@@ -34,17 +34,28 @@ vns_params parse_and_init_vns_params(){
 
     return pars;
 }
-
+void init_vns_params(vns_params* pars) {
+    pars->gnuplot_pipe = _popen("gnuplot -persist", "w");
+    pars->min_kicks = 1;
+    pars->max_kicks = 1;
+}
 /**
  * Solve with vns
 */
-void vns(instance* inst){
+void vns(instance* inst) {
 
-    
-    char plot_desired = inst->verbose >= 10;
-    
+
+    char plot_desired = inst->verbose >= 1000;
+
+
     //Step 1: Parse vns parameters + copy the current best_sol to optimize + initializing gnuplot pipe with correct axis
-    vns_params params = parse_and_init_vns_params();
+    vns_params params;
+
+    init_vns_params(&params);
+
+    //to be commented if not passing cmd line arguments
+    params.min_kicks = inst->vns_min_kicks;
+    params.max_kicks = inst->vns_max_kicks;
 
     // copying the current best sol to optimize with opt2 and then to kick
     int* incumbent_sol = (int*) calloc(inst->nnodes, sizeof(int));
@@ -73,8 +84,9 @@ void vns(instance* inst){
         while(improvement){
             improvement = opt2_move(0, inst, incumbent_sol, &incumbent_cost, &swaps);
            
-            t++;
+            
         }
+        t++;
 
         if (plot_desired) {
             fprintf(params.gnuplot_pipe, "%d %lf\n", t, incumbent_cost);
@@ -86,18 +98,17 @@ void vns(instance* inst){
         //update the solution if we found a better one
         if (incumbent_cost <inst->zbest){
 
-            printf("Better solution found: updating the instance\n");
-            printf("zbest: %lf\n",incumbent_cost);
-            copy_array(inst->best_sol, incumbent_sol);
-            inst->zbest = incumbent_cost;
-            inst->tbest = get_timer();  
+            tsp_debug(inst->verbose >=100, 1,"Better solution found: updating the instance\n");
+            
+            update_best(inst, incumbent_cost, get_timer(), incumbent_sol);
+            
 
         }
         
         //params.min_kicks = 3;
         //params.max_kicks = 3;
         //printf("I am kicking with min : %d, max: %d", params.min_kicks,params.max_kicks);
-        int kicks = 4;
+        int kicks = (int) (rand_01()*(params.max_kicks- params.min_kicks))+params.min_kicks;
         //printf("I want to kick %d times\n", kicks);
         for (int jj = 0; jj<kicks; jj++){
             //printf("kicking!\n");
@@ -108,13 +119,13 @@ void vns(instance* inst){
                 fprintf(params.gnuplot_pipe, "%d %lf\n", t, compute_path_length(incumbent_sol, inst->nnodes, inst->nodes));
             }
 
-            t++;
+            
         }
-        
+        t++;
        
         incumbent_cost = compute_path_length(incumbent_sol, inst->nnodes, inst->nodes);
 
-        //t += (swaps+kicks);
+        
        
     }
 
