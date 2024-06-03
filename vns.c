@@ -5,35 +5,6 @@
  * Gathers parameter information for vns from cmd line
 */
 
-vns_params parse_and_init_vns_params(){
-
-    //Initialization
-
-    vns_params pars;
-    char buf[2];
-    char buf2[2];
-    int min;
-    int max;
-
-    //Scanning for user input: 
-
-    printf("----Choose a minimum number of kicks:----\n");
-    fgets(buf, 2, stdin);
-    min = atoi(buf);
-    printf("you chose as minimum %d\n", min);
-    printf("----Choose a maximium number of kicks:----\n");
-    fgets(buf2, 2, stdin);
-    max = atoi(buf2);
-    printf("you chose as maximum %d\n", max);
-    assert(min<=max);
-    printf("------------------------------------------\n");
-    pars.min_kicks = min;
-    pars.max_kicks = max;
-    pars.gnuplot_pipe = _popen("gnuplot -persist", "w");
-
-
-    return pars;
-}
 void init_vns_params(vns_params* pars) {
     pars->gnuplot_pipe = _popen("gnuplot -persist", "w");
     pars->min_kicks = 1;
@@ -59,18 +30,19 @@ void vns(instance* inst) {
 
     // copying the current best sol to optimize with opt2 and then to kick
     int* incumbent_sol = (int*) calloc(inst->nnodes, sizeof(int));
-
+    int* best_vns_sol = (int*)calloc(inst->nnodes, sizeof(int));
     copy_array(incumbent_sol, inst->best_sol);
-
+    copy_array(best_vns_sol, inst->best_sol);
     double incumbent_cost = inst->zbest;
-
+    double best_vns_cost = inst->zbest;
+    double best_time = inst->tbest;
     //initializing gnuplot
 
     vns_init_plot_iter_cost(plot_desired, params.gnuplot_pipe, inst);
 
     //Step 2: Solve with vns upon the incumbent: need to rewrite opt 2
-    printf("-----Starting vns heuristics:-------\n");
-    int max_iter = 1500;
+    tsp_debug(inst->verbose >=10, 1,"-----Starting vns heuristics:-------\n");
+
     int t=1;
     srand(time(NULL));
     //opt2_optimize_best_sol(inst);
@@ -96,12 +68,15 @@ void vns(instance* inst) {
 	    //plot_path((inst->verbose>-1),figure_name,incumbent_sol, inst->nodes, inst->nnodes);
         //printf("Finished intensification\n");
         //update the solution if we found a better one
-        if (incumbent_cost <inst->zbest){
+        if (incumbent_cost <best_vns_cost){
 
             tsp_debug(inst->verbose >=100, 1,"Better solution found: updating the instance\n");
             
-            update_best(inst, incumbent_cost, get_timer(), incumbent_sol);
-            
+            //update_best(inst, incumbent_cost, get_timer(), incumbent_sol);
+            //update the best vns sol
+            copy_array(best_vns_sol, incumbent_sol);
+            best_vns_cost = incumbent_cost;
+            best_time = get_timer();
 
         }
         
@@ -129,8 +104,14 @@ void vns(instance* inst) {
        
     }
 
-    free(incumbent_sol);
     vns_close_plot_pipe(plot_desired, params.gnuplot_pipe);
+
+    if (best_vns_cost < inst->zbest) {
+
+        update_best(inst, best_vns_cost, best_time, best_vns_sol);
+    }
+
+    free(incumbent_sol);
 
 }
 
