@@ -3,7 +3,7 @@
 
 void hf_init_table(hardfixing* hf) {
 	if (!hf->table_flag) { return; }
-	char* table_fields[] = { "#Nr. Call", "Best Cost", "New best", "p_fix"};
+	char* table_fields[] = { "#Nr. Call", "Best Cost", "New best", "p_fix" };
 	int num_cols_table = sizeof(table_fields) / sizeof(table_fields[0]);
 	make_first_row(hf->table_flag, hf->table_out, num_cols_table, "HARDFIXING");
 	make_table_row(hf->table_flag, hf->table_out, num_cols_table, table_fields);
@@ -23,7 +23,7 @@ void hf_fill_table(hardfixing* hf, int nr_call, double cost, char is_new_best) {
 	else { sprintf(table_3, "%.2f", hf->p_fix); }
 	char* table_fields[] = { table_0, table_1, table_2, table_3 };
 	int num_cols_table = sizeof(table_fields) / sizeof(table_fields[0]);
-	make_table_row(hf->table_flag, hf->table_out , num_cols_table, table_fields);
+	make_table_row(hf->table_flag, hf->table_out, num_cols_table, table_fields);
 }
 
 void hf_init(hardfixing* hf, instance* inst) {
@@ -64,8 +64,8 @@ void hf_fixing_rnd(int* xheu_path, instance* inst, double p_fix, CPXENVptr env, 
 	for (int i = 0; i < inst->nnodes - 1; i++) {
 		double random_01 = rand_01();
 		tsp_debug(inst->verbose >= 300, 0, "rand = %.2f, p_fix = %.2f", random_01, p_fix);
-		if ( ( random_01 < p_fix) ) {
-			int index = xpos(xheu_path[i], xheu_path[i+1], inst);
+		if ((random_01 < p_fix)) {
+			int index = xpos(xheu_path[i], xheu_path[i + 1], inst);
 			if (CPXchgbds(env, lp, 1, &index, &bd, &lb)) { exit(main_error_text(-9, "CPXchgbds() error.\n")); }
 			tsp_debug(inst->verbose >= 300, 0, "fixed edge (%d,%d)", xheu_path[i], xheu_path[i + 1]);
 		}
@@ -118,7 +118,7 @@ void hf_unfix(instance* inst, CPXENVptr env, CPXLPptr lp) {
 		if (CPXchgbds(env, lp, 1, &pos, &bd, &lb)) { exit(main_error_text(-9, "CPXchgbds() error.\n")); }
 	}
 	tsp_debug(inst->verbose >= 10, 1, "hf_unfix SUCCESSFUL");
-	
+
 }
 
 //It does CPXmipopt() with the callback installed, this is the function to solve mip in the fastest known way.
@@ -178,7 +178,7 @@ void hf_solve(instance* inst) {
 	inst->ncols = CPXgetnumcols(env, lp);
 	hf_init(&hf, inst); //TODO
 	//1: initialize with an euristich method xheu
-	gre_partial_solve(inst, 1, inst->nnodes/100);
+	gre_partial_solve(inst, 1, inst->nnodes / 100);
 	int* xheu_path = inst->best_sol;
 	hf_fill_table(&hf, hf.nr_call, inst->zbest, 1);
 	(hf.nr_call)++;
@@ -198,7 +198,7 @@ void hf_solve(instance* inst) {
 		int status = hf.status_mipcall;
 		if ((status == CPXMIP_OPTIMAL_TOL) || (status == CPXMIP_OPTIMAL)) {
 			hf.p_fix -= hf.p_fix_scaling;
-			if(hf.p_fix<0) { break ;}
+			if (hf.p_fix < 0) { break; }
 		}
 		else { hf.tl_mipcall *= 2; }
 	}

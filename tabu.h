@@ -7,7 +7,6 @@
 #include "utils.h"
 #include <stdio.h>
 #include <stdlib.h>
-#define MAX_ITER 100000
 
 typedef struct{
     int vertex_to_swap_1;
@@ -26,7 +25,6 @@ typedef struct{
     int tenure;
     char tenure_is_variable;
     int* tabu_list;
-    int iter_stop;
     int printing_period;
     char figure_cost_flag;
     FILE* pipe;

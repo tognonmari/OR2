@@ -488,6 +488,9 @@ int cpx_update_best(char flag, instance* inst, CPXENVptr env, CPXLPptr lp, const
 				generate_name(figure_name, sizeof(figure_name), "figures/ben_%d_%d_%d_postpatch.png", inst->nnodes, inst->randomseed);
 				plot_path(inst->verbose >= 1, (const int*)path, inst->nnodes, z, inst->nodes, figure_name);
 			}
+			else {
+				opt2(inst, inst->best_sol, &(inst->zbest), 0);
+			}
 			if (z < inst->zbest) {
 				update_best(inst, z, get_timer(), path);
 			}
@@ -601,7 +604,7 @@ void set_init_param(CPXENVptr env, const instance* inst, char* log_name, size_t 
 	CPXsetdblparam(env, CPX_PARAM_EPRHS, 1e-9);
 	CPXsetdblparam(env, CPX_PARAM_TILIM, inst->timelimit - get_timer());
 	CPXsetintparam(env, CPX_PARAM_MIPDISPLAY, 4);
-	CPXsetintparam(env, CPX_PARAM_THREADS, 1);
+	//CPXsetintparam(env, CPX_PARAM_THREADS, 1);
 	if (inst->verbose >= 101) CPXsetintparam(env, CPX_PARAM_SCRIND, CPX_ON); // Cplex output on screen
 	//CPXsetintparam(env, CPX_PARAM_RANDOMSEED, 123456);
 

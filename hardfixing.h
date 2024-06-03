@@ -4,7 +4,7 @@
 #include "tsp.h"
 
 typedef enum {
-	RND
+    RND
 }hf_policy;
 
 typedef struct {
