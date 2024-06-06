@@ -994,16 +994,14 @@ void tsp_solve(instance* inst) {
 	case VNS:
 		
 		
-    	gre_partial_solve(inst,1,1); //to change and use gre_solve instead!!
+    	gre_partial_solve(inst,1,1); 
 		
 		print_best_sol((inst->verbose>=5), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/greedy_%d_%d.png", inst->nnodes, inst->randomseed);
-		//plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
-		init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		vns(inst);
 		print_best_sol((inst->verbose>=5), inst);
-		//generate_name(figure_name, sizeof(figure_name), "figures/vns_%d_%d.png", inst->nnodes, inst->randomseed);
-		//plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
+		generate_name(figure_name, sizeof(figure_name), "figures/vns_%d_%d.png", inst->nnodes, inst->randomseed);
+		//plot_path(inst->verbose >= 1000, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
 		//init_data_file((inst->verbose>-1),(inst->best_sol_data), inst);
 		break;
 	case EX:
