@@ -10,19 +10,18 @@ void sf_init_table(softfixing* sf) {
 }
 void sf_init(softfixing* sf, instance* inst) {
 	sf->check_feasibility = 1;
-	sf->plots_on_screen = 1;
+	sf->plots_on_screen = 0;
 	sf->pipe = _popen("gnuplot -persist", "w");
 	sf->table_flag = (inst->verbose >= 1);
 	sf->tl_mipcall = inst->timelimit/5; //da studiare
 
-	// decommenta se devi fare perf plot
-	/*
-	sf->k = inst->sf_k_start;
-	sf->k_scaling = inst->sf_k_scaling;*/
 	// usa queste se non devi fare perf plot
-	sf->apply_opt2 = 0;
+	sf->apply_opt2 = 1;
 	sf->k = 20;
 	sf->k_scaling = 5;
+	// decommenta se devi fare perf plot
+	sf->k = inst->sf_k_start;
+	sf->k_scaling = inst->sf_k_scaling;
 	sf->nr_call = 0;
 	char table_file_name[64];
 	generate_name(table_file_name, sizeof(table_file_name), "figures/sf_table_%d_%d.txt", inst->nnodes, inst->randomseed);

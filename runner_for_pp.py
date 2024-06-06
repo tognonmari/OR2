@@ -9,26 +9,27 @@ import stat
 EXECUTABLE_PATH = ".\\x64\\Release\\TSP_Project.exe"
 
 METHODS = {
-    "hardfixing_probability_tuning" : ["-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.03", "-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.02"],
+    "hardfix_tuning" : ["-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.03", "-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.00", "-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.02","-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.05", "-solver hf -hf2opt 1 -hfpstart 0.6 -hfpscal 0.05", "-solver hf -hf2opt 1 -hfpstart 0.25 -hfpscal 0.02"],
+    "hardfix_tuning_2" : ["-solver hf -hfpstart 0.5 -hfpscal 0.00", "-solver hf -hfpstart 0.5 -hfpscal 0.03", "-solver hf -hfpstart 0.5 -hfpscal 0.06","-solver hf -hfpstart 0.5 -hfpscal 0.10", "-solver hf -hfpstart 0.3 -hfpscal 0.00", "-solver hf -hfpstart 0.3 -hfpscal 0.03", "-solver hf -hfpstart 0.3 -hfpscal 0.06", "-solver hf -hfpstart 0.3 -hfpscal 0.10"],
     "metaheuristics" : ["-solver vns -max_kicks 3", "-solver tabu -tenure xy"],
     "branch_and_cut" : ["-solver bc", "-solver bcf", "-solver bcm", "-solver bcfm"],
+    "tabu" : ["-solver tabu -varten 0 -tabuavg 1.0" , " -solver tabu -varten 0 -tabuavg 3.0 "," -solver tabu -varten 0 -tabuavg 4.0 " , "-solver tabu -varten 0 -tabuavg 2.0" , " -solver tabu -varten 1 -tabuavg 2.0", "-solver tabu -varten 1 -tabuavg 3.0"],
     "heuristics" : [ "-solver nn -greperc 0.0", "-solver nn -greperc 1.0", "-solver 2opt -greperc 0.0333" , "-solver 2opt -greperc 1.0"],
     "tabuavg" : [ "-solver tabu -tabuavg 1.5" ,"-solver tabu -tabuavg 2.0" , "-solver tabu -tabuavg 2.5", "-solver tabu -tabuavg 3" , "-solver tabu -tabuavg 4" ],
     "tabuamp" : [ "-solver tabu -tabuamp 0.05" ,"-solver tabu -tabuamp 0.1" , "-solver tabu -tabuamp 0.2", "-solver tabu -tabuamp 0.3"],
     "tabufreq" : [ "-solver tabu -tabufreq 0.1" , "-solver tabu -tabufreq 1.0"],
     #5 , 7 , 8 , 9 , 10 , 11 , 12 , 13 , 14
     "exact" : ["-solver benders", "-solver bc" , "-solver bcm" , " -solver bcp" , " -solver bcmp" , " -solver bcf" , " -solver bcfm" , " -solver bcfp" , " -solver bcfmp"],
-    "vns_testing" : ["-solver vns -vns_min_kicks 1 -vns_max_kicks 3"],
-    "vns_best" : ["-solver vns -vns_min_kicks 1 -vns_max_kicks 1"],
-    "meta_best" : ["-solver tabu", "-solver vns -vns_min_kicks 1 -vns_max_kicks 1"]
-
+    "math" : ["-solver hf -hfpstart 0.5 -hfpscal 0.10" , "-solver sf -sfkstart 20 -sfkscal 15"],
+    "vns_tune" : ["-solver vns -vns_min_kicks 1 -vns_max_kicks 1", "-solver vns -vns_min_kicks 3 -vns_max_kicks 3","-solver vns -vns_min_kicks 5 -vns_max_kicks 5", "-solver vns -vns_min_kicks 1 -vns_max_kicks 3", "-solver vns -vns_min_kicks 1 -vns_max_kicks 5"],
+    "softfixing_tuning" : ["-solver sf -sfkstart 20 -sfkscal 0" , "-solver sf -sfkstart 20 -sfkscal 5" ,"-solver sf -sfkstart 20 -sfkscal 10" ,"-solver sf -sfkstart 20 -sfkscal 15" ,"-solver sf -sfkstart 20 -sfkscal 20"]
 }
 
 TEST_BED_SIZE = 15
 
 RANDOM_SEED = 0
 
-NNODES = 1000
+NNODES = 700
 
 TIMELIMIT = 60
 
@@ -133,5 +134,5 @@ if __name__ == "__main__":
         if ("time" in pp_name):
             str_exec = f"python .\\perfprof.py -D , -M 8.0 -X \"Time Ratio\" {name} {pp_name}"
         else:
-            str_exec = f"python .\\perfprof.py -D , -M 1.5 -X \"Cost Ratio\" {name} {pp_name}"
+            str_exec = f"python .\\perfprof.py -D , -M 1.1 -X \"Cost Ratio\" {name} {pp_name}"
         os.system(str_exec)

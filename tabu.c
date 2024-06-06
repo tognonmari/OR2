@@ -12,10 +12,10 @@ int tabu_get_tenure(instance* inst, int num_iterations, int nnodes) {
     //for perf prof
     //amplitude = inst->tabu_amp * nnodes;
     //frequency = inst->tabu_freq;
-    //average = inst->tabu_avg;
+    average = inst->tabu_avg;
 
 
-    int tenure =(int) amplitude *(average + sin(frequency * num_iterations + phase_shift));
+    int tenure =(int) amplitude *(average + sin(frequency * (num_iterations%62) + phase_shift));
     return tenure;
 }
 void tabu_init_data_iter_and_cost(char flag, FILE* data_file, int y_range_min, int y_range_max, instance* inst){

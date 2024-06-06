@@ -16,7 +16,7 @@ void init_vns_params(vns_params* pars) {
 void vns(instance* inst) {
 
 
-    char plot_desired = inst->verbose >= 1000;
+    char plot_desired = inst->verbose >= 1;
 
 
     //Step 1: Parse vns parameters + copy the current best_sol to optimize + initializing gnuplot pipe with correct axis
@@ -202,7 +202,7 @@ void vns_init_plot_iter_cost(char flag, FILE* gnuplotPipe, instance* inst) {
         //fprintf(gnuplotPipe, "set yrange [%d:%d]\n",y_range_min, y_range_max);
         fprintf(gnuplotPipe, "set pointsize 0.5\n");
         fprintf(gnuplotPipe, "set grid \n");
-        fprintf(gnuplotPipe, "plot '-' with linespoints pt 0.3 lc rgb '#800080'\n");
+        fprintf(gnuplotPipe, "plot '-' with points lc rgb '#800080'\n");
     }
 }
 

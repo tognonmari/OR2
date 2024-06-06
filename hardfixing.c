@@ -33,14 +33,13 @@ void hf_init(hardfixing* hf, instance* inst) {
 	hf->table_flag = (inst->verbose >= 1);
 	hf->tl_mipcall = inst->timelimit / 5.0;
 
-	// decommenta se devi fare perf plot
-	/*hf->apply_opt2 = inst->hf_opt2;
-	hf->p_fix_start = inst->hf_pfix_start;
-	hf->p_fix_scaling = inst->hf_pfix_scaling;*/
-	// usa queste se non devi fare perf plot
 	hf->apply_opt2 = 1;
 	hf->p_fix = 0.7;
 	hf->p_fix_scaling = 0.03;
+	// decommenta se devi fare perf plot
+	//hf->apply_opt2 = inst->hf_opt2;
+	hf->p_fix = inst->hf_pfix_start;
+	hf->p_fix_scaling = inst->hf_pfix_scaling;
 
 	hf->policy = RND;
 	hf->nr_call = 0;
