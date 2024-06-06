@@ -91,12 +91,13 @@ typedef struct {
 
 	//sf param
 	int sf_k_start;
-	int sf_K_scaling;
+	int sf_k_scaling;
 
 	//greedy param
 	double gre_perc_start;
 
 	//tabu param
+	char tenure_is_variable;
 	double tabu_amp;
 	double tabu_avg;
 	double tabu_freq;

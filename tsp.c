@@ -306,6 +306,7 @@ void parse_command_line(int argc, char** argv, instance* inst) {
 	inst->timelimit = 10; //seconds
 	// inst->cutoff = -1; 
 	inst->integer_costs = 0;
+	inst->tenure_is_variable = 1;
 	inst->verbose = VERBOSE;
 	inst->available_memory = 12000;
 	inst->zbest = DBL_MAX;
@@ -314,6 +315,9 @@ void parse_command_line(int argc, char** argv, instance* inst) {
 	inst->ncols = 0;
 	inst->check_feasibility = 1;
 	inst->solver = NOT_DEF;
+	inst->sf_k_start = 20;
+	inst->sf_k_scaling = 10;
+
 	int help = 0; if (argc < 1) help = 1;
 	for (int i = 1; i < argc; i++)
 	{
@@ -322,10 +326,15 @@ void parse_command_line(int argc, char** argv, instance* inst) {
 		if (strcmp(argv[i], "-hfpstart") == 0) { inst->hf_pfix_start = atof(argv[++i]); continue; }
 		if (strcmp(argv[i], "-hfpscal") == 0) { inst->hf_pfix_scaling = atof(argv[++i]); continue; }
 		//end hf_param
+		//sf_param
+		if (strcmp(argv[i], "-sfkstart") == 0) { inst->sf_k_start = atoi(argv[++i]); continue; }
+		if (strcmp(argv[i], "-sfkscal") == 0) { inst->sf_k_scaling = atoi(argv[++i]); continue; }
+		//end sf_param
 		//gre_param
 		if (strcmp(argv[i], "-greperc") == 0) { inst->gre_perc_start = atof(argv[++i]); continue; }
 		//end gre_param
 		//tabu param
+		if (strcmp(argv[i], "-varten") == 0) { inst->tenure_is_variable = atoi(argv[++i]); continue; }
 		if (strcmp(argv[i], "-tabufreq") == 0) { inst->tabu_freq = atof(argv[++i]); continue; }
 		if (strcmp(argv[i], "-tabuavg") == 0) { inst->tabu_avg = atof(argv[++i]); continue; }
 		if (strcmp(argv[i], "-tabuamp") == 0) { inst->tabu_amp = atof(argv[++i]); continue; }
@@ -985,7 +994,7 @@ void tsp_solve(instance* inst) {
 		print_best_sol((inst->verbose >= 1), inst);
 		break;
 	case TABU:
-		tabu_search(1, inst);
+		tabu_search(inst->tenure_is_variable, inst);
 		print_best_sol((inst->verbose >= 1), inst);
 		generate_name(figure_name, sizeof(figure_name), "figures/tabu_%d_%d.png", inst->nnodes, inst->randomseed);
 		plot_path(inst->verbose >= 1, inst->best_sol, inst->nnodes, inst->zbest, inst->nodes, figure_name);
