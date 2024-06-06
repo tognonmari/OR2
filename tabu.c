@@ -11,7 +11,7 @@ int tabu_get_tenure(instance* inst, int num_iterations, int nnodes) {
 
     //for perf prof
     //amplitude = inst->tabu_amp * nnodes;
-    frequency = inst->tabu_freq;
+    //frequency = inst->tabu_freq;
     //average = inst->tabu_avg;
 
 

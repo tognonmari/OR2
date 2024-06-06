@@ -17,8 +17,10 @@ METHODS = {
     "tabuamp" : [ "-solver tabu -tabuamp 0.05" ,"-solver tabu -tabuamp 0.1" , "-solver tabu -tabuamp 0.2", "-solver tabu -tabuamp 0.3"],
     "tabufreq" : [ "-solver tabu -tabufreq 0.1" , "-solver tabu -tabufreq 1.0"],
     #5 , 7 , 8 , 9 , 10 , 11 , 12 , 13 , 14
-    "exact" : ["-solver benders", "-solver bc" , "-solver bcm" , " -solver bcp" , " -solver bcmp" , " -solver bcf" , " -solver bcfm" , " -solver bcfp" , " -solver bcfmp"]
-
+    "exact" : ["-solver benders", "-solver bc" , "-solver bcm" , " -solver bcp" , " -solver bcmp" , " -solver bcf" , " -solver bcfm" , " -solver bcfp" , " -solver bcfmp"],
+    "vns_testing" : ["-solver vns -vns_min_kicks 1 -vns_max_kicks 3"],
+    "vns_best" : ["-solver vns -vns_min_kicks 1 -vns_max_kicks 1"],
+    "meta_best" : ["-solver tabu", "-solver vns -vns_min_kicks 1 -vns_max_kicks 1"]
 
 }
 
@@ -26,9 +28,9 @@ TEST_BED_SIZE = 15
 
 RANDOM_SEED = 0
 
-NNODES = 250
+NNODES = 1000
 
-TIMELIMIT = 400
+TIMELIMIT = 60
 
 PERFPLOT_TYPE = ["cost", "time"] #do not touch
 
@@ -127,7 +129,7 @@ if __name__ == "__main__":
     
     #generate perf plot 
     for name in to_be_perfplotted:
-        pp_name =  .replace(".csv", ".pdf")
+        pp_name =  name.replace(".csv", ".pdf")
         if ("time" in pp_name):
             str_exec = f"python .\\perfprof.py -D , -M 8.0 -X \"Time Ratio\" {name} {pp_name}"
         else:
