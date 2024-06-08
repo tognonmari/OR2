@@ -25,8 +25,8 @@ void vns(instance* inst) {
     init_vns_params(&params);
 
     //to be commented if not passing cmd line arguments
-    params.min_kicks = inst->vns_min_kicks;
-    params.max_kicks = inst->vns_max_kicks;
+    //params.min_kicks = inst->vns_min_kicks;
+    //params.max_kicks = inst->vns_max_kicks;
 
     // copying the current best sol to optimize with opt2 and then to kick
     int* incumbent_sol = (int*) calloc(inst->nnodes, sizeof(int));
@@ -45,7 +45,6 @@ void vns(instance* inst) {
 
     int t=1;
     srand(time(NULL));
-    //opt2_optimize_best_sol(inst);
     //generate_name(figure_name, sizeof(figure_name), "figures/after2opt_%d_%d.png", inst->nnodes, inst->randomseed);
 	//plot_path((inst->verbose>-1),figure_name,incumbent_sol, inst->nodes, inst->nnodes);
     while(!(is_time_limit_exceeded(inst->timelimit))){

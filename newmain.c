@@ -1,12 +1,7 @@
 #include <stdio.h>
 #include "tsp.h"
 #include "utils.h"
-//#include "TSPmodel.h"
 
-
-/*
-@ho scoperto che in verità %f è per i float e per i double dovremmo usare %lf.
-*/
 /*
 OR Esito(
 	 0: elaborazione riuscita;

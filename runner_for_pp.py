@@ -11,7 +11,7 @@ EXECUTABLE_PATH = ".\\x64\\Release\\TSP_Project.exe"
 METHODS = {
     "hardfix_tuning" : ["-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.03", "-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.00", "-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.02","-solver hf -hf2opt 1 -hfpstart 0.4 -hfpscal 0.05", "-solver hf -hf2opt 1 -hfpstart 0.6 -hfpscal 0.05", "-solver hf -hf2opt 1 -hfpstart 0.25 -hfpscal 0.02"],
     "hardfix_tuning_2" : ["-solver hf -hfpstart 0.5 -hfpscal 0.00", "-solver hf -hfpstart 0.5 -hfpscal 0.03", "-solver hf -hfpstart 0.5 -hfpscal 0.06","-solver hf -hfpstart 0.5 -hfpscal 0.10", "-solver hf -hfpstart 0.3 -hfpscal 0.00", "-solver hf -hfpstart 0.3 -hfpscal 0.03", "-solver hf -hfpstart 0.3 -hfpscal 0.06", "-solver hf -hfpstart 0.3 -hfpscal 0.10"],
-    "metaheuristics" : ["-solver vns -max_kicks 3", "-solver tabu -tenure xy"],
+    "metaheuristics" : ["-solver vns -vns_min_kicks 3 -vns_max_kicks 3", "-solver tabu -varten 1 -tabuavg 3.0"],
     "branch_and_cut" : ["-solver bc", "-solver bcf", "-solver bcm", "-solver bcfm"],
     "tabu" : ["-solver tabu -varten 0 -tabuavg 1.0" , " -solver tabu -varten 0 -tabuavg 3.0 "," -solver tabu -varten 0 -tabuavg 4.0 " , "-solver tabu -varten 0 -tabuavg 2.0" , " -solver tabu -varten 1 -tabuavg 2.0", "-solver tabu -varten 1 -tabuavg 3.0"],
     "heuristics" : [ "-solver nn -greperc 0.0", "-solver nn -greperc 1.0", "-solver 2opt -greperc 0.0333" , "-solver 2opt -greperc 1.0"],

@@ -62,26 +62,6 @@ void print_best_sol(char flag, instance* inst) {
 	tsp_debug_inline(flag, "\n ------------ End best solution: ------------\n");
 }
 
-//ACTUALLY NOT USED BECAUSE DIST_MATRIX IS SAVED AS CONTIGUOS ARRAY
-/**
- * Prints the elements of a triangular matrix up to the main diagonal.
- * IP flag Print flag
- * IP matrix A pointer to a 2D array representing the triangular matrix.
- * IP nrows The number of rows in the triangular matrix.
- * OV The triangular matrix represented by $matrix if $flag and if ($nrows<=10)
- */
-void print_triangular_matrix(char flag, const char text_to_print[], const float** matrix, int nrows) {
-	if (nrows > 10) { return; }
-	if (text_to_print[0] != '\0') {
-		tsp_debug(flag, 0, "%s", text_to_print);
-	}
-	for (int row = 0; row < nrows; row++) {
-		tsp_debug_inline(flag, "\n");
-		for (int col = 0; col <= row; col++) {
-			tsp_debug_inline(flag, "%8.1f ", get_cost_matrix(matrix, row, col));
-		}
-	}
-}
 /**
  * Prints the elements of a triangular matrix up to the main diagonal.
  * IP flag Print flag
@@ -149,19 +129,7 @@ void print_path(char flag, const char text_to_print[], const int* path, const po
 		print_point(flag, "", &nodes[path[i]]);
 	}
 }
-/*
-* The values of an array are transformed in random values belonging to [0,$max_value]
-* IP n Length of the array
-* OP array Array to be modified with random values
-* IP max_value Maximum value of the generated values
-*/
-//ACTUALLY NOT USED TO ERASE
-void generate_array(int n, double* array, int max_value) {
-	for (int i = 0; i < n; i++) {
-		*array = rand() % (max_value + 1);
-		array++;
-	}
-}
+
 /*
 * The points in an array are transformed s.t. their coordinates assume random values.
 * x field assume random values belonging to [0,$max_x]
@@ -262,20 +230,6 @@ float get_dist_matrix(const float* matrix, int row, int col) {
 	if (col <= row) { return matrix[(row * (row + 1) / 2) + col]; }
 	return matrix[(col * (col + 1) / 2) + row];
 }
-
-////ACTUALLY NOT USED BECAUSE DIST_MATRIX IS SAVED AS CONTIGUOS ARRAY AND THIS FUNCTION WORKS FOR 2D ARRAYS
-/*
- * Ottiene il valore di un elemento della matrice simmetrica $matrix
- * IP matrix La matrice simmetrica.
- * IP a L'indice di riga (0-based).
- * IP b L'indice di colonna (0-based).
- * OR Il valore dell'entry associata ad a e b.
- */
-double get_cost_matrix(const float** matrix, int a, int b) {
-	if (b <= a) { return matrix[a][b]; }
-	return matrix[b][a];
-}
-//TO ERASE
 
 /*
 * The file data_file is modified in the following way:
@@ -569,66 +523,6 @@ char opt2_move(char table_flag, instance* inst, int* incumbent_sol, double* incu
 	}
 }
 
-//NINO: I think it is unuseful and it can be erased, it is sufficient to use classic opt2 passing as parameter inst->best_sol
-/**
- * 	Given an instance inst, it performs opt-2 refinement.
- * IP: instance inst passed by reference
- * OP: formally none, but inst's best_sol and zbest are updated if an improvement is found
-*/
-void opt2_optimize_best_sol(instance* inst) {
-
-	int n = inst->nnodes;
-	int* path = inst->best_sol;
-	point* nodes_list = inst->nodes;
-	double path_length = inst->zbest;
-	tsp_debug((inst->verbose > 49), 0, "Initial real path length: %lf", compute_path_length(path, n, nodes_list));
-	tsp_debug((inst->verbose > 49), 0, "initial zbest : %lf", path_length);
-	double best_delta = -1;
-
-	while (best_delta < 0 && !(is_time_limit_exceeded(inst->timelimit)))
-	{
-		char improvement = 0;
-		best_delta = 0;
-		int best_i = -1;
-		int best_j = -1;
-		for (int i = 0; i <= n - 3; i++) //cambiato da n-2!
-		{
-			for (int j = i + 2; j <= n - 1; j++)
-			{
-				double current_dist = get_distance(&nodes_list[inst->best_sol[i % n]], &nodes_list[inst->best_sol[(i + 1) % n]]) + get_distance(&nodes_list[inst->best_sol[j % n]], &nodes_list[inst->best_sol[(j + 1) % n]]);
-				double changed_dist = get_distance(&nodes_list[inst->best_sol[i % n]], &nodes_list[inst->best_sol[j % n]]) + get_distance(&nodes_list[inst->best_sol[(i + 1) % n]], &nodes_list[inst->best_sol[(j + 1) % n]]);
-				double delta = changed_dist - current_dist;
-
-				if (delta < best_delta)
-				{
-					improvement = 1;
-					best_i = i % n;
-					best_j = j % n;
-					best_delta = delta;
-				}
-			}
-		}
-		if (improvement)
-		{
-			tsp_debug((inst->verbose > 49), 0, "I am swapping nodes %d and %d", best_i + 1, best_j);
-			swap_2_opt(inst->best_sol, (best_i + 1) % n, (best_j) % n);
-			path_length += best_delta;
-			inst->tbest = get_timer();
-		}
-	}
-	if (is_time_limit_exceeded(inst->timelimit)) {
-
-		tsp_debug((inst->verbose >= 5), 0, "Could not finish 2 opt before time limit: current time is %lf", get_timer());
-	}
-	if (is_feasible_solution(inst, path, path_length)) {
-
-		printf("Solution is feasible!\n");
-
-	}
-	inst->zbest = path_length;
-
-}
-//TO ERASE
 /*
  * Generic swap function for swapping data of arbitrary types.
  * This function takes two pointers to data ($a and $b) and the size of each data element.
@@ -652,7 +546,6 @@ void swap_space(void* a, void* b, size_t size) {
  * IP a1 Pointer to the destination array.
  * IP a2 Pointer to the source array.
  */
- //IT IS USED ONLY IN VNS, IM NOT SURE IT IS RESILIENT FROM ERRORS, BUT I THINK IT IS OK
 void copy_array(void* a1, const void* a2) {
 	size_t size_a1 = _msize(a1);
 	/*
@@ -668,7 +561,6 @@ void copy_array(void* a1, const void* a2) {
 		fprintf(stderr, "Size a1 = %d , size a2 = %d\n", (int)size_a1, (int)size_a2);
 	}
 }
-//I THINK IT IS OK
 /*
  * Copies data from one dynamically allocated array to another.
  * This function checks if the sizes of the input arrays in the heap are equal.
@@ -686,115 +578,6 @@ void copy_din_array(void* a1, const void* a2, size_t elem_size, size_t num_elems
 	}
 	size_t total_size = elem_size * num_elems;
 	memcpy(a1, a2, total_size);
-}
-//TO ERASE, WE HAVE IMPLEMENTED THE NEW VERSION IN greedy.c
-/*
-* Searches for the node with the minimum distance to $p from the points allocated in [p+1 ; end] (address space).
-*
-* This function iterates through the nodes starting from the specified current node
-* and calculates the distance between each node and the reference node (p).
-* It updates the minimum distance and the pointer to the closest node accordingly.
-* The computed minimum distance is stored in the variable pointed to by current_cost.
-*
-* IP p Pointer to the reference node for distance calculation.
-* IP end Pointer to the last node in the search range.
-* OP current_cost Pointer to a variable to store the computed minimum distance.
-* OR Pointer to the node with the minimum distance.
-* @note A node is represented by a int value which is its label, thus its position in the instance point array $(inst->nodes).
-*/
-int* search_min(const int* p, const int* end, const float* dist_matrix, double* min) {
-	double min_distance = DBL_MAX;
-	int* closest_node = NULL;
-	int* current = (int*)p + 1;
-	while (current <= end) {
-		double distance = get_dist_matrix(dist_matrix, *p, *current);
-		if (distance < min_distance) {
-			min_distance = distance;
-			closest_node = current;
-		}
-		current++;
-	}
-	(*min) = min_distance;
-	return closest_node;
-}
-//TO ERASE, WE HAVE IMPLEMENTED THE NEW VERSION IN greedy.c
-/*
-* Computes a greedy path starting from a specified index and calculates its cost.
-* This function constructs a greedy path starting from the node at the given index.
-* It iteratively selects the closest node to the last visited node, swaps it
-* into the path, and calculates the cost of the path.
-*
-* IP index_first Index of the starting node for the greedy path.
-* IP inst Pointer to the instance containing node information.
-* OP path_cost Pointer to a variable to store the computed path cost.
-* OR A pointer to the constructed greedy path.
-*/
-int* compute_greedy_path(int index_first, instance* inst, double* path_cost) {
-	int n = inst->nnodes;
-	int* path = (int*)calloc(n, sizeof(int)); //manca un assert, non sarebbe meglio metterlo dentro init_path?
-	init_path(path, n);
-	swap(&(path[0]), &(path[index_first]));
-	int* next = &(path[1]); //pointer to the next node to visit in the path (at the start path[0] is already correct)
-	int* end = &(path[n - 1]); //pointer to the ending node of the path
-	int* min; //pointer to the closest node of the last node visited;
-	double current_cost = 0;
-	double aggregate_cost = 0;
-	while (next < end) {
-		min = search_min((next - 1), end, (const float*)(inst->dist_matrix), &current_cost);
-		swap(next, min);
-		next++;
-		aggregate_cost += current_cost;
-	}
-	current_cost = get_dist_matrix((const float*)(inst->dist_matrix), *(end - 1), *end);
-	aggregate_cost += (current_cost + get_dist_matrix((const float*)(inst->dist_matrix), path[0], *end));
-	(*path_cost) = aggregate_cost;
-	return path;
-}
-//TO ERASE, WE HAVE IMPLEMENTED THE NEW VERSION IN greedy.c
-/*
-* This function must update the data of $inst related to the best solution using
-* a greedy approach that provides a good solution for the tsp problem.
-* The idea is to build a path in which the initial node 0 (position 0 in the vector representing the path)
-* is arbitrarily chosen among the nodes of the graph,
-* while node i is chosen by selecting the node at minimum distance from node i-1.
-* INVARIANT FOR THE PATH BUILDED IN GREEDY TSP.
-* Let PATH = [v1, v2, ..., vK] the sequence of visited node we have that
-* for each (1 <= i <= k-1) : d(v_i, v_i+1) <= d(v_i, u) for each u not yet visited.
-* IOP inst Pointer to the instance containing node information. The following field are updated:
-*	tbest Execution time to find the best solution.
-*	zbest Cost of the best solution.
-*	best_sol Sequence of indices representing the best solution.
-*/
-void greedy_tsp(instance* inst) {
-	int n = inst->nnodes;
-	int verbose = inst->verbose;
-	double current_cost;
-	double min_cost;
-	int* sol;
-	int* min_sol = compute_greedy_path(0, inst, &min_cost);
-	update_best(inst, min_cost, get_timer(), min_sol);
-	int i;
-	for (i = 1; i < n; i++) {
-		sol = compute_greedy_path(i, inst, &current_cost);
-		if (current_cost < min_cost) {
-			free(min_sol); //I am going to update min_sol, then I can free the actual min_sol
-			min_cost = current_cost; //update cost
-			min_sol = sol; //update min_sol
-			update_best(inst, min_cost, get_timer(), min_sol);
-		}
-		else {
-			free(sol); //sol is not the best path, then i can free it
-		}
-		tsp_debug((inst->verbose > 99), 0, "iter %d ", i);
-		tsp_debug((inst->verbose > 99), 0, "cost = %.2f", current_cost);
-		tsp_debug((inst->verbose > 99), 0, "zbest = %.2f", min_cost);
-	}
-
-
-	//If we exited the cycle due to time constraints, print an error message saying the reached point
-	if (i < n) {
-		tsp_debug(inst->verbose, 0, "Could not finish greedy NN due to time constraints: visited up until node %d", i);
-	}
 }
 
 /**

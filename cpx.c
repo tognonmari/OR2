@@ -804,7 +804,8 @@ void plot_multitour(char figure_flag,char debug_flag, const char figure_name[], 
 	fclose(gnuplotPipe);
 	tsp_debug(debug_flag, 1, "Plot of multitour_sol SUCCESSFUL");
 }
-*/ // TO ERASE
+*/
+
 int TSPopt(instance* inst)
 {
 	// open CPLEX model

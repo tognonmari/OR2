@@ -73,16 +73,6 @@ typedef struct {
 	char check_feasibility;
 	// model;
 	int ncols;
-	/*
-	int xstart;
-	int qstart;
-	int bigqstart;
-	int sstart;
-	int bigsstart;
-	int ystart;
-	int fstart;
-	int zstart;
-	*/
 
 	//hf param
 	char hf_opt2;
@@ -117,8 +107,6 @@ void generate_name(char buffer[], size_t bufferSize, const char* format, ...);
 
 void generate_nodes(int n, point* nodes, int max_x, int max_y);
 
-void generate_array(int n, double* array, int max_value);
-
 double get_distance(const point* p1, const point* p2);
 
 void print_nodes(char flag, const char text_to_print[], const instance* inst, int n);
@@ -128,8 +116,6 @@ void print_path(char flag, const char text_to_print[], const int* path, const po
 void print_best_sol(char flag, instance* inst);
 
 void print_point(char flag, const char text_to_print[], const point* p);
-
-void print_triangular_matrix(char flag, const char text[], const float** matrix, int nrows);
 
 void print_triangular_matrix_as_array(char flag, const char text_to_print[], const float* matrix, int nrows);
 
@@ -145,13 +131,9 @@ void print_instance_parameters(instance* inst);
 
 void parse_command_line(int argc, char** argv, instance* inst);
 
-void opt2_optimize_best_sol(instance* inst);
-
 void reverse_sequence(int* path, int min, int max);
 
 void compute_dist_matrix(instance* inst);
-
-double get_cost_matrix(const float** matrix, int a, int b);
 
 float get_dist_matrix(const float* matrix, int row, int col);
 
@@ -170,12 +152,6 @@ void opt2(instance* inst, int* incumbent_sol, double* incumbent_cost, char table
 void copy_array(void* a1, const void* a2);
 
 void copy_din_array(void* a1, const void* a2, size_t elem_size, size_t num_elems);
-
-int* search_min(const int* p, const int* end, const float* cost_matrix, double* current_cost);
-
-int* compute_greedy_path(int index_first, instance* inst, double* path_cost);
-
-void greedy_tsp(instance* inst);
 
 void update_best(instance* inst, double z, double t, int* sol);
 
